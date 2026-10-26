@@ -414,3 +414,46 @@ bool EquipUpgradeAction::Execute(Event /*event*/)
     EquipItems(items);
     return true;
 }
+
+bool EquipUpgradeDestroyAction::Execute(Event /*event*/)
+{
+    ItemIds items = SelectInventoryItemsToEquip();
+    EquipItems(items);
+
+    bool cleanEquip = sRandomPlayerbotMgr.IsAddclassBot(bot);
+    CollectItemsVisitor visitor;
+    IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+    for (auto i = visitor.items.begin(); i != visitor.items.end(); ++i)
+    {
+        Item* item = *i;
+        if (!item)
+            continue;
+
+        ItemTemplate const* itemTemplate = item->GetTemplate();
+        if (!itemTemplate)
+            continue;
+
+        switch (itemTemplate->Class)
+        {
+            case ITEM_CLASS_WEAPON:
+            case ITEM_CLASS_ARMOR:
+            {
+                if (!cleanEquip || bot->GetLevel() < itemTemplate->RequiredLevel)
+                    continue;
+                break;
+            }
+            case ITEM_CLASS_PROJECTILE:
+            case ITEM_CLASS_REAGENT:
+            case ITEM_CLASS_CONSUMABLE:
+                break;
+            default:
+                continue;
+        }
+
+        uint8 bagIndex = item->GetBagSlot();
+        uint8 slot  = item->GetSlot();
+        bot->DestroyItem(bagIndex, slot, true);
+    }
+
+    return true;
+}

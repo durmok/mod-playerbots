@@ -14,6 +14,9 @@
 
 bool AutoMaintenanceOnLevelupAction::Execute(Event /*event*/)
 {
+    if (!sRandomPlayerbotMgr.IsRandomBot(bot))
+        return false;
+
     AutoPickTalents();
     AutoLearnSpell();
     AutoTeleportForLevel();

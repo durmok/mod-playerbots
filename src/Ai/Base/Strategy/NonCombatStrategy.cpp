@@ -5,11 +5,18 @@
  */
 
 #include "NonCombatStrategy.h"
+#include "WaitMoveCompleteMultiplier.h"
 
 void NonCombatStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     triggers.push_back(new TriggerNode("random", { NextAction("clean quest log", 1.0f) }));
     triggers.push_back(new TriggerNode("timer", { NextAction("check mount state", 1.0f) }));
+    triggers.push_back(new TriggerNode("move complete", { NextAction("move complete", ACTION_MOVE + 9) }));
+}
+
+void NonCombatStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
+{
+    multipliers.push_back(new WaitMoveCompleteMultiplier(botAI));
 }
 
 void CollisionStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)

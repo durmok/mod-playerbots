@@ -19,12 +19,14 @@ public:
     {
         creators["gossip hello"] = &WorldPacketTriggerContext::gossip_hello;
         creators["group invite"] = &WorldPacketTriggerContext::group_invite;
+        creators["partykilllog"] = &WorldPacketTriggerContext::partykilllog;
         creators["group set leader"] = &WorldPacketTriggerContext::group_set_leader;
         creators["not enough money"] = &WorldPacketTriggerContext::no_money;
         creators["not enough reputation"] = &WorldPacketTriggerContext::no_reputation;
         creators["cannot equip"] = &WorldPacketTriggerContext::cannot_equip;
         creators["use game object"] = &WorldPacketTriggerContext::use_game_object;
         creators["loot roll"] = &WorldPacketTriggerContext::loot_roll;
+        creators["loot start roll"] = &WorldPacketTriggerContext::loot_start_roll;
         creators["resurrect request"] = &WorldPacketTriggerContext::resurrect_request;
         creators["area trigger"] = &WorldPacketTriggerContext::area_trigger;
         creators["within area trigger"] = &WorldPacketTriggerContext::within_area_trigger;
@@ -33,6 +35,7 @@ public:
         creators["trade status"] = &WorldPacketTriggerContext::trade_status;
         creators["trade status extended"] = &WorldPacketTriggerContext::trade_status_extended;
         creators["loot response"] = &WorldPacketTriggerContext::loot_response;
+        creators["out of react range"] = &WorldPacketTriggerContext::out_of_react_range;
         creators["out of react range"] = &WorldPacketTriggerContext::out_of_react_range;
 
         // quest
@@ -120,11 +123,13 @@ private:
     static Trigger* resurrect_request(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "resurrect request"); }
     static Trigger* gossip_hello(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "gossip hello"); }
     static Trigger* group_invite(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "group invite"); }
+    static Trigger* partykilllog(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "partykilllog"); }
     static Trigger* group_set_leader(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "group set leader"); }
     static Trigger* no_money(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "not enough money"); }
     static Trigger* no_reputation(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "not enough reputation"); }
     static Trigger* use_game_object(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "use game object"); }
     static Trigger* loot_roll(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "loot roll"); }
+    static Trigger* loot_start_roll(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "loot start roll"); }
     static Trigger* taxi(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "activate taxi"); }
     static Trigger* bg_status(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "bg status"); }
     static Trigger* levelup(PlayerbotAI* botAI) { return new WorldPacketTrigger(botAI, "levelup"); }

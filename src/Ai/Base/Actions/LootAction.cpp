@@ -405,6 +405,8 @@ bool StoreLootAction::Execute(Event event)
         // bot->GetSession()->HandleLootMoneyOpcode(packet);
     }
 
+    bool isAltBot = botAI->IsAltBot();
+
     for (uint8 i = 0; i < items; ++i)
     {
         uint32 itemid;
@@ -430,6 +432,50 @@ bool StoreLootAction::Execute(Event event)
         if (!proto)
             continue;
 
+        // #include "SSCHelpers.h"
+        // #include "TKHelpers.h"
+        // using namespace TkHelpers;
+        // using namespace SerpentShrineCavernHelpers;
+        switch (itemid) {
+            // Lady Vashj <Coilfang Matron>
+            case 31088:
+            // Kael'thas Sunstrider
+            case 30311:
+            case 30312:
+            case 30313:
+            case 30314:
+            case 30316:
+            case 30317:
+            case 30318:
+            case 30319:
+                break;
+            default:
+                {
+                    // for low level bots to auto pick poor or normal equipment
+                    bool takeit = false;
+                    if (isAltBot)
+                    {
+                        if (proto->Quality < ITEM_QUALITY_UNCOMMON)
+                        {
+                            switch (proto->Class)
+                            {
+                                case ITEM_CLASS_WEAPON:
+                                case ITEM_CLASS_ARMOR:
+                                {
+                                    ItemUsage usage = AI_VALUE2(ItemUsage, "item usage", std::to_string(proto->ItemId));
+                                    takeit = usage == ITEM_USAGE_EQUIP || usage == ITEM_USAGE_REPLACE || usage == ITEM_USAGE_BAD_EQUIP;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (takeit)
+                        break;
+                    else
+                        continue;
+                }
+        }
+
         if (!IsRealPlayer(botAI->GetMaster()) && AI_VALUE(uint8, "bag space") > 80)
         {
             uint32 maxStack = proto->GetMaxStackSize();
@@ -453,18 +499,18 @@ bool StoreLootAction::Execute(Event event)
                 continue;
         }
 
-        Player* master = botAI->GetMaster();
-        if (sRandomPlayerbotMgr.IsRandomBot(bot) && master)
-        {
-            uint32 price = itemcount * proto->BuyPrice * sRandomPlayerbotMgr.GetBuyMultiplier(bot) + gold;
-            if (price)
-                sRandomPlayerbotMgr.AddTradeDiscount(bot, master, price);
+        // Player* master = botAI->GetMaster();
+        // if (sRandomPlayerbotMgr.IsRandomBot(bot) && master)
+        // {
+        //     uint32 price = itemcount * proto->BuyPrice * sRandomPlayerbotMgr.GetBuyMultiplier(bot) + gold;
+        //     if (price)
+        //         sRandomPlayerbotMgr.AddTradeDiscount(bot, master, price);
 
-            if (Group* group = bot->GetGroup())
-                for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
-                    if (ref->GetSource() != bot)
-                        GuildTaskMgr::instance().CheckItemTask(itemid, itemcount, ref->GetSource(), bot);
-        }
+        //     if (Group* group = bot->GetGroup())
+        //         for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        //             if (ref->GetSource() != bot)
+        //                 GuildTaskMgr::instance().CheckItemTask(itemid, itemcount, ref->GetSource(), bot);
+        // }
 
         WorldPacket* packet = new WorldPacket(CMSG_AUTOSTORE_LOOT_ITEM, 1);
         *packet << itemindex;

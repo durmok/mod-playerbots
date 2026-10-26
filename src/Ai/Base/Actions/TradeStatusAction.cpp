@@ -295,7 +295,7 @@ bool TradeStatusAction::CheckTrade()
     int32 delta = playerMoney - botMoney;
     int32 moneyDelta = (int32)trader->GetTradeData()->GetMoney() - (int32)bot->GetTradeData()->GetMoney();
     bool success = false;
-    if (delta < 0)
+    if (delta < 0 && sRandomPlayerbotMgr.IsRandomBot(bot))
     {
         if (delta + discount >= 0)
         {
@@ -314,7 +314,8 @@ bool TradeStatusAction::CheckTrade()
 
     if (success)
     {
-        sRandomPlayerbotMgr.AddTradeDiscount(bot, trader, delta);
+        if (sRandomPlayerbotMgr.IsRandomBot(bot))
+            sRandomPlayerbotMgr.AddTradeDiscount(bot, trader, delta);
         switch (urand(0, 4))
         {
             case 0:

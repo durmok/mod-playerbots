@@ -53,9 +53,10 @@ bool AcceptInvitationAction::Execute(Event /*event*/)
 
     botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault("hello", "Hello", {}));
 
-    if (sPlayerbotAIConfig.SummonWhenGroup && bot->GetDistance(inviter) > sPlayerbotAIConfig.SightDistance)
-    {
-        Teleport(inviter, bot, true);
-    }
+    // comment for FollowAction will handle it
+    // if (sPlayerbotAIConfig.SummonWhenGroup && bot->GetDistance(inviter) > sPlayerbotAIConfig.SightDistance)
+    // {
+    //     Teleport(inviter, bot, true);
+    // }
     return true;
 }

@@ -39,7 +39,7 @@ GuidVector AttackersValue::Calculate()
     {
         ObjectGuid skullGuid = group->GetTargetIcon(7);
         Unit* skullTarget = botAI->GetUnit(skullGuid);
-        if (skullTarget && IsValidTarget(skullTarget, bot))
+        if (skullTarget && IsValidTarget(skullTarget, bot) && skullTarget->IsInCombat())
             targets.insert(skullTarget);
     }
 
@@ -78,6 +78,17 @@ void AttackersValue::AddAttackersOf(Group* group, std::unordered_set<Unit*>& tar
 
         AddAttackersOf(member, targets);
     }
+    // for protect npc quest by mark raid target on npc
+    for (int8 id = 0; id < 3; id++)
+    {
+        ObjectGuid guid = group->GetTargetIcon(id);
+        if (!guid || guid.IsPlayer() || guid.IsPet())
+            continue;
+        Creature* creature = ObjectAccessor::GetCreature(*bot, guid);
+        if (!creature || creature->IsHostileTo(bot) || !creature->IsAlive())
+            continue;
+        AddAttackersOf(creature, targets);
+    }
 }
 
 struct AddGuardiansHelper
@@ -102,6 +113,23 @@ void AttackersValue::AddAttackersOf(Player* player, std::unordered_set<Unit*>& t
 
         if (player->IsValidAttackTarget(attacker) &&
             player->GetDistance2d(attacker) < sPlayerbotAIConfig.SightDistance)
+            targets.insert(attacker);
+    }
+}
+
+void AttackersValue::AddAttackersOf(Creature* creature, std::unordered_set<Unit*>& targets)
+{
+    if (!creature || !creature->IsInWorld())
+        return;
+
+    for (auto const& [guid, ref] : creature->GetThreatMgr().GetThreatenedByMeList())
+    {
+        Unit* attacker = ref->GetOwner();
+        if (!attacker)
+            continue;
+
+        if (creature->IsValidAttackTarget(attacker) &&
+            creature->GetDistance2d(attacker) < sPlayerbotAIConfig.SightDistance)
             targets.insert(attacker);
     }
 }
@@ -247,7 +275,19 @@ bool AttackersValue::IsPossibleTarget(Unit* attacker, Player* bot, float /*range
 
 bool AttackersValue::IsValidTarget(Unit* attacker, Player* bot)
 {
-    return IsPossibleTarget(attacker, bot) && bot->IsWithinLOSInMap(attacker);
+    // return IsPossibleTarget(attacker, bot) && bot->IsWithinLOSInMap(attacker);
+    if (!IsPossibleTarget(attacker, bot))
+        return false;
+    if (!bot->IsInMap(attacker))
+        return false;
+    if (bot->IsWithinLOSInMap(attacker))
+        return true;
+
+    PathGenerator path(bot);
+    path.CalculatePath(attacker->m_positionX, attacker->m_positionY, attacker->m_positionZ, false);
+    PathType type = path.GetPathType();
+    int typeOk = PATHFIND_NORMAL | PATHFIND_INCOMPLETE | PATHFIND_SHORTCUT;
+    return type & typeOk;
 }
 
 bool PossibleAddsValue::Calculate()

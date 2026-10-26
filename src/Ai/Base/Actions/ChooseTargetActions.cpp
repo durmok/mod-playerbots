@@ -40,13 +40,13 @@ bool AggressiveTargetAction::isUseful()
 
 bool DropTargetAction::Execute(Event /*event*/)
 {
-    Unit* target = context->GetValue<Unit*>("current target")->Get();
-    if (target && target->isDead())
-    {
-        ObjectGuid guid = target->GetGUID();
-        if (guid)
-            context->GetValue<LootObjectStack*>("available loot")->Get()->Add(guid);
-    }
+    // Unit* target = context->GetValue<Unit*>("current target")->Get();
+    // if (target && target->isDead())
+    // {
+    //     ObjectGuid guid = target->GetGUID();
+    //     if (guid)
+    //         context->GetValue<LootObjectStack*>("available loot")->Get()->Add(guid);
+    // }
 
     // ObjectGuid pullTarget = context->GetValue<ObjectGuid>("pull target")->Get();
     // GuidVector possible = botAI->GetAiObjectContext()->GetValue<GuidVector>("possible targets no los")->Get();

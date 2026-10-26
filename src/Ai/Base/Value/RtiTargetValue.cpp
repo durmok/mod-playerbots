@@ -32,6 +32,24 @@ int32 RtiTargetValue::GetRtiIndex(std::string const rti)
     return index;
 }
 
+Unit* RtiTargetValue::GetValidRtiTarget(ObjectGuid &guid)
+{
+    Unit* unit = botAI->GetUnit(guid);
+    if (!unit || unit->isDead() || !bot->IsWithinLOSInMap(unit) || !AttackersValue::IsValidTarget(unit, bot) ||
+        ServerFacade::instance().IsDistanceGreaterThan(ServerFacade::instance().GetDistance2d(bot, unit),
+                                            sPlayerbotAIConfig.SightDistance))
+        return nullptr;
+
+    if (Player* master = botAI->GetMaster())
+    {
+        if (master->IsInWorld() && master->GetMapId() == unit->GetMapId() &&
+            ServerFacade::instance().IsDistanceGreaterThan(ServerFacade::instance().GetDistance2d(master, unit),
+                sPlayerbotAIConfig.SightDistance))
+            return nullptr;
+    }
+    return unit;
+}
+
 Unit* RtiTargetValue::Calculate()
 {
     Group* group = bot->GetGroup();
@@ -41,8 +59,45 @@ Unit* RtiTargetValue::Calculate()
     std::string const rti = AI_VALUE(std::string, type);
     int32 index = GetRtiIndex(rti);
 
+    const int32 GROUP_RTI_ATTACK_INDEX_START = 5;
     if (index == -1)
+    {
+        // check if exist group rti attack target
+        if (type != "rti")
+            return nullptr;
+
+        Group* group = bot->GetGroup();
+        if (!group)
+            return nullptr;
+        for (int32 id = 7; id >= GROUP_RTI_ATTACK_INDEX_START; id--)
+        {
+            ObjectGuid guid = group->GetTargetIcon(id);
+            if (!guid)
+                continue;
+            if (Unit* unit = GetValidRtiTarget(guid))
+                return unit;
+        }
         return nullptr;
+    }
+    else if (type != "rti" && index >= GROUP_RTI_ATTACK_INDEX_START)
+    {
+        // ignore if conflict with the valid-highest-index group rti attack target
+        Group* group = bot->GetGroup();
+        if (!group)
+            return nullptr;
+        bool existHigherRti = false;
+        for (int32 id = index + 1; id < 8; id++)
+        {
+            ObjectGuid guid = group->GetTargetIcon(index);
+            if (guid && GetValidRtiTarget(guid))
+            {
+                existHigherRti = true;
+                break;
+            }
+        }
+        if (!existHigherRti)
+            return nullptr;
+    }
 
     ObjectGuid guid = group->GetTargetIcon(index);
     if (!guid)

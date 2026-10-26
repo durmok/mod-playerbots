@@ -201,6 +201,7 @@ bool Engine::DoNextAction(Unit* /*unit*/, uint32 /*depth*/, bool minimal)
                         multiplier->NoteBlock();
 
                     LogAction("Multiplier %s made action %s useless", multiplier->getName().c_str(), action->getName().c_str());
+                    action->SetUseless();
                     break;
                 }
             }
@@ -247,6 +248,7 @@ bool Engine::DoNextAction(Unit* /*unit*/, uint32 /*depth*/, bool minimal)
         {
             LogAction("A:%s - USELESS", action->getName().c_str());
             lastRelevance = relevance;
+            action->SetUseless();
         }
 
         delete actionNode;  // Always delete after processing the action node

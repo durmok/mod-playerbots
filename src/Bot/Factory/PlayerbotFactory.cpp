@@ -836,7 +836,7 @@ void PlayerbotFactory::Randomize(bool incremental)
     LOG_DEBUG("playerbots", "Resetting player...");
     PerfMonitorOperation* pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Reset");
 
-    if (!sPlayerbotAIConfig.EquipAndSpecPersistence ||
+    if (!incremental || !sPlayerbotAIConfig.EquipAndSpecPersistence ||
         level < uint32(sPlayerbotAIConfig.EquipAndSpecPersistenceLevel))
     {
         bot->resetTalents(true);
@@ -1066,6 +1066,203 @@ void PlayerbotFactory::Randomize(bool incremental)
         // bot->SaveToDB(false, false);
     }
     if (bot->GetLevel() >= 10)
+    {
+        pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Pet");
+        LOG_DEBUG("playerbots", "Initializing pet...");
+        InitPet();
+        // bot->SaveToDB(false, false);
+        InitPetTalents();
+        if (pmo)
+            pmo->finish();
+    }
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Save");
+    LOG_DEBUG("playerbots", "Saving to DB...");
+    bot->SetMoney(urand(level * 100000, level * 5 * 100000));
+    bot->SetHealth(bot->GetMaxHealth());
+    bot->SetPower(POWER_MANA, bot->GetMaxPower(POWER_MANA));
+    bot->SaveToDB(false, false);
+    LOG_DEBUG("playerbots", "Initialization Done.");
+    if (pmo)
+        pmo->finish();
+}
+
+void PlayerbotFactory::SyncLevel()
+{
+    if (bot->GetLevel() == level || (bot->getClass() == CLASS_DEATH_KNIGHT && level < sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL)))
+        return;
+    bool incremental = bot->GetLevel() < level;
+
+    LOG_DEBUG("playerbots", "{} synchronizing level {} (level {} class = {})...", (incremental ? "Incremental" : "Full"),
+             bot->GetName().c_str(), level, bot->getClass());
+    Prepare();
+    LOG_DEBUG("playerbots", "Synchronizing player level...");
+    PerfMonitorOperation* pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_SyncLevel");
+
+    if (!incremental || !sPlayerbotAIConfig.EquipAndSpecPersistence ||
+        level < uint32(sPlayerbotAIConfig.EquipAndSpecPersistenceLevel))
+    {
+        bot->resetTalents(true);
+    }
+
+    if (!incremental)
+    {
+        ClearSkills();
+        ClearSpells();
+        ResetQuests();
+        if (!sPlayerbotAIConfig.EquipAndSpecPersistence ||
+            level < uint32(sPlayerbotAIConfig.EquipAndSpecPersistenceLevel))
+        {
+            ClearAllItems();
+        }
+    }
+    // ClearInventory();
+    bot->RemoveAllSpellCooldown();
+    UnbindInstance();
+
+    bot->GiveLevel(level);
+    bot->InitStatsForLevel(true);
+    CancelAuras();
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Quests");
+    InitAttunementQuests();
+    if (pmo)
+        pmo->finish();
+
+    LOG_DEBUG("playerbots", "Initializing skills (step 1)...");
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Skills1");
+    bot->LearnDefaultSkills();
+    InitSkills();
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Spells1");
+    LOG_DEBUG("playerbots", "Initializing spells (step 1)...");
+    InitClassSpells();
+    InitAvailableSpells();
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Talents");
+    LOG_DEBUG("playerbots", "Initializing talents...");
+    InitTalentsTree(incremental);
+    if (botAI && !incremental)
+    {
+        PlayerbotRepository::instance().Reset(botAI);
+        // botAI->DoSpecificAction("auto talents");
+        botAI->ResetStrategies(false);  // fix wrong stored strategy
+    }
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Spells2");
+    LOG_DEBUG("playerbots", "Initializing spells (step 2)...");
+    InitAvailableSpells();
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Reputation");
+    LOG_DEBUG("playerbots", "Initializing reputation...");
+    InitReputation();
+    if (pmo)
+        pmo->finish();
+
+    LOG_DEBUG("playerbots", "Initializing special spells...");
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Spells3");
+    InitSpecialSpells();
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Mounts");
+    LOG_DEBUG("playerbots", "Initializing mounts...");
+    InitMounts();
+    if (pmo)
+        pmo->finish();
+
+    // pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Equip");
+    // LOG_DEBUG("playerbots", "Initializing equipmemt...");
+    // InitEquipment(incremental, incremental ? false : sPlayerbotAIConfig.twoRoundsGearInit);
+    // if (pmo)
+    //     pmo->finish();
+
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Bags");
+    LOG_DEBUG("playerbots", "Initializing bags...");
+    InitBags();
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Ammo");
+    LOG_DEBUG("playerbots", "Initializing ammo...");
+    InitAmmo();
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Food");
+    LOG_DEBUG("playerbots", "Initializing food...");
+    InitFood();
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Potions");
+    LOG_DEBUG("playerbots", "Initializing potions...");
+    InitPotions();
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Reagents");
+    LOG_DEBUG("playerbots", "Initializing reagents...");
+    InitReagents();
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Keys");
+    LOG_DEBUG("playerbots", "Initializing keys...");
+    InitKeyring();
+    if (pmo)
+        pmo->finish();
+
+    if (bot->GetLevel() >= sPlayerbotAIConfig.MinEnchantingBotLevel)
+    {
+        ApplyEnchantAndGemsNew();
+    }
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Inventory");
+    LOG_DEBUG("playerbots", "Initializing inventory...");
+    // InitInventory();
+    if (pmo)
+        pmo->finish();
+
+    pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Consumable");
+    LOG_DEBUG("playerbots", "Initializing consumables...");
+    InitConsumables();
+    if (pmo)
+        pmo->finish();
+
+    LOG_DEBUG("playerbots", "Initializing glyphs...");
+    InitGlyphs();
+
+    if (pmo)
+        pmo->finish();
+
+    // if (bot->GetLevel() >= 70)
+    // {
+    //     pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Arenas");
+    //     // LOG_INFO("playerbots", "Initializing arena teams...");
+    //     InitArenaTeam();
+    //     if (pmo)
+    //         pmo->finish();
+    // }
+
+    if (!incremental)
+    {
+        bot->RemovePet(nullptr, PET_SAVE_AS_CURRENT, true);
+        bot->RemovePet(nullptr, PET_SAVE_NOT_IN_SLOT, true);
+        // bot->SaveToDB(false, false);
+    }
+    if (bot->GetLevel() >= 10 && bot->GetPet())
     {
         pmo = sPerfMonitor.start(PERF_MON_RNDBOT, "PlayerbotFactory_Pet");
         LOG_DEBUG("playerbots", "Initializing pet...");
@@ -3539,6 +3736,8 @@ void PlayerbotFactory::InitClassSpells()
         case CLASS_WARRIOR:
             bot->learnSpell(78, true);
             bot->learnSpell(2457, true);
+            bot->learnSpell(2764, false);  // throw
+            bot->learnSpell(75, false);  // shoot
             if (level >= 10)
             {
                 bot->learnSpell(71, false);    // Defensive Stance
@@ -3559,6 +3758,7 @@ void PlayerbotFactory::InitClassSpells()
         case CLASS_ROGUE:
             bot->learnSpell(1752, true);
             bot->learnSpell(2098, true);
+            bot->learnSpell(2764, false);  // throw
             break;
         case CLASS_DEATH_KNIGHT:
             bot->learnSpell(45477, true);
@@ -4380,6 +4580,9 @@ void PlayerbotFactory::InitReagents()
         }
         case CLASS_WARLOCK:
             items.push_back({6265, 5});  // Soul Shard
+            break;
+        case CLASS_ROGUE:
+            items.push_back({5060, 1});  // Thieve's Tool
             break;
         default:
             break;

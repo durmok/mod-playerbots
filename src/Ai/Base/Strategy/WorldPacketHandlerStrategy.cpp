@@ -13,6 +13,8 @@ void WorldPacketHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     triggers.push_back(
         new TriggerNode("group invite", { NextAction("accept invitation", relevance) }));
     triggers.push_back(
+        new TriggerNode("partykilllog", { NextAction("partykilllog", relevance) }));
+    triggers.push_back(
         new TriggerNode("uninvite", { NextAction("uninvite", relevance) }));
     triggers.push_back(
         new TriggerNode("uninvite guid", { NextAction("uninvite", relevance) }));
@@ -35,8 +37,8 @@ void WorldPacketHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     triggers.push_back(new TriggerNode("taxi done", { NextAction("taxi", relevance) }));
     triggers.push_back(new TriggerNode("trade status", { NextAction("accept trade", relevance), NextAction("equip upgrades packet action", relevance) }));
     triggers.push_back(new TriggerNode("trade status extended", { NextAction("trade status extended", relevance) }));
-    triggers.push_back(new TriggerNode("area trigger", { NextAction("reach area trigger", relevance) }));
-    triggers.push_back(new TriggerNode("within area trigger", { NextAction("area trigger", relevance) }));
+    // triggers.push_back(new TriggerNode("area trigger", { NextAction("reach area trigger", relevance) }));
+    // triggers.push_back(new TriggerNode("within area trigger", { NextAction("area trigger", relevance) }));
     triggers.push_back(new TriggerNode("loot response", { NextAction("store loot", relevance) }));
     triggers.push_back(new TriggerNode("item push result", { NextAction("unlock items", relevance),
                                                                                 NextAction("open items", relevance),
@@ -69,7 +71,8 @@ void WorldPacketHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     triggers.push_back(new TriggerNode("questgiver quest details", { NextAction("turn in query quest", relevance) }));
 
     // loot roll
-    triggers.push_back(new TriggerNode("very often", { NextAction("loot roll", relevance) }));
+    // triggers.push_back(new TriggerNode("very often", { NextAction("loot roll", relevance) }));
+    triggers.push_back(new TriggerNode("loot start roll", { NextAction("loot start roll", relevance) }));
 }
 
 WorldPacketHandlerStrategy::WorldPacketHandlerStrategy(PlayerbotAI* botAI) : PassThroughStrategy(botAI)

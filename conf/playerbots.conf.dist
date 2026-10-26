@@ -101,6 +101,10 @@ Playerbots.RandomBotAccountCount = 0
 # 10 bots (or 9 if WotLK is disabled), one bot for each class.
 Playerbots.AddClassAccountPoolSize = 50
 
+# Battlebot accounts
+# Default: 0
+Playerbots.BattleBotAccountCount = 0
+
 # Prefix for created bot accounts (of any type).
 # Do not change this prefix while there are existing bot accounts.
 Playerbots.RandomBotAccountPrefix = "rndbot"

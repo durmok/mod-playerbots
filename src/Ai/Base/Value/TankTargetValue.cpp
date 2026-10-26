@@ -122,9 +122,9 @@ Unit* TankTargetValue::Calculate()
                 // rti target is attacking a non-tank player
                 if (!PlayerbotAI::IsTank(victimPlayer))
                     return rtiTarget;
-                // rti target is attacking a tank player, check if the tank is a bot and has the same rti setting
+                // rti target is attacking a tank player, check if the tank is a bot and has the same rti setting, or is a player attacking the same rti target
                 PlayerbotAI* victimBotAI = GET_PLAYERBOT_AI(victimPlayer);
-                if (!victimBotAI || victimBotAI->GetAiObjectContext()->GetValue<std::string>("rti")->Get() != rti)
+                if ((!victimBotAI && victimPlayer->GetVictim() != rtiTarget) || victimBotAI->GetAiObjectContext()->GetValue<std::string>("rti")->Get() != rti)
                     return rtiTarget;
             }
         }

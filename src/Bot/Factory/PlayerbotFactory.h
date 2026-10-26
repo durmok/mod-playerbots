@@ -63,6 +63,7 @@ public:
     static void Init();
     void Refresh();
     void Randomize(bool incremental);
+    void SyncLevel();
     static std::list<uint32> classQuestIds;
     void ClearEverything();
     void InitSkills();

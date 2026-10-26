@@ -29,6 +29,7 @@
 #include "EmoteAction.h"
 #include "FishingAction.h"
 #include "FollowActions.h"
+#include "FollowMasterAction.h"
 #include "GenericSpellActions.h"
 #include "GiveItemAction.h"
 #include "GreetAction.h"
@@ -42,6 +43,7 @@
 #include "LootRollAction.h"
 #include "MoveToRpgTargetAction.h"
 #include "MoveToTravelTargetAction.h"
+#include "MoveCompleteAction.h"
 #include "MovementActions.h"
 #include "NewRpgAction.h"
 #include "NewRpgOutdoorPvP.h"
@@ -119,6 +121,7 @@ public:
         creators["mana potion"] = &ActionContext::mana_potion;
         creators["food"] = &ActionContext::food;
         creators["drink"] = &ActionContext::drink;
+        creators["eat drink"] = &ActionContext::eatDrink;
         creators["tank assist"] = &ActionContext::tank_assist;
         creators["dps assist"] = &ActionContext::dps_assist;
         creators["dps aoe"] = &ActionContext::dps_aoe;
@@ -151,6 +154,8 @@ public:
         creators["move out of enemy contact"] = &ActionContext::move_out_of_enemy_contact;
         creators["set facing"] = &ActionContext::set_facing;
         creators["set behind"] = &ActionContext::set_behind;
+        creators["move to los target"] = &ActionContext::move_to_los_target;
+        creators["move complete"] = &ActionContext::move_complete;
         creators["attack duel opponent"] = &ActionContext::attack_duel_opponent;
         creators["drop target"] = &ActionContext::drop_target;
         creators["check mail"] = &ActionContext::check_mail;
@@ -343,7 +348,7 @@ private:
     static Action* stay(PlayerbotAI* botAI) { return new StayAction(botAI); }
     static Action* sit(PlayerbotAI* botAI) { return new SitAction(botAI); }
     static Action* runaway(PlayerbotAI* botAI) { return new RunAwayAction(botAI); }
-    static Action* follow(PlayerbotAI* botAI) { return new FollowAction(botAI); }
+    static Action* follow(PlayerbotAI* botAI) { return new FollowMasterAction(botAI); }
     static Action* move_from_group(PlayerbotAI* botAI) { return new MoveFromGroupAction(botAI); }
     static Action* add_gathering_loot(PlayerbotAI* botAI) { return new AddGatheringLootAction(botAI); }
     static Action* add_loot(PlayerbotAI* botAI) { return new AddLootAction(botAI); }
@@ -356,12 +361,15 @@ private:
     static Action* tank_assist(PlayerbotAI* botAI) { return new TankAssistAction(botAI); }
     static Action* drink(PlayerbotAI* botAI) { return new DrinkAction(botAI); }
     static Action* food(PlayerbotAI* botAI) { return new EatAction(botAI); }
+    static Action* eatDrink(PlayerbotAI* botAI) { return new EatDrinkAction(botAI); }
     static Action* mana_potion(PlayerbotAI* botAI) { return new UseManaPotion(botAI); }
     static Action* healing_potion(PlayerbotAI* botAI) { return new UseHealingPotion(botAI); }
     static Action* healthstone(PlayerbotAI* botAI) { return new UseItemAction(botAI, "healthstone"); }
     static Action* move_out_of_enemy_contact(PlayerbotAI* botAI) { return new MoveOutOfEnemyContactAction(botAI); }
     static Action* set_facing(PlayerbotAI* botAI) { return new SetFacingTargetAction(botAI); }
     static Action* set_behind(PlayerbotAI* botAI) { return new SetBehindTargetAction(botAI); }
+    static Action* move_to_los_target(PlayerbotAI* botAI) { return new MoveToLOSTargetAction(botAI); }
+    static Action* move_complete(PlayerbotAI* botAI) { return new MoveCompleteAction(botAI); }
     static Action* say(PlayerbotAI* botAI) { return new SayAction(botAI); }
     static Action* reveal_gathering_item(PlayerbotAI* botAI) { return new RevealGatheringItemAction(botAI); }
     static Action* outfit(PlayerbotAI* botAI) { return new OutfitAction(botAI); }

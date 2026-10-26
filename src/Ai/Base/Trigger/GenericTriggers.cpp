@@ -16,10 +16,12 @@
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
 #include "PositionValue.h"
+#include "PointMovementGenerator.h"
 #include "SharedDefines.h"
 #include "TemporarySummon.h"
 #include "ThreatManager.h"
 #include "Timer.h"
+#include "WaitMoveCompleteValue.h"
 #include <string>
 
 bool LowManaTrigger::IsActive()
@@ -85,6 +87,42 @@ bool EnoughManaTrigger::IsActive()
 {
     return AI_VALUE2(bool, "has mana", "self target") &&
            AI_VALUE2(uint8, "mana", "self target") > sPlayerbotAIConfig.HighMana;
+}
+
+bool EatDrinkTrigger::IsActive()
+{
+    if (bot->isDead() || bot->isSwimming())
+        return false;
+
+    uint32 healthLimit = sPlayerbotAIConfig.MediumHealth;
+    uint32 manaLimit = sPlayerbotAIConfig.HighMana;
+
+    if (botAI->HasStrategy("stay", botAI->GetState()))
+    {
+        healthLimit = 100;
+        manaLimit = 100;
+    }
+    else
+    {
+        Player* master = GetMaster();
+        if (master && master->IsAlive())
+        {
+            if (bot->GetDistance(master) >= 15 || master->IsMounted())
+                return false;
+
+            if (master->IsSitState())
+            {
+                healthLimit = 100;
+                manaLimit = 100;
+            }
+        }
+    }
+
+    bool needEat = AI_VALUE2(uint8, "health", GetTargetName()) < healthLimit;
+    bool needDrink =  AI_VALUE2(bool, "has mana", GetTargetName()) &&
+           AI_VALUE2(uint8, "mana", "self target") < manaLimit;
+
+    return needEat || needDrink;
 }
 
 bool RageAvailable::IsActive() { return AI_VALUE2(uint8, "rage", "self target") >= amount; }
@@ -289,6 +327,25 @@ bool RandomTrigger::IsActive()
         k = 1;
 
     return (rand() % k) == 0;
+}
+
+MaxIntervalTrigger::MaxIntervalTrigger(PlayerbotAI* botAI, std::string const name, uint32 intervalSecs)
+    : Trigger(botAI, name), nextTime(0)
+{
+    this->intervalMilli = intervalSecs * 1000;
+    if (this->intervalMilli < sPlayerbotAIConfig.RepeatDelay)
+        this->intervalMilli = sPlayerbotAIConfig.RepeatDelay;
+}
+
+bool MaxIntervalTrigger::IsActive()
+{
+    uint32 now = getMSTime();
+    if (now >= nextTime)
+    {
+        nextTime = now + urand(sPlayerbotAIConfig.RepeatDelay, this->intervalMilli);
+        return true;
+    }
+    return false;
 }
 
 bool AndTrigger::IsActive() { return ls && rs && ls->IsActive() && rs->IsActive(); }
@@ -531,6 +588,47 @@ bool IsNotFacingTargetTrigger::IsActive()
     return !AI_VALUE2(bool, "facing", "current target");
 }
 
+bool IsNotWithinLOSTargetTrigger::IsActive()
+{
+    if (bot->isMoving())
+        return false;
+    if (botAI->HasStrategy("stay", botAI->GetState()))
+        return false;
+    Unit* target = AI_VALUE(Unit*, "current target");
+    if (!target)
+        return false;
+    if (bot->IsWithinLOSInMap(target))
+        return false;
+    if (!bot->IsInMap(target))
+        return false;
+    return true;
+}
+
+bool MoveCompleteTrigger::IsActive()
+{
+    WaitMoveComplete* wmc = AI_VALUE(WaitMoveComplete*, "wait move complete");
+    if (!wmc->IsStarted())
+        return false;
+
+    if (bot->isDead())
+        return true;
+
+    if (bot->GetMotionMaster()->GetCurrentMovementGeneratorType() != POINT_MOTION_TYPE)
+        return true;
+
+    PointMovementGenerator<Player>* mg = dynamic_cast<PointMovementGenerator<Player>*>(bot->GetMotionMaster()->top());
+    if (!mg)
+        return true;
+
+    // check if target point is expected point
+    float x, y ,z;
+    mg->GetDestination(x, y, z);
+    if (!wmc->GetDestPosition().IsInDist(x, y, z, 0.1))
+        return true;
+
+    return false;
+}
+
 bool HasCcTargetTrigger::IsActive()
 {
     Unit* rtiCcTarget = nullptr;
@@ -671,7 +769,7 @@ bool IsMountedTrigger::IsActive() { return AI_VALUE2(bool, "mounted", "self targ
 
 bool CorpseNearTrigger::IsActive()
 {
-    return bot->GetCorpse() && bot->GetCorpse()->IsWithinDistInMap(bot, CORPSE_RECLAIM_RADIUS, true);
+    return !botAI->GetMaster() && bot->GetCorpse() && bot->GetCorpse()->IsWithinDistInMap(bot, CORPSE_RECLAIM_RADIUS, true);
 }
 
 bool IsFallingTrigger::IsActive() { return bot->HasUnitMovementFlag(MOVEMENTFLAG_FALLING); }

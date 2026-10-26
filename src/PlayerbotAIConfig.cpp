@@ -5,6 +5,7 @@
  */
 
 #include "PlayerbotAIConfig.h"
+#include "BattlePlayerbotMgr.h"
 #include "BisListMgr.h"
 #include "Config.h"
 #include "NewRpgInfo.h"
@@ -647,6 +648,7 @@ bool PlayerbotAIConfig::Initialize()
     AddClassCommand = sConfigMgr->GetOption<int32>("Playerbots.AddClassCommand", 1);
     AddClassAccountPoolSize = sConfigMgr->GetOption<int32>("Playerbots.AddClassAccountPoolSize", 50);
     AddClassRandomCharacter = sConfigMgr->GetOption<bool>("Playerbots.AddClassRandomCharacter", false);
+    BattleBotAccountCount = sConfigMgr->GetOption<int32>("Playerbots.BattleBotAccountCount", 0);
     MaintenanceCommand = sConfigMgr->GetOption<int32>("Playerbots.MaintenanceCommand", 1);
 
     AltMaintenanceAttunementQs = sConfigMgr->GetOption<bool>("Playerbots.AltMaintenanceAttunementQuests", true);
@@ -766,6 +768,7 @@ bool PlayerbotAIConfig::Initialize()
     if (sPlayerbotAIConfig.Enabled)
     {
         sRandomPlayerbotMgr.Init();
+        sBattlePlayerbotMgr.Init();
     }
 
     PlayerbotGuildMgr::instance().Init();
@@ -946,7 +949,8 @@ void PlayerbotAIConfig::LoadRandomBotLevelConfig()
 
 bool PlayerbotAIConfig::IsInRandomAccountList(uint32 id)
 {
-    return find(RandomBotAccounts.begin(), RandomBotAccounts.end(), id) != RandomBotAccounts.end();
+    // return find(RandomBotAccounts.begin(), RandomBotAccounts.end(), id) != RandomBotAccounts.end();
+    return  RandomBotAccountSet.contains(id);
 }
 
 bool PlayerbotAIConfig::IsInRandomQuestItemList(uint32 id)

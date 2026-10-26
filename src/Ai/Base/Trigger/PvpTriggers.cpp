@@ -308,7 +308,8 @@ bool PlayerWantsInBattlegroundTrigger::IsActive()
         return false;
 
     if (bot->IsDeserter())
-        return false;
+        // return false;
+        bot->RemoveAura(26013);
 
     return true;
 }

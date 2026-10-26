@@ -6,6 +6,7 @@
 
 #include "Playerbots.h"
 #include "BattleGroundTactics.h"
+#include "BattlePlayerbotMgr.h"
 #include "BattlefieldScript.h"
 #include "Channel.h"
 #include "CheckMountStateAction.h"
@@ -148,6 +149,7 @@ public:
         {
             PlayerbotsMgr::instance().AddPlayerbotData(player, false);
             sRandomPlayerbotMgr.OnPlayerLogin(player);
+            sBattlePlayerbotMgr.OnPlayerLogin(player);
 
             // Before modifying the following messages, please make sure it does not violate the GNU GPLv2
             // license especially if you are distributing a repack or hosting a public server
@@ -181,6 +183,7 @@ public:
         }
 
         sRandomPlayerbotMgr.OnPlayerLogout(player);
+        sBattlePlayerbotMgr.OnPlayerLogout(player);
     }
 
     void OnPlayerCreatureKillCredit(Player* player, Creature* killed) override
@@ -350,7 +353,7 @@ public:
 
     bool OnPlayerBeforeAchievementComplete(Player* player, AchievementEntry const* achievement) override
     {
-        if ((sRandomPlayerbotMgr.IsRandomBot(player) || sRandomPlayerbotMgr.IsAddclassBot(player)) &&
+        if ((sRandomPlayerbotMgr.IsRandomBot(player) || sRandomPlayerbotMgr.IsAddclassBot(player) || sRandomPlayerbotMgr.IsBattleBot(player)) &&
             (achievement->flags & (ACHIEVEMENT_FLAG_REALM_FIRST_REACH | ACHIEVEMENT_FLAG_REALM_FIRST_KILL)))
         {
             return false;
@@ -361,6 +364,7 @@ public:
 
     void OnPlayerGiveXP(Player* player, uint32& amount, Unit* /*victim*/, uint8 /*xpSource*/) override
     {
+        /*
         // early return
         if (sPlayerbotAIConfig.RandomBotXPRate == 1.0 || !player)
             return;
@@ -385,6 +389,11 @@ public:
 
         // otherwise apply bot XP multiplier.
         amount = static_cast<uint32>(std::round(static_cast<float>(amount) * sPlayerbotAIConfig.RandomBotXPRate));
+        */
+
+        if (player && player->GetSession()->IsHeadless() )
+            amount = 0;
+        return;
     }
 };
 
@@ -542,8 +551,10 @@ public:
     {
         PlayerbotHolder::UpdatePendingLogins();  // Headless sessions whose login holder is in flight
         sRandomPlayerbotMgr.UpdateSessions();  // Per-bot packet queues, world thread only
+        sBattlePlayerbotMgr.UpdateSessions();
         PlayerbotWorldThreadProcessor::instance().Update(diff);
         sRandomPlayerbotMgr.UpdateAI(diff);  // World thread only
+        sBattlePlayerbotMgr.UpdateAI(diff);
     }
 
     // Runs before the sessions are kicked on server shutdown
@@ -551,6 +562,7 @@ public:
     {
         LOG_INFO("playerbots", "Logging out all bots...");
         sRandomPlayerbotMgr.LogoutAllBots();
+        sBattlePlayerbotMgr.LogoutAllBots();
         PlayerbotHolder::ClearPendingLogins();
     }
 };

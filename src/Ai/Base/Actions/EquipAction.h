@@ -46,4 +46,12 @@ public:
     bool Execute(Event event) override;
 };
 
+class EquipUpgradeDestroyAction : public EquipAction
+{
+public:
+    explicit EquipUpgradeDestroyAction(PlayerbotAI* botAI, std::string const name = "equip upgrade destroy") : EquipAction(botAI, name) {}
+
+    bool Execute(Event event) override;
+};
+
 #endif

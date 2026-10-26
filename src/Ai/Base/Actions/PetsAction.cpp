@@ -85,9 +85,9 @@ bool PetsAction::Execute(Event event)
     // If no pets or guardians are found, notify and return.
     if (targets.empty())
     {
-        std::string text = PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "pet_no_pet_error", "You have no pet or guardian pet.", {});
-        botAI->TellError(text);
+        // std::string text = PlayerbotTextMgr::instance().GetBotTextOrDefault(
+        //     "pet_no_pet_error", "You have no pet or guardian pet.", {});
+        // botAI->TellError(text);
         return false;
     }
 

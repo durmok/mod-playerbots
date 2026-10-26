@@ -94,6 +94,7 @@ public:
     void MakeVerbose() { verbose = true; }
     void setRelevance(uint32 relevance1) { relevance = relevance1; };
     virtual float getRelevance() { return relevance; }
+    virtual void SetUseless() {}
 
     // Reaction system
     bool IsReaction() const { return reaction; }

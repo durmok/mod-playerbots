@@ -9,7 +9,9 @@
 #include "Formations.h"
 #include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
+#include "PointMovementGenerator.h"
 #include "PositionValue.h"
+#include "WaitMoveCompleteValue.h"
 
 void PositionsResetAction::ResetReturnPosition()
 {
@@ -43,7 +45,23 @@ void PositionsResetAction::SetStayPosition(float x, float y, float z)
     posMap["stay"] = pos;
 }
 
-bool FollowChatShortcutAction::Execute(Event /*event*/)
+void PositionsResetAction::ResetGuardPosition()
+{
+    PositionMap& posMap = context->GetValue<PositionMap&>("position")->Get();
+    PositionInfo pos = posMap["guard"];
+    pos.Reset();
+    posMap["guard"] = pos;
+}
+
+void PositionsResetAction::SetGuardPosition(float x, float y, float z)
+{
+    PositionMap& posMap = context->GetValue<PositionMap&>("position")->Get();
+    PositionInfo pos = posMap["guard"];
+    pos.Set(x, y, z, botAI->GetBot()->GetMapId());
+    posMap["guard"] = pos;
+}
+
+bool FollowChatShortcutAction::Execute(Event event)
 {
     Player* master = GetMaster();
     if (!master)
@@ -63,7 +81,9 @@ bool FollowChatShortcutAction::Execute(Event /*event*/)
     pos.Reset();
     posMap["stay"] = pos;
 
-    if (bot->IsInCombat())
+    std::string const command = event.getParam();
+
+    if (command == "cometome")
     {
         Formation* formation = AI_VALUE(Formation*, "formation");
         std::string const target = formation->GetTargetName();
@@ -133,6 +153,24 @@ bool StayChatShortcutAction::Execute(Event /*event*/)
     return true;
 }
 
+bool GuardChatShortcutAction::Execute(Event /*event*/)
+{
+    Player* master = GetMaster();
+    if (!master)
+        return false;
+
+    botAI->Reset();
+    botAI->ChangeStrategy("+guard,-passive,-move from group", BOT_STATE_NON_COMBAT);
+    botAI->ChangeStrategy("-stay,-follow,-passive,-move from group", BOT_STATE_COMBAT);
+
+    // SetReturnPosition(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
+    SetGuardPosition(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ());
+
+    botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
+        "guarding", "Guarding", {}));
+    return true;
+}
+
 bool MoveFromGroupChatShortcutAction::Execute(Event /*event*/)
 {
     Player* master = GetMaster();
@@ -158,6 +196,11 @@ bool FleeChatShortcutAction::Execute(Event /*event*/)
     botAI->Reset();
     botAI->ChangeStrategy("+follow,-stay,+passive", BOT_STATE_NON_COMBAT);
     botAI->ChangeStrategy("+follow,-stay,+passive", BOT_STATE_COMBAT);
+
+    // fix shouldn't keep combat state after flee
+    bot->SetTarget(ObjectGuid::Empty);
+    bot->SetSelection(ObjectGuid());
+    bot->AttackStop();
 
     ResetReturnPosition();
     ResetStayPosition();
@@ -190,6 +233,128 @@ bool GoawayChatShortcutAction::Execute(Event /*event*/)
     botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
         "running_away", "Running away", {}));
     return true;
+}
+
+bool MovedirChatShortcutAction::Execute(Event event)
+{
+    Player* master = GetMaster();
+    if (!master)
+        return false;
+
+    if (bot->GetTransport())
+        return false;
+
+
+    std::string const param = event.getParam();
+    char* dir = strtok((char*)param.c_str(), " ");
+    char* distStr = strtok(nullptr, " ");
+
+    const char* USAGE = "usage: movedir close/left/right/away [yards]";
+
+    if (!dir)
+    {
+        botAI->TellMaster(USAGE);
+        return false;
+    }
+
+    float angle;
+    if (!strcmp(dir, "close"))
+        angle = master->GetAngle(bot) + M_PI;
+    else if (!strcmp(dir, "left"))
+        angle = master->GetOrientation() + M_PI / 2;
+    else if (!strcmp(dir, "right"))
+        angle = master->GetOrientation() - M_PI / 2;
+    else if (!strcmp(dir, "away"))
+        angle = master->GetAngle(bot);
+    else
+    {
+        botAI->TellMaster(USAGE);
+        return false;
+    }
+
+    float dist = 8.0;
+    if (distStr)
+    {
+        try
+        {
+            dist = std::stof(distStr);
+        } 
+        catch (const std::exception& e) {
+            botAI->TellMaster(USAGE);
+            return false;
+        }
+    }
+
+    float x, y, z;
+    x = bot->m_positionX + dist * cos(angle);
+    y = bot->m_positionY + dist * std::sin(angle);
+    z = bot->m_positionZ;
+
+    if (!bot->GetMap()->CheckCollisionAndGetValidCoords(bot, bot->m_positionX, bot->m_positionY, bot->m_positionZ, x, y, z, false))
+        return false;
+
+    bool backwards = bot->getAttackers().size() != 0;
+
+    if (!MoveTo(bot->GetMapId(), x, y, z, false, false,
+        false, true,
+        MovementPriority::MOVEMENT_NORMAL, false, backwards))
+        return false;
+
+    PointMovementGenerator<Player>* mg = static_cast<PointMovementGenerator<Player>*>(bot->GetMotionMaster()->top());
+    float x_, y_, z_;
+    mg->GetDestination(x_, y_, z_);
+    AI_VALUE(WaitMoveComplete*, "wait move complete")->Start(x_, y_, z_);
+    
+    if (botAI->HasStrategy("stay", botAI->GetState()))
+    {
+        PositionMap& posMap = AI_VALUE(PositionMap&, "position");
+        PositionInfo stayPosition = posMap["stay"];
+
+        stayPosition.Set(x, y, z, bot->GetMapId());
+        posMap["stay"] = stayPosition;
+    }
+
+    return true;
+}
+
+bool TeletomeChatShortcutAction::Execute(Event /*event*/)
+{
+    Player* master = botAI->GetMaster();
+    if (!master)
+        return false;
+
+    if (master->IsInWorld() &&
+        bot->IsInWorld() &&
+        !bot->isDead() &&
+        !master->isDead() &&
+        (!bot->IsInCombat() || botAI->HasStrategy("passive", BOT_STATE_COMBAT)) &&
+        !bot->GetVehicle() &&
+        !bot->IsBeingTeleported() &&
+        !master->IsBeingTeleported())
+    {
+        Position pos = master->GetRandomNearPosition(5.0f);
+        bot->TeleportTo({ master->GetMapId(), pos});
+        if (bot->GetPet())
+            bot->GetPet()->NearTeleportTo(pos);
+        if (bot->GetGuardianPet())
+            bot->GetGuardianPet()->NearTeleportTo(pos);
+
+        if (botAI->HasStrategy("stay", botAI->GetState()))
+        {
+            PositionMap& posMap = AI_VALUE(PositionMap&, "position");
+            PositionInfo stayPosition = posMap["stay"];
+
+            stayPosition.Set(pos.m_positionX, pos.m_positionY, pos.m_positionZ, bot->GetMapId());
+            posMap["stay"] = stayPosition;
+        }
+
+        return true;
+    }
+    else
+    {
+        botAI->TellMaster("Can not teleport to you right now");
+        return false;
+    }
 }
 
 bool GrindChatShortcutAction::Execute(Event /*event*/)

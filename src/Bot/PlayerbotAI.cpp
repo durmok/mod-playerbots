@@ -187,6 +187,7 @@ PlayerbotAI::PlayerbotAI(Player* bot)
 
     botOutgoingPacketHandlers.AddHandler(SMSG_PETITION_SHOW_SIGNATURES, "petition offer");
     botOutgoingPacketHandlers.AddHandler(SMSG_GROUP_INVITE, "group invite");
+    botOutgoingPacketHandlers.AddHandler(SMSG_PARTYKILLLOG, "partykilllog");
     botOutgoingPacketHandlers.AddHandler(SMSG_GUILD_INVITE, "guild invite");
     botOutgoingPacketHandlers.AddHandler(BUY_ERR_NOT_ENOUGHT_MONEY, "not enough money");
     botOutgoingPacketHandlers.AddHandler(BUY_ERR_REPUTATION_REQUIRE, "not enough reputation");
@@ -210,7 +211,8 @@ PlayerbotAI::PlayerbotAI(Player* bot)
     botOutgoingPacketHandlers.AddHandler(SMSG_LFG_PROPOSAL_UPDATE, "lfg proposal");
     botOutgoingPacketHandlers.AddHandler(SMSG_TEXT_EMOTE, "receive text emote");
     botOutgoingPacketHandlers.AddHandler(SMSG_EMOTE, "receive emote");
-    botOutgoingPacketHandlers.AddHandler(SMSG_LOOT_START_ROLL, "master loot roll");
+    // botOutgoingPacketHandlers.AddHandler(SMSG_LOOT_START_ROLL, "master loot roll");
+    botOutgoingPacketHandlers.AddHandler(SMSG_LOOT_START_ROLL, "loot start roll");
     botOutgoingPacketHandlers.AddHandler(SMSG_ARENA_TEAM_INVITE, "arena team invite");
     botOutgoingPacketHandlers.AddHandler(SMSG_GROUP_DESTROYED, "group destroyed");
     botOutgoingPacketHandlers.AddHandler(SMSG_GROUP_LIST, "group list");
@@ -1625,6 +1627,7 @@ void PlayerbotAI::DoNextAction(bool min)
     else if (bot->isAFK() && !IsSelfBot(bot))
         bot->ToggleAFK();
 
+    /*
     if (master && master->IsInWorld())
     {
         float distance = ServerFacade::instance().GetDistance2d(bot, master);
@@ -1646,6 +1649,7 @@ void PlayerbotAI::DoNextAction(bool min)
         bot->m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_WALKING);
     else if ((nextAICheckDelay < 1000) && bot->IsSitState())
         bot->SetStandState(UNIT_STAND_STATE_STAND);
+    */
 
     bool hasMountAura = bot->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED) ||
                         bot->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED);
@@ -4590,7 +4594,7 @@ Player* PlayerbotAI::FindNewMaster()
 // An altbot is a bot whose master is client-based (a regular player or a SelfBot), and is not a randombot, and is not a SelfBot.
 // For the purpose of this bool, all addclassbots return true for IsAltBot, but not all altbots return true for IsAddClassBot, since
 // IsAddClassBot requires the bot to come from a type 2 account in playerbots_account_type.
-bool PlayerbotAI::IsAltBot() { return HasGameClientMaster() && !sRandomPlayerbotMgr.IsRandomBot(bot) && !IsSelfBot(bot); }
+bool PlayerbotAI::IsAltBot() { return HasGameClientMaster() && !sRandomPlayerbotMgr.IsRandomBot(bot) && !sRandomPlayerbotMgr.IsBattleBot(bot) && !IsSelfBot(bot); }
 
 // True when the bot's master is driven by a player with a game client: a regular player (no bot AI) or a SelfBot player.
 bool PlayerbotAI::HasGameClientMaster() { return IsRealPlayer(master) || IsSelfBot(master); }

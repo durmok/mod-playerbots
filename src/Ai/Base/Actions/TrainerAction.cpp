@@ -185,7 +185,7 @@ void TrainerAction::TellFooter(uint32 totalCost)
     }
 }
 
-bool MaintenanceAction::Execute(Event /*event*/)
+bool MaintenanceAction::Execute(Event event)
 {
     if (!sPlayerbotAIConfig.MaintenanceCommand)
     {
@@ -221,6 +221,26 @@ bool MaintenanceAction::Execute(Event /*event*/)
     }
     else
     {
+        if (sRandomPlayerbotMgr.IsAddclassBot(bot))
+        {
+            if (Player* master = GetMaster())
+            {
+                if (bot->GetLevel() < master->GetLevel() ||
+                    (bot->GetLevel() > master->GetLevel() && event.getParam() == "force"))
+                {
+                    PlayerbotFactory factory(bot, master->GetLevel());
+                    factory.SyncLevel();
+                }
+            }
+        }
+        botAI->DoSpecificAction("equip upgrade destroy", Event(), true);
+        factory.InitAmmo();
+        factory.InitFood();
+        factory.InitReagents();
+        factory.InitConsumables();
+        factory.InitPotions();
+
+        /*
         if (sPlayerbotAIConfig.AltMaintenanceAttunementQs)
             factory.InitAttunementQuests();
 
@@ -278,6 +298,7 @@ bool MaintenanceAction::Execute(Event /*event*/)
         if (sPlayerbotAIConfig.AltMaintenanceGemsEnchants &&
             bot->GetLevel() >= sPlayerbotAIConfig.MinEnchantingBotLevel)
             factory.ApplyEnchantAndGemsNew();
+        */
     }
 
     bot->DurabilityRepairAll(false, 1.0f, false);

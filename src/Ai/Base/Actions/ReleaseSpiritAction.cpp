@@ -40,6 +40,9 @@ bool ReleaseSpiritAction::Execute(Event event)
         return false;
     }
 
+    if (botAI->GetMaster())
+        return false;
+
     WorldPacket const& packet = event.getPacket();
     const std::string message = !packet.empty() && packet.GetOpcode() == CMSG_REPOP_REQUEST
         ? PlayerbotTextMgr::instance().GetBotTextOrDefault("release_spirit_releasing", "Releasing...", {})
@@ -87,15 +90,15 @@ void ReleaseSpiritAction::LogRelease(std::string const& releaseMsg) const
 // AutoReleaseSpiritAction implementation
 bool AutoReleaseSpiritAction::Execute(Event /*event*/)
 {
-    IncrementDeathCount();
-    bot->DurabilityRepairAll(false, 1.0f, false);
-    LogRelease("auto released");
+        IncrementDeathCount();
+        bot->DurabilityRepairAll(false, 1.0f, false);
+        LogRelease("auto released");
 
-    WorldPacket packet(CMSG_REPOP_REQUEST);
-    packet << uint8(0);
-    bot->GetSession()->HandleRepopRequestOpcode(packet);
+        WorldPacket packet(CMSG_REPOP_REQUEST);
+        packet << uint8(0);
+        bot->GetSession()->HandleRepopRequestOpcode(packet);
 
-    LogRelease("releases spirit");
+        LogRelease("releases spirit");
 
     if (bot->InBattleground())
     {
@@ -115,6 +118,9 @@ bool AutoReleaseSpiritAction::isUseful()
         return ShouldDelayBattlegroundRelease();
 
     if (bot->HasPlayerFlag(PLAYER_FLAGS_GHOST))
+        return false;
+
+    if (!sRandomPlayerbotMgr.IsRandomBot(bot))
         return false;
 
     return ShouldAutoRelease();

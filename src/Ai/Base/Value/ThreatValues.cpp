@@ -63,20 +63,20 @@ uint8 ThreatValue::Calculate(Unit* target)
         }
     }
 
-    if (maxThreat <= 0 && !hasTank)
+    if (!hasTank)
         return 0;
 
     // calculate normal threat for fleeing targets
     bool fleeing = target->GetMotionMaster()->GetCurrentMovementGeneratorType() == FLEEING_MOTION_TYPE ||
                    target->GetMotionMaster()->GetCurrentMovementGeneratorType() == TIMED_FLEEING_MOTION_TYPE;
 
-    // return high threat if tank has no threat
-    if (target->IsInCombat() && maxThreat <= 0 && botThreat <= 0 && hasTank && !fleeing)
-        return 100;
-
     // return low threat if mob if fleeing
-    if (hasTank && fleeing)
+    if (fleeing)
         return 0;
+
+    // return high threat if tank has no threat
+    if (maxThreat <= 0)
+        return 100;
 
     return botThreat * 100 / maxThreat;
 }

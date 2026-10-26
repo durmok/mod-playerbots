@@ -27,12 +27,17 @@ public:
         : source(source), packet(packet), owner(owner)
     {
     }
+    Event(std::string const source, WorldPacket& packet, std::vector<std::pair<WorldPacket, Player*>> allPackets, Player* owner = nullptr)
+        : source(source), packet(packet), allPackets(allPackets), owner(owner)
+    {
+    }
     Event(std::string const source, ObjectGuid object, Player* owner = nullptr);
     virtual ~Event() {}
 
     std::string const GetSource() { return source; }
     std::string const getParam() { return param; }
     WorldPacket& getPacket() { return packet; }
+    std::vector<std::pair<WorldPacket, Player*>>& getAllPackets() { return allPackets; }
     ObjectGuid getObject();
     Player* getOwner() { return owner; }
     bool operator!() const { return source.empty(); }
@@ -41,6 +46,7 @@ protected:
     std::string source;
     std::string param;
     WorldPacket packet;
+    std::vector<std::pair<WorldPacket, Player*>> allPackets;
     Player* owner = nullptr;
 };
 

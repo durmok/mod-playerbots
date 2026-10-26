@@ -117,7 +117,7 @@ bool MovementAction::MoveNear(WorldObject* target, float distance, MovementPrior
     return false;
 }
 
-bool MovementAction::MoveToLOS(WorldObject* target, bool ranged)
+bool MovementAction::MoveToLOS(WorldObject* target, MovementPriority priority, bool ranged)
 {
     if (!target)
         return false;
@@ -134,7 +134,7 @@ bool MovementAction::MoveToLOS(WorldObject* target, bool ranged)
         return false;
 
     if (!ranged)
-        return MoveTo((Unit*)target, target->GetCombatReach());
+        return MoveTo((Unit*)target, target->GetCombatReach(), priority);
 
     float dist = FLT_MAX;
     PositionInfo dest;
@@ -159,7 +159,7 @@ bool MovementAction::MoveToLOS(WorldObject* target, bool ranged)
     }
 
     if (dest.isSet())
-        return MoveTo(dest.mapId, dest.x, dest.y, dest.z);
+        return MoveTo(dest.mapId, dest.x, dest.y, dest.z, false, false, false, true, priority);
     else
         botAI->TellError("All paths not in LOS");
 
@@ -1238,7 +1238,7 @@ bool MovementAction::Follow(Unit* target, float distance, float angle)
 
     bot->CastStop();
 
-    // AI_VALUE(LastMovement&, "last movement").Set(target);
+    AI_VALUE(LastMovement&, "last movement").Set(target);
     ClearIdleState();
 
     if (bot->GetMotionMaster()->GetCurrentMovementGeneratorType() == FOLLOW_MOTION_TYPE)
@@ -2702,6 +2702,33 @@ bool SetBehindTargetAction::Execute(Event /*event*/)
     Position nearest = GetNearestPosition(availablePos);
     return MoveTo(bot->GetMapId(), nearest.GetPositionX(), nearest.GetPositionY(), nearest.GetPositionZ(), false, false,
                   false, true, MovementPriority::MOVEMENT_COMBAT);
+}
+
+bool MoveToLOSTargetAction::isUseful()
+{
+    return !bot->isMoving();
+}
+
+bool MoveToLOSTargetAction::isPossible()
+{
+    if (bot->isFrozen() || bot->IsPolymorphed() || (bot->isDead() && !bot->HasPlayerFlag(PLAYER_FLAGS_GHOST)) ||
+        bot->IsBeingTeleported() || bot->HasConfuseAura() || bot->IsCharmed() || bot->HasStunAura() ||
+        bot->IsInFlight() || bot->HasUnitState(UNIT_STATE_LOST_CONTROL))
+        return false;
+
+    return true;
+}
+
+bool MoveToLOSTargetAction::Execute(Event /*event*/)
+{    
+    Unit* target = AI_VALUE(Unit*, "current target");
+    if (!target)
+        return false;
+
+    if (target->GetVictim() == bot)
+        return false;
+
+    return MoveToLOS(target, MovementPriority::MOVEMENT_COMBAT, !PlayerbotAI::IsMelee(bot));
 }
 
 bool MoveOutOfCollisionAction::Execute(Event /*event*/)

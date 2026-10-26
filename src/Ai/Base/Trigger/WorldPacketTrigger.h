@@ -28,6 +28,7 @@ private:
     WorldPacket packet;
     bool triggered;
     Player* owner;
+    std::vector<std::pair<WorldPacket, Player*>> allPackets;
 };
 
 #endif

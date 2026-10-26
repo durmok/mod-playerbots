@@ -8,10 +8,12 @@
 
 #include "ChatHelper.h"
 #include "Event.h"
+#include "GridNotifiers.h"
 #include "ItemPackets.h"
 #include "ItemUsageValue.h"
 #include "LootObjectStack.h"
 #include "PlayerbotAIConfig.h"
+#include "NearestGameObjects.h"
 #include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
@@ -41,6 +43,39 @@ bool UseItemAction::Execute(Event event)
             return UseGameObject(*gos.begin());
         else
             return UseItemOnGameObject(*items.begin(), *gos.begin());
+    }
+
+    // use nearest game object
+    if (Player* master = botAI->GetMaster())
+    {
+        float const range = 10.0f;
+        std::list<GameObject*> targets;
+        AnyGameObjectInObjectRangeCheck u_check(master, range);
+        Acore::GameObjectListSearcher<AnyGameObjectInObjectRangeCheck> searcher(master, targets, u_check);
+        Cell::VisitObjects(bot, searcher, range);
+        float distMin = 100.0f;
+        GameObject* nearest = nullptr;
+        for (GameObject* go : targets)
+        {
+            if (sPlayerbotAIConfig.DisallowedGameObjects.contains(go->GetGUID().GetEntry()))
+                continue;
+            float dist = master->GetDistance(go);
+            if (dist < distMin)
+            {
+                distMin = dist;
+                nearest = go;
+            }
+        }
+        if (nearest)
+        {
+            LootObject lootObject(bot, nearest->GetGUID());
+            if (lootObject.IsLootPossible(bot))
+            {
+                return AI_VALUE(LootObjectStack*, "available loot")->Add(nearest->GetGUID()); 
+            }
+            else
+                return UseGameObject(nearest->GetGUID());
+        }
     }
 
     botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault("use_item_none_available",

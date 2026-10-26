@@ -54,6 +54,7 @@
 #include "ReleaseSpiritAction.h"
 #include "RepairAllAction.h"
 #include "ResetAiAction.h"
+#include "ResurrectAction.h"
 #include "ReviveFromCorpseAction.h"
 #include "RewardAction.h"
 #include "RtiAction.h"
@@ -143,6 +144,7 @@ public:
         creators["autogear"] = &ChatActionContext::autogear;
         creators["autogear bis"] = &ChatActionContext::autogear_bis;
         creators["equip upgrade"] = &ChatActionContext::equip_upgrade;
+        creators["equip upgrade destroy"] = &ChatActionContext::equip_upgrade_destroy;
         creators["attack my target"] = &ChatActionContext::attack_my_target;
         creators["pull my target"] = &ChatActionContext::pull_my_target;
         creators["pull rti target"] = &ChatActionContext::pull_rti_target;
@@ -156,8 +158,11 @@ public:
         creators["bank"] = &ChatActionContext::bank;
         creators["follow chat shortcut"] = &ChatActionContext::follow_chat_shortcut;
         creators["stay chat shortcut"] = &ChatActionContext::stay_chat_shortcut;
+        creators["guard chat shortcut"] = &ChatActionContext::guard_chat_shortcut;
         creators["flee chat shortcut"] = &ChatActionContext::flee_chat_shortcut;
         creators["runaway chat shortcut"] = &ChatActionContext::runaway_chat_shortcut;
+        creators["movedir chat shortcut"] = &ChatActionContext::movedir_chat_shortcut;
+        creators["teletome chat shortcut"] = &ChatActionContext::teletome_chat_shortcut;
         creators["move from group chat shortcut"] = &ChatActionContext::move_from_group_chat_shortcut;
         creators["grind chat shortcut"] = &ChatActionContext::grind_chat_shortcut;
         creators["tank attack chat shortcut"] = &ChatActionContext::tank_attack_chat_shortcut;
@@ -172,6 +177,7 @@ public:
         creators["tell target"] = &ChatActionContext::tell_target;
         creators["target me"] = &ChatActionContext::target_requester;
         creators["summon"] = &ChatActionContext::summon;
+        creators["resurrect"] = &ChatActionContext::resurrect;
         creators["who"] = &ChatActionContext::who;
         creators["save mana"] = &ChatActionContext::save_mana;
         creators["max dps chat shortcut"] = &ChatActionContext::max_dps_chat_shortcut;
@@ -235,6 +241,7 @@ private:
     static Action* save_mana(PlayerbotAI* botAI) { return new SaveManaAction(botAI); }
     static Action* who(PlayerbotAI* botAI) { return new WhoAction(botAI); }
     static Action* summon(PlayerbotAI* botAI) { return new SummonAction(botAI); }
+    static Action* resurrect(PlayerbotAI* botAI) { return new ResurrectAction(botAI); }
     static Action* tell_target(PlayerbotAI* botAI) { return new TellTargetAction(botAI); }
     static Action* target_requester(PlayerbotAI* botAI) { return new TargetRequesterAction(botAI); }
     static Action* position(PlayerbotAI* botAI) { return new PositionAction(botAI); }
@@ -249,8 +256,11 @@ private:
     static Action* grind_chat_shortcut(PlayerbotAI* botAI) { return new GrindChatShortcutAction(botAI); }
     static Action* flee_chat_shortcut(PlayerbotAI* botAI) { return new FleeChatShortcutAction(botAI); }
     static Action* runaway_chat_shortcut(PlayerbotAI* botAI) { return new GoawayChatShortcutAction(botAI); }
+    static Action* movedir_chat_shortcut(PlayerbotAI* botAI) { return new MovedirChatShortcutAction(botAI); }
+    static Action* teletome_chat_shortcut(PlayerbotAI* botAI) { return new TeletomeChatShortcutAction(botAI); }
     static Action* stay_chat_shortcut(PlayerbotAI* botAI) { return new StayChatShortcutAction(botAI); }
     static Action* follow_chat_shortcut(PlayerbotAI* botAI) { return new FollowChatShortcutAction(botAI); }
+    static Action* guard_chat_shortcut(PlayerbotAI* botAI) { return new GuardChatShortcutAction(botAI); }
     static Action* move_from_group_chat_shortcut(PlayerbotAI* botAI) { return new MoveFromGroupChatShortcutAction(botAI); }
     static Action* gb(PlayerbotAI* botAI) { return new GuildBankAction(botAI); }
     static Action* bank(PlayerbotAI* botAI) { return new BankAction(botAI); }
@@ -268,6 +278,7 @@ private:
     static Action* autogear(PlayerbotAI* botAI) { return new AutoGearAction(botAI); }
     static Action* autogear_bis(PlayerbotAI* botAI) { return new BisGearAction(botAI); }
     static Action* equip_upgrade(PlayerbotAI* botAI) { return new EquipUpgradeAction(botAI); }
+    static Action* equip_upgrade_destroy(PlayerbotAI* botAI) { return new EquipUpgradeDestroyAction(botAI); }
     static Action* co(PlayerbotAI* botAI) { return new ChangeCombatStrategyAction(botAI); }
     static Action* nc(PlayerbotAI* botAI) { return new ChangeNonCombatStrategyAction(botAI); }
     static Action* dead(PlayerbotAI* botAI) { return new ChangeDeadStrategyAction(botAI); }

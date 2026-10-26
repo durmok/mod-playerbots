@@ -50,6 +50,7 @@ void ChatCommandHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     triggers.push_back(new TriggerNode("accept", { NextAction("accept quest", relevance) }));
     triggers.push_back(new TriggerNode("follow", { NextAction("follow chat shortcut", relevance) }));
     triggers.push_back(new TriggerNode("stay", { NextAction("stay chat shortcut", relevance) }));
+    triggers.push_back(new TriggerNode("guard", { NextAction("guard chat shortcut", relevance) }));
     triggers.push_back(new TriggerNode("move from group", { NextAction("move from group chat shortcut", relevance) }));
     triggers.push_back(new TriggerNode("flee", { NextAction("flee chat shortcut", relevance) }));
     triggers.push_back(new TriggerNode("tank attack", { NextAction("tank attack chat shortcut", relevance) }));
@@ -64,6 +65,8 @@ void ChatCommandHandlerStrategy::InitTriggers(std::vector<TriggerNode*>& trigger
     triggers.push_back(new TriggerNode("revive", { NextAction("spirit healer", relevance) }));
     triggers.push_back(new TriggerNode("runaway", { NextAction("runaway chat shortcut", relevance) }));
     triggers.push_back(new TriggerNode("warning", { NextAction("runaway chat shortcut", relevance) }));
+    triggers.push_back(new TriggerNode("movedir", { NextAction("movedir chat shortcut", relevance) }));
+    triggers.push_back(new TriggerNode("teletome", { NextAction("teletome chat shortcut", relevance) }));
     triggers.push_back(new TriggerNode("max dps", { NextAction("max dps chat shortcut", relevance) }));
     triggers.push_back(new TriggerNode("attackers", { NextAction("tell attackers", relevance) }));
     triggers.push_back(new TriggerNode("target", { NextAction("tell target", relevance) }));
@@ -136,6 +139,7 @@ ChatCommandHandlerStrategy::ChatCommandHandlerStrategy(PlayerbotAI* botAI) : Pas
     supported.push_back("rti");
     supported.push_back("position");
     supported.push_back("summon");
+    supported.push_back("resurrect");
     supported.push_back("who");
     supported.push_back("save mana");
     supported.push_back("formation");

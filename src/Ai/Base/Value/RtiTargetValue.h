@@ -33,6 +33,7 @@ public:
 
 private:
     std::string const type;
+    Unit* GetValidRtiTarget(ObjectGuid &guid);
 };
 
 class RtiCcTargetValue : public RtiTargetValue

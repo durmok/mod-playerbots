@@ -281,7 +281,7 @@ protected:
 Unit* DpsTargetValue::Calculate()
 {
     Unit* rti = RtiTargetValue::Calculate();
-    if (rti)
+    if (rti && rti->IsInCombat())
         return rti;
 
     float dps = AI_VALUE(float, "estimated group dps");
@@ -330,7 +330,7 @@ protected:
 Unit* DpsAoeTargetValue::Calculate()
 {
     Unit* rti = RtiTargetValue::Calculate();
-    if (rti)
+    if (rti && rti->IsInCombat())
         return rti;
 
     FindMaxHpTargetStrategy strategy(botAI);

@@ -7,6 +7,7 @@
 #ifndef PLAYERBOTS_PLAYERBOTOPERATIONS_H
 #define PLAYERBOTS_PLAYERBOTOPERATIONS_H
 
+#include "BattlePlayerbotMgr.h"
 #include "Group.h"
 #include "GroupMgr.h"
 #include "GuildMgr.h"
@@ -430,8 +431,8 @@ public:
         if (!botAI)
             return false;
 
-        Group* group = bot->GetGroup();
-        if (group && !bot->InBattleground() && !bot->InBattlegroundQueue() && IsRealPlayer(botAI->GetMaster()))
+        // Group* group = bot->GetGroup();
+        if (!bot->InBattleground() && !bot->InBattlegroundQueue() && IsRealPlayer(botAI->GetMaster()))
             PlayerbotRepository::instance().Save(botAI);
 
         return true;
@@ -497,7 +498,12 @@ public:
         if (!bot)
             return false;
 
+
         PlayerbotHolder* holder = &RandomPlayerbotMgr::instance();
+
+        if (sRandomPlayerbotMgr.IsBattleBot(bot))
+            holder = &sBattlePlayerbotMgr;
+
         if (m_masterAccountId)
         {
             WorldSession* masterSession = sWorldSessionMgr->FindSession(m_masterAccountId);

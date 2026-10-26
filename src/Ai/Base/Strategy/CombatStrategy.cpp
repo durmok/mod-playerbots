@@ -6,6 +6,7 @@
 
 #include "CombatStrategy.h"
 #include "Strategy.h"
+#include "WaitMoveCompleteMultiplier.h"
 
 void CombatStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
@@ -50,9 +51,30 @@ void CombatStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
             }
         )
     );
+    triggers.push_back(
+        new TriggerNode(
+            "not within los target",
+            {
+                NextAction("move to los target", ACTION_MOVE + 8)
+            }
+        )
+    );
+    triggers.push_back(
+        new TriggerNode(
+            "move complete",
+            {
+                NextAction("move complete", ACTION_MOVE + 9)
+            }
+        )
+    );
     // The pet-attack trigger is commented out because it was forcing the bot's pet to attack, overriding stay and follow commands.
     // Pets will automatically attack the bot's enemy if they are in "defensive" or "aggressive"
     // stance, or if the master issues an attack command.
+}
+
+void CombatStrategy::InitMultipliers(std::vector<Multiplier*>& multipliers)
+{
+    multipliers.push_back(new WaitMoveCompleteMultiplier(botAI));
 }
 
 AvoidAoeStrategy::AvoidAoeStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}

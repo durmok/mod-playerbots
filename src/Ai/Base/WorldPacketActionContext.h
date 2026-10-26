@@ -29,6 +29,7 @@
 #include "PassLeadershipToMasterAction.h"
 #include "PetitionSignAction.h"
 #include "PetsAction.h"
+#include "PartykilllogAction.h"
 #include "QuestAction.h"
 #include "QuestConfirmAcceptAction.h"
 #include "ReadyCheckAction.h"
@@ -53,6 +54,7 @@ public:
     WorldPacketActionContext()
     {
         creators["accept invitation"] = &WorldPacketActionContext::accept_invitation;
+        creators["partykilllog"] = &WorldPacketActionContext::partykilllog;
         creators["give leader in dungeon"] = &WorldPacketActionContext::give_leader_in_dungeon;
         creators["leader"] = &WorldPacketActionContext::pass_leadership_to_master;
         creators["tell not enough money"] = &WorldPacketActionContext::tell_not_enough_money;
@@ -60,6 +62,7 @@ public:
         creators["tell cannot equip"] = &WorldPacketActionContext::tell_cannot_equip;
         creators["loot roll"] = &WorldPacketActionContext::loot_roll;
         creators["master loot roll"] = &WorldPacketActionContext::master_loot_roll;
+        creators["loot start roll"] = &WorldPacketActionContext::loot_start_roll;
         creators["revive from corpse"] = &WorldPacketActionContext::revive_from_corpse;
         creators["find corpse"] = &WorldPacketActionContext::find_corpse;
         creators["auto release"] = &WorldPacketActionContext::auto_release;
@@ -142,6 +145,7 @@ private:
     static Action* auto_release(PlayerbotAI* botAI) { return new AutoReleaseSpiritAction(botAI); }
     static Action* revive_from_corpse(PlayerbotAI* botAI) { return new ReviveFromCorpseAction(botAI); }
     static Action* accept_invitation(PlayerbotAI* botAI) { return new AcceptInvitationAction(botAI); }
+    static Action* partykilllog(PlayerbotAI* botAI) { return new PartykilllogAction(botAI); }
     static Action* give_leader_in_dungeon(PlayerbotAI* botAI) { return new GiveLeaderAction(botAI, "I don't know this dungeon, lead the way!"); }
     static Action* pass_leadership_to_master(PlayerbotAI* botAI) { return new PassLeadershipToMasterAction(botAI); }
     static Action* tell_not_enough_money(PlayerbotAI* botAI) { return new TellMasterAction(botAI, "Not enough money"); }
@@ -169,6 +173,7 @@ private:
 
     static Action* loot_roll(PlayerbotAI* botAI) { return new LootRollAction(botAI); }
     static Action* master_loot_roll(PlayerbotAI* botAI) { return new MasterLootRollAction(botAI); }
+    static Action* loot_start_roll(PlayerbotAI* botAI) { return new LootStartRollAction(botAI); }
     static Action* bg_join(PlayerbotAI* botAI) { return new BGJoinAction(botAI); }
     static Action* bg_leave(PlayerbotAI* botAI) { return new BGLeaveAction(botAI); }
     static Action* bg_status(PlayerbotAI* botAI) { return new BGStatusAction(botAI); }

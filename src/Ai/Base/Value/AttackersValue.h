@@ -27,6 +27,7 @@ public:
 private:
     void AddAttackersOf(Group* group, std::unordered_set<Unit*>& targets);
     void AddAttackersOf(Player* player, std::unordered_set<Unit*>& targets);
+    void AddAttackersOf(Creature* creature, std::unordered_set<Unit*>& targets);
     void RemoveNonThreating(std::unordered_set<Unit*>& targets);
     bool hasRealThreat(Unit* attacker);
 };

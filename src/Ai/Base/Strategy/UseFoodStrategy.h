@@ -17,7 +17,16 @@ public:
     UseFoodStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
 
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
     std::string const getName() override { return "food"; }
+};
+
+class EatDrinkMultiplier : public Multiplier
+{
+public:
+    EatDrinkMultiplier(PlayerbotAI* botAI);
+
+    float GetValue(Action* action) override;
 };
 
 #endif

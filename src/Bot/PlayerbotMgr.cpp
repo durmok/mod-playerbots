@@ -6,6 +6,7 @@
 
 #include "PlayerbotMgr.h"
 #include "PlayerbotsDatabase.h"
+#include "BattlePlayerbotMgr.h"
 #include "BroadcastHelper.h"
 #include "ChannelMgr.h"
 #include "CharacterCache.h"
@@ -113,7 +114,7 @@ void PlayerbotHolder::AddPlayerBot(ObjectGuid playerGuid, uint32 masterAccountId
     std::ostringstream out;
     std::string botName;
     sCharacterCache->GetCharacterNameByGuid(playerGuid, botName);
-    if (!isRndbot && !sameAccount && !sameGuild && !addClassBot && !linkedAccount)
+    if (!isRndbot && !sameAccount && !addClassBot)
     {
         allowed = false;
         out << "Failure: You are not allowed to control bot " << botName.c_str();
@@ -186,6 +187,12 @@ void PlayerbotHolder::AddPlayerBot(ObjectGuid playerGuid, uint32 masterAccountId
                         AbandonPendingLogin(holder.GetGuid());
                         return;
                     }
+                }
+
+                if (sRandomPlayerbotMgr.IsBattleBot(holder.GetGuid().GetCounter()))
+                {
+                    sBattlePlayerbotMgr.HandlePlayerBotLoginCallback(holder, botSession);
+                    return;
                 }
 
                 RandomPlayerbotMgr::instance().HandlePlayerBotLoginCallback(holder, botSession);
@@ -400,8 +407,9 @@ void PlayerbotHolder::LogoutPlayerBot(ObjectGuid guid)
             return;
 
         // Queue group cleanup operation for world thread
-        auto cleanupOp = std::make_unique<BotLogoutGroupCleanupOperation>(guid);
-        PlayerbotWorldThreadProcessor::instance().QueueOperation(std::move(cleanupOp));
+        // auto cleanupOp = std::make_unique<BotLogoutGroupCleanupOperation>(guid);
+        // PlayerbotWorldThreadProcessor::instance().QueueOperation(std::move(cleanupOp));
+        BotLogoutGroupCleanupOperation(guid).Execute();
 
         LOG_DEBUG("playerbots", "Bot {} logging out", bot->GetName().c_str());
 
@@ -636,6 +644,7 @@ void PlayerbotHolder::OnBotLogin(Player* const bot)
     }
 
     bot->SaveToDB(false, false);
+    /*
     bool addClassBot = sRandomPlayerbotMgr.IsAccountType(accountId, 2);
     if (addClassBot && master && abs((int)master->GetLevel() - (int)bot->GetLevel()) > 3)
     {
@@ -649,6 +658,7 @@ void PlayerbotHolder::OnBotLogin(Player* const bot)
         PlayerbotFactory factory(bot, master->GetLevel(), ITEM_QUALITY_LEGENDARY, mixedGearScore);
         factory.Randomize(false);
     }
+    */
 
     // bots join World chat if not solo oriented
     if (bot->GetLevel() >= 10 && sRandomPlayerbotMgr.IsRandomBot(bot) && GET_PLAYERBOT_AI(bot) &&
@@ -906,6 +916,18 @@ static uint8 GetOfflinePlayerGender(ObjectGuid guid)
         return (*result)[0].Get<uint8>();       // 0 = male, 1 = female
 
     return GENDER_MALE;                         // fallback value
+}
+
+static bool GetOfflinePlayerInfo(ObjectGuid guid, uint8* race, uint8* cls, uint8* gender)
+{
+    QueryResult result = CharacterDatabase.Query(
+        "SELECT race,class,gender FROM characters WHERE guid = {}", guid.GetCounter());
+    if (!result)
+        return false;
+    *race = (*result)[0].Get<uint8>();// 0 = male, 1 = female
+    *cls = (*result)[1].Get<uint8>();
+    *gender = (*result)[2].Get<uint8>();
+    return true;
 }
 
 bool PlayerbotMgr::HandlePlayerbotMgrCommand(ChatHandler* handler, char const* args)
@@ -1212,12 +1234,19 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
         }
         uint8 teamId = master->GetTeamId(true);
         std::unordered_set<ObjectGuid> const& guidCache = sRandomPlayerbotMgr.addclassCache[RandomPlayerbotMgr::GetTeamClassIdx(teamId == TEAM_ALLIANCE, claz)];
+        uint32 expansion = sWorld->getIntConfig(CONFIG_EXPANSION);
         auto const pickFirstEligible = [&](auto const& pool) -> ObjectGuid
         {
             for (ObjectGuid const& guid : pool)
             {
+                uint8 botRace, botClass, botGender;
                 // If the user requested a specific gender, skip any character that doesn't match.
-                if (gender != -1 && GetOfflinePlayerGender(guid) != gender)
+                if (!GetOfflinePlayerInfo(guid, &botRace, &botClass, &botGender))
+                    continue;
+                if (gender != -1 && botGender != gender)
+                    continue;
+                if ((expansion < EXPANSION_THE_BURNING_CRUSADE && (botRace == RACE_BLOODELF || botRace == RACE_DRAENEI)) ||
+                    (expansion < EXPANSION_WRATH_OF_THE_LICH_KING && botClass == CLASS_DEATH_KNIGHT))
                     continue;
                 if (botLoading.find(guid) != botLoading.end())
                     continue;
@@ -1374,6 +1403,7 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
         }
     }
 
+    uint32 expansion = sWorld->getIntConfig(CONFIG_EXPANSION);
     for (auto i = bots.begin(); i != bots.end(); ++i)
     {
         std::string const bot = *i;
@@ -1382,9 +1412,20 @@ std::vector<std::string> PlayerbotHolder::HandlePlayerbotCommand(char const* arg
         out << cmdStr << ": " << bot << " - ";
 
         ObjectGuid member = sCharacterCache->GetCharacterGuidByName(bot);
+        uint8 race,cls,gender = 0;
+
         if (!member)
         {
             out << "character not found";
+        }
+        else if (!GetOfflinePlayerInfo(member, &race, &cls, &gender))
+        {
+            out << "character info not found";
+        }
+        else if ((expansion < EXPANSION_THE_BURNING_CRUSADE && (race == RACE_BLOODELF || race == RACE_DRAENEI)) ||
+                (expansion < EXPANSION_WRATH_OF_THE_LICH_KING && cls == CLASS_DEATH_KNIGHT))
+        {
+            out << "character race/class is invalid in current expansion";
         }
         else if (master && member != master->GetGUID())
         {

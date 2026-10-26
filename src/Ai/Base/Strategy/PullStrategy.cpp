@@ -103,11 +103,9 @@ std::string PullStrategy::GetSpellName() const
         case ITEM_SUBCLASS_WEAPON_THROWN:
             return "throw";
         case ITEM_SUBCLASS_WEAPON_GUN:
-            return "shoot gun";
         case ITEM_SUBCLASS_WEAPON_BOW:
-            return "shoot bow";
         case ITEM_SUBCLASS_WEAPON_CROSSBOW:
-            return "shoot crossbow";
+            return "shoot";
         default:
             return spellName;
     }
@@ -179,6 +177,9 @@ float PullMultiplier::GetValue(Action* action)
     if (!strategy || !strategy->HasTarget() || !action)
         return 1.0f;
 
+    if (action->getName() == "follow")
+        return 0.0f;
+
     if (!strategy->IsPullPendingToStart() && !strategy->HasPullStarted())
         return 1.0f;
 
@@ -190,7 +191,7 @@ float PullMultiplier::GetValue(Action* action)
         actionName == "pull action" ||
         actionName == "return to pull position" ||
         actionName == "pull end" ||
-        actionName == "follow" ||
+        // actionName == "follow" ||
         actionName == "set facing")
         return 1.0f;
 

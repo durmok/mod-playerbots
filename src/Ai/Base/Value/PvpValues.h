@@ -72,4 +72,22 @@ private:
     bool ignoreRange;
 };
 
+class BgJoinQueueTypeIdValue : public ManualSetValue<uint32>
+{
+public:
+    BgJoinQueueTypeIdValue(PlayerbotAI* botAI) : ManualSetValue<uint32>(botAI, BATTLEGROUND_QUEUE_NONE, "bg join queue type id") {}
+};
+
+class BgJoinBracketIdValue : public ManualSetValue<uint32>
+{
+public:
+    BgJoinBracketIdValue(PlayerbotAI* botAI) : ManualSetValue<uint32>(botAI, BG_BRACKET_ID_FIRST, "bg join bracket id") {}
+};
+
+class BgLeaveQueueValue : public ManualSetValue<bool>
+{
+public:
+    BgLeaveQueueValue(PlayerbotAI* botAI) : ManualSetValue<bool>(botAI, false, "bg leave queue") {}
+};
+
 #endif

@@ -416,7 +416,7 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
             engine->addStrategy("healer dps", false);
     }
 
-    if (IsSelfBot(player) || sRandomPlayerbotMgr.IsRandomBot(player))
+    if (IsSelfBot(player) || sRandomPlayerbotMgr.IsRandomBot(player) || sRandomPlayerbotMgr.IsBattleBot(player))
     {
         if (!player->GetGroup())
         {
@@ -582,10 +582,22 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
             break;
     }
 
-    if (!player->InBattleground())
+    if (!player->InBattleground() && sRandomPlayerbotMgr.IsRandomBot(player))
     {
         nonCombatEngine->addStrategiesNoInit("nc", "food", "chat", "follow", "default", "force rebuff", "quest", "loot",
                                             "gather", "duel", "pvp", "buff", "mount", "emote", nullptr);
+    }
+
+    if (!player->InBattleground() && facade->IsAltBot())
+    {
+        nonCombatEngine->addStrategiesNoInit("nc", "food", "chat", "follow", "default", "force rebuff", "loot",
+                                            "duel", "pvp", "buff", "mount", "emote", nullptr);
+    }
+
+    if (!player->InBattleground() && sRandomPlayerbotMgr.IsBattleBot(player))
+    {
+        nonCombatEngine->addStrategiesNoInit("nc", "food", "chat", "follow", "default", "force rebuff",
+                                            "duel", "pvp", "buff", "mount", "emote", "bg", nullptr);
     }
 
     if (sPlayerbotAIConfig.AutoSaveMana && PlayerbotAI::IsHeal(player, true))
@@ -729,6 +741,9 @@ void AiFactory::AddDefaultDeadStrategies(Player* player, PlayerbotAI* const faca
     deadEngine->addStrategiesNoInit("dead", "stay", "chat", "default", "follow", nullptr);
 
     if (sRandomPlayerbotMgr.IsRandomBot(player) && !player->GetGroup())
+        deadEngine->removeStrategy("follow", false);
+
+    if (sRandomPlayerbotMgr.IsBattleBot(player))
         deadEngine->removeStrategy("follow", false);
 }
 

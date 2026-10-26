@@ -114,9 +114,18 @@ std::string ChangeTalentsAction::SpecList()
         {
             break;
         }
+
+        int level = bot->GetLevel();
+        while (level > 1 && level < 80 && sPlayerbotAIConfig.ParsedSpecLinkOrder[cls][specNo][level].size() == 0)
+            level--;
+        while (level <= 80 && sPlayerbotAIConfig.ParsedSpecLinkOrder[cls][specNo][level].size() == 0)
+            level++;
+        if (sPlayerbotAIConfig.ParsedSpecLinkOrder[cls][specNo][level].size() == 0)
+            continue;
+
         specFound++;
         std::ostringstream out;
-        std::vector<std::vector<uint32>> parsed = sPlayerbotAIConfig.ParsedSpecLinkOrder[cls][specNo][80];
+        std::vector<std::vector<uint32>> parsed = sPlayerbotAIConfig.ParsedSpecLinkOrder[cls][specNo][level];
         std::unordered_map<int, int> tabCount;
         tabCount[0] = tabCount[1] = tabCount[2] = 0;
         for (auto& item : parsed)

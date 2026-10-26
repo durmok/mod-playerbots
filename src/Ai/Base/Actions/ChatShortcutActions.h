@@ -20,6 +20,8 @@ public:
     void SetReturnPosition(float x, float y, float z);
     void ResetStayPosition();
     void SetStayPosition(float x, float y, float z);
+    void ResetGuardPosition();
+    void SetGuardPosition(float x, float y, float z);
 };
 
 class FollowChatShortcutAction : public MovementAction
@@ -35,6 +37,15 @@ class StayChatShortcutAction : public PositionsResetAction
 {
 public:
     StayChatShortcutAction(PlayerbotAI* botAI) : PositionsResetAction(botAI, "stay chat shortcut") {}
+
+    bool Execute(Event event) override;
+    bool isUsefulWithoutControl() override { return true; }
+};
+
+class GuardChatShortcutAction : public PositionsResetAction
+{
+public:
+    GuardChatShortcutAction(PlayerbotAI* botAI) : PositionsResetAction(botAI, "guard chat shortcut") {}
 
     bool Execute(Event event) override;
     bool isUsefulWithoutControl() override { return true; }
@@ -61,6 +72,22 @@ class GoawayChatShortcutAction : public PositionsResetAction
 {
 public:
     GoawayChatShortcutAction(PlayerbotAI* botAI) : PositionsResetAction(botAI, "runaway chat shortcut") {}
+
+    bool Execute(Event event) override;
+};
+
+class MovedirChatShortcutAction : public MovementAction
+{
+public:
+    MovedirChatShortcutAction(PlayerbotAI* botAI) : MovementAction(botAI, "movedir chat shortcut") {}
+
+    bool Execute(Event event) override;
+};
+
+class TeletomeChatShortcutAction : public MovementAction
+{
+public:
+    TeletomeChatShortcutAction(PlayerbotAI* botAI) : MovementAction(botAI, "teletome chat shortcut") {}
 
     bool Execute(Event event) override;
 };

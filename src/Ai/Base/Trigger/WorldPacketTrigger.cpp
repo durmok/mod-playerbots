@@ -12,6 +12,7 @@ void WorldPacketTrigger::ExternalEvent(WorldPacket& revData, Player* eventOwner)
     packet = revData;
     owner = eventOwner;
     triggered = true;
+    allPackets.emplace_back(packet, owner);
 }
 
 Event WorldPacketTrigger::Check()
@@ -19,7 +20,10 @@ Event WorldPacketTrigger::Check()
     if (!triggered)
         return Event();
 
-    return Event(getName(), packet, owner);
+    return Event(getName(), packet, std::move(allPackets), owner);
 }
 
-void WorldPacketTrigger::Reset() { triggered = false; }
+void WorldPacketTrigger::Reset() {
+    triggered = false;
+    allPackets.clear();
+}

@@ -107,6 +107,9 @@ public:
     bool IsRandomBot(ObjectGuid::LowType bot);
     bool IsAddclassBot(Player* bot);
     bool IsAddclassBot(ObjectGuid::LowType bot);
+    bool IsBattleBot(Player* bot);
+    bool IsBattleBot(ObjectGuid::LowType bot);
+    std::vector<uint32> GetBattleTypeAccounts() { return battleTypeAccounts; }
     void Randomize(Player* bot);
     void Clear(Player* bot);
     void RandomizeFirst(Player* bot);
@@ -257,6 +260,12 @@ private:
     // Account lists
     std::vector<uint32> rndBotTypeAccounts;             // Accounts marked as RNDbot (type 1)
     std::vector<uint32> addClassTypeAccounts;           // Accounts marked as AddClass (type 2)
+    std::vector<uint32> battleTypeAccounts;           // Accounts marked as Battlebot (type 8)
+
+    // Account maps
+    std::unordered_set<uint32> rndBotTypeAccountSet;             // Accounts marked as RNDbot (type 1)
+    std::unordered_set<uint32> addClassTypeAccountSet;           // Accounts marked as AddClass (type 2)
+    std::unordered_set<uint32> battleTypeAccountSet;           // Accounts marked as Battlebot (type 8)
 
     //void ScaleBotActivity();      // Deprecated function
     static inline uint32 NowSeconds() { return static_cast<uint32>(GameTime::GetGameTime().count()); }

@@ -7,6 +7,7 @@
 #include "PlayerbotRepository.h"
 #include "PlayerbotsDatabase.h"
 #include "AiObjectContext.h"
+#include "RandomPlayerbotMgr.h"
 
 void PlayerbotRepository::Load(PlayerbotAI* botAI)
 {
@@ -49,6 +50,8 @@ void PlayerbotRepository::Load(PlayerbotAI* botAI)
 
 void PlayerbotRepository::Save(PlayerbotAI* botAI)
 {
+    if (!botAI->IsAltBot())
+        return;
     ObjectGuid::LowType guid = botAI->GetBot()->GetGUID().GetCounter();
 
     PlayerbotsDatabaseTransaction trans = PlayerbotsDatabase.BeginTransaction();

@@ -19,6 +19,7 @@
 #include "PositionValue.h"
 #include "PullStrategy.h"
 #include "RtiTargetValue.h"
+#include "ServerFacade.h"
 #include <algorithm>
 
 namespace
@@ -34,7 +35,7 @@ float GetPullReachDistance(Player* bot, Unit* target, PullStrategy const* strate
 
 bool IsWithinPullRange(Player* bot, Unit* target, PullStrategy const* strategy)
 {
-    return bot && target && strategy && bot->GetExactDist(target) <= strategy->GetRange();
+    return bot && target && strategy && bot->GetExactDist(target) <= strategy->GetRange() && bot->IsWithinLOSInMap(target);
 }
 }
 
@@ -303,7 +304,7 @@ bool ReachPullAction::Execute(Event /*event*/)
         return false;
 
     float const reachDistance = GetPullReachDistance(bot, target, strategy);
-    return ReachCombatTo(target, reachDistance);
+    return ReachCombatTo(target, reachDistance) || MoveToLOS(target, MovementPriority::MOVEMENT_COMBAT, true);
 }
 
 bool ReachPullAction::isUseful()
@@ -312,6 +313,10 @@ bool ReachPullAction::isUseful()
         return false;
 
     if (bot->GetCurrentSpell(CURRENT_CHANNELED_SPELL) != nullptr)
+        return false;
+
+    // do not reach again when mob has already been pulled
+    if (bot->IsInCombat())
         return false;
 
     PullStrategy* strategy = PullStrategy::Get(botAI);

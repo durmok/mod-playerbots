@@ -16,6 +16,12 @@
 
 bool BGJoinAction::Execute(Event /*event*/)
 {
+    if (AI_VALUE(bool, "bg leave queue"))
+    {
+        SET_AI_VALUE(bool, "bg leave queue", false);
+        return botAI->DoSpecificAction("bg leave");
+    }
+
     uint32 queueType = AI_VALUE(uint32, "bg type");
     if (!queueType)  // force join to fill bg
     {
@@ -308,6 +314,73 @@ bool BGJoinAction::shouldJoinBg(BattlegroundQueueTypeId queueTypeId, Battlegroun
     return false;
 }
 
+bool ShouldLeaveQueue(Player* bot, BattlegroundQueueTypeId queueTypeId, BattlegroundBracketId bracketId)
+{
+    if (!bot->InBattlegroundQueue())
+        return false;
+
+    BattlegroundTypeId bgTypeId = BattlegroundMgr::BGTemplateId(queueTypeId);
+    Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(bgTypeId);
+    if (!bg)
+        return false;
+
+    TeamId teamId = bot->GetTeamId();
+    uint32 BracketSize = bg->GetMaxPlayersPerTeam() * 2;
+    uint32 TeamSize = bg->GetMaxPlayersPerTeam();
+    BattlegroundInfo& bgInfo = sRandomPlayerbotMgr.BattlegroundData[queueTypeId][bracketId];
+
+    // Check if bots should join Arena
+    ArenaType type = ArenaType(BattlegroundMgr::BGArenaType(queueTypeId));
+    if (type != ARENA_TYPE_NONE)
+    {
+        BracketSize = (uint32)(type * 2);
+        TeamSize = (uint32)type;
+
+        // Check if bots should join Rated Arena (Only captains can queue)
+        bool isRated = (bgInfo.ratedArenaBotCount + bgInfo.ratedArenaPlayerCount) <
+                       (BracketSize * (bgInfo.activeRatedArenaQueue + bgInfo.ratedArenaInstanceCount));
+
+        if (isRated)
+        {
+            // not implemented yet
+            return false;
+        }
+
+        // Check if bots should join Skirmish Arena
+        // We have extra bots queue because same faction can vs each other but can't be in the same group.
+        uint32 maxRequiredSkirmishBots = BracketSize * (bgInfo.activeSkirmishArenaQueue + bgInfo.skirmishArenaInstanceCount);
+        if (maxRequiredSkirmishBots != 0)
+            maxRequiredSkirmishBots = maxRequiredSkirmishBots + TeamSize;
+
+        return (bgInfo.skirmishArenaBotCount + bgInfo.skirmishArenaPlayerCount) > maxRequiredSkirmishBots;
+    }
+
+    // Check if bots should join Battleground
+    if (teamId == TEAM_ALLIANCE)
+        return (bgInfo.bgAllianceBotCount + bgInfo.bgAlliancePlayerCount) > TeamSize * (bgInfo.activeBgQueue + bgInfo.bgInstanceCount);
+    else
+        return (bgInfo.bgHordeBotCount + bgInfo.bgHordePlayerCount) > TeamSize * (bgInfo.activeBgQueue + bgInfo.bgInstanceCount);
+}
+
+bool ShouldLeaveQueue(Player* bot)
+{
+    if (!bot->InBattlegroundQueue())
+        return false;
+
+    BattlegroundQueueTypeId queueTypeId = bot->GetBattlegroundQueueTypeId(0);
+    BattlegroundTypeId _bgTypeId = BattlegroundMgr::BGTemplateId(queueTypeId);
+    if (!queueTypeId)
+        return false;
+
+    Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(_bgTypeId);
+    uint32 mapId = bg->GetMapId();
+    PvPDifficultyEntry const* pvpDiff = GetBattlegroundBracketByLevel(mapId, bot->GetLevel());
+    if (!pvpDiff)
+        return false;
+
+    return ShouldLeaveQueue(bot, queueTypeId, pvpDiff->GetBracketId());
+}
+
 bool BGJoinAction::isUseful()
 {
     // do not try if BG bots disabled
@@ -320,7 +393,15 @@ bool BGJoinAction::isUseful()
 
     // can't queue while in BG/Arena queue
     if (bot->InBattlegroundQueue())
-        return false;
+    {
+        if (ShouldLeaveQueue(bot))
+        {
+            SET_AI_VALUE(bool, "bg leave queue", true);
+            return true;
+        }
+        else
+            return false;
+    }
 
     // do not try right after login (currently not working)
     if ((time(nullptr) - bot->GetInGameTime()) < 120)
@@ -344,7 +425,8 @@ bool BGJoinAction::isUseful()
 
     // check Deserter debuff
     if (bot->IsDeserter())
-        return false;
+        // return false;
+        bot->RemoveAura(26013);
 
     // check if has free queue slots (pointless as already making sure not in queue)
     // keeping just in case.
@@ -358,6 +440,21 @@ bool BGJoinAction::isUseful()
 
     bgList.clear();
     ratedList.clear();
+
+    uint32 joinQueueTypeId = AI_VALUE(uint32, "bg join queue type id");
+    if (joinQueueTypeId != BATTLEGROUND_QUEUE_NONE)
+    {
+        BattlegroundQueueTypeId queueTypeId = BattlegroundQueueTypeId(joinQueueTypeId);
+        BattlegroundBracketId bracketId = BattlegroundBracketId(AI_VALUE(uint32, "bg join bracket id"));
+        if (!canJoinBg(queueTypeId, bracketId))
+            return false;
+
+        if (!shouldJoinBg(queueTypeId, bracketId))
+            return false;
+
+        bgList.push_back(queueTypeId);
+        return true;
+    }
 
     for (int bracket = BG_BRACKET_ID_FIRST; bracket < MAX_BATTLEGROUND_BRACKETS; ++bracket)
     {
@@ -665,10 +762,6 @@ bool BGLeaveAction::Execute(Event /*event*/)
         type = arenaType;
     }
 
-    uint32 queueType = AI_VALUE(uint32, "bg type");
-    if (!queueType)
-        return false;
-
     LOG_INFO("playerbots", "Bot {} {}:{} <{}> leaves {} queue", bot->GetGUID().ToString().c_str(),
              bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(), bot->GetName().c_str(),
              isArena ? "Arena" : "BG");
@@ -879,12 +972,14 @@ bool BGStatusAction::Execute(Event event)
                  bot->GetName(), Time2, isArena ? "Arena" : "BG", _bgType);
         // temp fix for crash
         // return true;
+        // const bool shouldLeaveQueue = ShouldLeaveQueue(bot, queueTypeId, bracketId);
+        const bool shouldLeaveQueue = false;
 
         BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(queueTypeId);
         GroupQueueInfo ginfo;
         if (bgQueue.GetPlayerGroupInfoData(bot->GetGUID(), &ginfo))
         {
-            if (ginfo.IsInvitedToBGInstanceGUID && !bot->InBattleground())
+            if (ginfo.IsInvitedToBGInstanceGUID && !bot->InBattleground() && !shouldLeaveQueue)
             {
                 // BattlegroundMgr::GetBattleground() does not return battleground if bgTypeId==BATTLEGROUND_AA
                 Battleground* bg = sBattlegroundMgr->GetBattleground(
@@ -937,6 +1032,9 @@ bool BGStatusAction::Execute(Event event)
             timer = TIME_TO_AUTOREMOVE + IN_MILLISECONDS * (bg->GetMaxPlayersPerTeam() * 8);
 
         if (Time2 > timer && isArena)  // disabled for BG
+            leaveQ = true;
+
+        if (shouldLeaveQueue)
             leaveQ = true;
 
         if (leaveQ && ((bot->GetGroup() && bot->GetGroup()->IsLeader(bot->GetGUID())) ||

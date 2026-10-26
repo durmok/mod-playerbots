@@ -76,11 +76,9 @@ bool RandomPlayerbotFactory::IsValidRaceClassCombination(uint8 race, uint8 cls, 
     return info != nullptr;
 }
 
-Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, uint8 cls, std::unordered_map<NameRaceAndGender, std::vector<std::string>>& nameCache)
+Player* RandomPlayerbotFactory::CreateRandomBot(WorldSession* session, uint8 cls, bool alliance, std::unordered_map<NameRaceAndGender, std::vector<std::string>>& nameCache)
 {
     LOG_DEBUG("playerbots", "Creating a new random bot for class: {}", cls);
-
-    const bool alliance = static_cast<bool>(urand(0, 1));
 
     std::vector<uint8> raceOptions;
     for (uint8 race = RACE_HUMAN; race < sRaceMgr->GetMaxRaces(); ++race)
@@ -333,6 +331,7 @@ std::string const RandomPlayerbotFactory::CreateRandomBotName(NameRaceAndGender 
 // AssignAccountTypes()
 uint32 RandomPlayerbotFactory::CalculateTotalAccountCount()
 {
+/*
     // Reset account types if features are disabled
     // Reset is done here to precede needed accounts calculations
     if (sPlayerbotAIConfig.MaxRandomBots == 0 || sPlayerbotAIConfig.AddClassAccountPoolSize == 0)
@@ -447,6 +446,8 @@ uint32 RandomPlayerbotFactory::CalculateTotalAccountCount()
             sPlayerbotAIConfig.RandomBotAccountCount, calculatedTotal);
 
     return calculatedTotal;
+*/
+    return sPlayerbotAIConfig.RandomBotAccountCount + sPlayerbotAIConfig.AddClassAccountPoolSize + sPlayerbotAIConfig.BattleBotAccountCount;
 }
 
 uint32 RandomPlayerbotFactory::CalculateAvailableCharsPerAccount()
@@ -656,6 +657,12 @@ void RandomPlayerbotFactory::CreateRandomBots()
 
         LOG_DEBUG("playerbots", "Account {} created for random bots", accountName.c_str());
     }
+    if (account_creation && sWorld->getIntConfig(CONFIG_EXPANSION) != EXPANSION_WRATH_OF_THE_LICH_KING)
+    {
+        LOG_ERROR("playerbots", "Require expansion {} to create randombots", EXPANSION_WRATH_OF_THE_LICH_KING);
+        World::StopNow(SHUTDOWN_EXIT_CODE);
+        return;
+    }
     if (account_creation)
     {
         LOG_INFO("playerbots", "Waiting for {} accounts loading into database ({} queries)...", account_creation, LoginDatabase.QueueSize());
@@ -675,7 +682,8 @@ void RandomPlayerbotFactory::CreateRandomBots()
     int bot_creation = 0;
     timer = getMSTime();
     bool nameCached = false;
-    for (uint32 accountNumber = 0; accountNumber < totalAccountCount; ++accountNumber)
+    bool alliance = true;
+    for (uint32 accountNumber = 0; accountNumber < totalAccountCount; ++accountNumber, alliance = !alliance)
     {
         std::ostringstream out;
         out << sPlayerbotAIConfig.RandomBotAccountPrefix << accountNumber;
@@ -691,9 +699,10 @@ void RandomPlayerbotFactory::CreateRandomBots()
         uint32 accountId = fields[0].Get<uint32>();
 
         sPlayerbotAIConfig.RandomBotAccounts.push_back(accountId);
+        sPlayerbotAIConfig.RandomBotAccountSet.insert(accountId);
 
         uint32 count = AccountMgr::GetCharactersCount(accountId);
-        if (count >= 10)
+        if (count != 0)
         {
             continue;
         }
@@ -736,6 +745,10 @@ void RandomPlayerbotFactory::CreateRandomBots()
 
         for (uint8 cls = CLASS_WARRIOR; cls < MAX_CLASSES - count; ++cls)
         {
+            if ((alliance && cls == CLASS_SHAMAN) || (!alliance && cls == CLASS_PALADIN)) {
+                continue;
+            }
+
             // skip nonexistent classes
             if (!((1 << (cls - 1)) & CLASSMASK_ALL_PLAYABLE) || !sChrClassesStore.LookupEntry(cls))
                 continue;
@@ -744,7 +757,7 @@ void RandomPlayerbotFactory::CreateRandomBots()
             if ((1 << (cls - 1)) & sWorld->getIntConfig(CONFIG_CHARACTER_CREATING_DISABLED_CLASSMASK))
                 continue;
 
-            Player* playerBot = factory.CreateRandomBot(session, cls, nameCache);
+            Player* playerBot = factory.CreateRandomBot(session, cls, alliance, nameCache);
             if (!playerBot)
             {
                 LOG_ERROR("playerbots", "Fail to create character for account {}", accountId);
