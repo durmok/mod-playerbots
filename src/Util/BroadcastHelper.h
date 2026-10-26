@@ -7,7 +7,7 @@
 #ifndef PLAYERBOTS_BROADCASTHELPER_H
 #define PLAYERBOTS_BROADCASTHELPER_H
 
-#include "Define.h"
+#include "Platform/Define.h"
 #include <cstdint>
 #include <list>
 #include <string>
@@ -20,7 +20,7 @@ class Quest;
 class Creature;
 class Group;
 
-struct ItemTemplate;
+struct ItemPrototype;
 
 class BroadcastHelper
 {
@@ -53,7 +53,7 @@ public:
     static bool BroadcastLootingItem(
         PlayerbotAI* botAI,
         Player* bot,
-        ItemTemplate const* proto
+        ItemPrototype const* proto
     );
     static bool BroadcastQuestAccepted(
         PlayerbotAI* botAI,
@@ -74,7 +74,7 @@ public:
         Quest const* quest,
         uint32_t availableCount,
         uint32_t requiredCount,
-        ItemTemplate const* proto
+        ItemPrototype const* proto
     );
     static bool BroadcastQuestUpdateFailedTimer(
         PlayerbotAI* botAI,
@@ -139,7 +139,7 @@ public:
     );
     static bool BroadcastSuggestSell(
         PlayerbotAI* botAI,
-        ItemTemplate const* proto,
+        ItemPrototype const* proto,
         uint32_t count,
         uint32_t price,
         Player* bot

@@ -8,7 +8,7 @@
 #include "Playerbots.h"
 #include "SharedDefines.h"
 
-uint8 MyAttackerCountValue::Calculate() { return bot->getAttackers().size(); }
+uint8 MyAttackerCountValue::Calculate() { return bot->GetAttackers().size(); }
 
 bool HasAggroValue::Calculate()
 {
@@ -23,7 +23,7 @@ bool HasAggroValue::Calculate()
         return true;
     }
     bool isMT = PlayerbotAI::IsExplicitMainTank(bot);
-    if (victim && (victim->GetGUID() == bot->GetGUID() ||
+    if (victim && (victim->GetObjectGuid() == bot->GetObjectGuid() ||
                    (!isMT && victim->ToPlayer() && PlayerbotAI::IsTank(victim->ToPlayer()))))
     {
         return true;

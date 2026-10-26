@@ -5,8 +5,8 @@
  */
 
 #include "TellPvpStatsAction.h"
-#include "ArenaTeam.h"
-#include "ArenaTeamMgr.h"
+// #include "ArenaTeam.h"
+// #include "ArenaTeamMgr.h"
 #include "Event.h"
 #include "Language.h"
 #include "Player.h"
@@ -16,6 +16,7 @@
 #include "SharedDefines.h"
 #include <map>
 
+/*
 namespace
 {
     inline char const* BracketName(uint8 slot)
@@ -28,6 +29,7 @@ namespace
         }
     }
 }
+*/
 
 bool TellPvpStatsAction::Execute(Event event)
 {
@@ -50,7 +52,7 @@ bool TellPvpStatsAction::Execute(Event event)
 
     // PVP currencies
     std::map<std::string, std::string> currencyPlaceholders;
-    currencyPlaceholders["%arena_points"] = std::to_string(bot->GetArenaPoints());
+    // currencyPlaceholders["%arena_points"] = std::to_string(bot->GetArenaPoints());
     currencyPlaceholders["%honor_points"] = std::to_string(bot->GetHonorPoints());
 
     std::string const currencyText = PlayerbotTextMgr::instance().GetBotTextOrDefault(
@@ -60,6 +62,7 @@ bool TellPvpStatsAction::Execute(Event event)
 
     bot->Whisper(currencyText, LANG_UNIVERSAL, requester);
 
+    /*
     // Arena Teams by slot
     bool anyTeam = false;
     for (uint8 slot = ARENA_SLOT_2v2; slot <= ARENA_SLOT_5v5; ++slot)
@@ -94,6 +97,7 @@ bool TellPvpStatsAction::Execute(Event event)
 
         bot->Whisper(noTeamText, LANG_UNIVERSAL, requester);
     }
+    */
 
     return true;
 }

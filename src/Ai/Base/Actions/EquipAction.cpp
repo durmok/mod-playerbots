@@ -7,7 +7,7 @@
 #include "EquipAction.h"
 #include "Event.h"
 #include "ItemCountValue.h"
-#include "ItemPackets.h"
+// #include "ItemPackets.h"
 #include "ItemUsageValue.h"
 #include "ItemVisitors.h"
 #include "Playerbots.h"
@@ -103,13 +103,10 @@ void EquipAction::EquipItem(Item* item)
         // Handle them early here to avoid issues.
         if (invType == INVTYPE_RANGED || invType == INVTYPE_THROWN || invType == INVTYPE_RANGEDRIGHT)
         {
-            WorldPacket packet(CMSG_AUTOEQUIP_ITEM_SLOT, 2);
-            ObjectGuid itemguid = item->GetGUID();
-            packet << itemguid << uint8(EQUIPMENT_SLOT_RANGED);
-
-            WorldPackets::Item::AutoEquipItemSlot nicePacket(std::move(packet));
-            nicePacket.Read();
-            bot->GetSession()->HandleAutoEquipItemSlotOpcode(nicePacket);
+            WorldPackets::Item::AutoEquipItemSlot packet;
+            packet.itemGuid = item->GetObjectGuid();
+            packet.dstslot = uint8(EQUIPMENT_SLOT_RANGED);
+            bot->GetSession()->HandleAutoEquipItemSlotOpcode(packet);
 
             std::ostringstream out;
             out << "Equipping " << chat->FormatItem(itemProto) << " in ranged slot";
@@ -203,12 +200,11 @@ void EquipAction::EquipItem(Item* item)
             {
                 // Equip new weapon in main hand
                 {
-                    WorldPacket eqPacket(CMSG_AUTOEQUIP_ITEM_SLOT, 2);
-                    ObjectGuid newItemGuid = item->GetGUID();
-                    eqPacket << newItemGuid << uint8(EQUIPMENT_SLOT_MAINHAND);
-                    WorldPackets::Item::AutoEquipItemSlot nicePacket(std::move(eqPacket));
-                    nicePacket.Read();
-                    bot->GetSession()->HandleAutoEquipItemSlotOpcode(nicePacket);
+                    // WorldPacket eqPacket(CMSG_AUTOEQUIP_ITEM_SLOT, 2);
+                    WorldPackets::Item::AutoEquipItemSlot packet;
+                    packet.itemGuid = item->GetObjectGuid();
+                    packet.dstslot = uint8(EQUIPMENT_SLOT_MAINHAND);
+                    bot->GetSession()->HandleAutoEquipItemSlotOpcode(packet);
                 }
 
                 // Try moving old main hand weapon to offhand if beneficial
@@ -216,12 +212,10 @@ void EquipAction::EquipItem(Item* item)
                 {
                     ItemTemplate const* oldMHProto = mainHandItem->GetTemplate();
 
-                    WorldPacket offhandPacket(CMSG_AUTOEQUIP_ITEM_SLOT, 2);
-                    ObjectGuid oldMHGuid = mainHandItem->GetGUID();
-                    offhandPacket << oldMHGuid << uint8(EQUIPMENT_SLOT_OFFHAND);
-                    WorldPackets::Item::AutoEquipItemSlot nicePacket(std::move(offhandPacket));
-                    nicePacket.Read();
-                    bot->GetSession()->HandleAutoEquipItemSlotOpcode(nicePacket);
+                    WorldPackets::Item::AutoEquipItemSlot packet;
+                    packet.itemGuid = mainHandItem->GetObjectGuid();
+                    packet.dstslot = uint8(EQUIPMENT_SLOT_OFFHAND);
+                    bot->GetSession()->HandleAutoEquipItemSlotOpcode(packet);
 
                     std::ostringstream moveMsg;
                     moveMsg << "Main hand upgrade found. Moving " << chat->FormatItem(oldMHProto) << " to offhand";
@@ -238,12 +232,10 @@ void EquipAction::EquipItem(Item* item)
             else if (canGoOff && newItemScore > offHandScore)
             {
                 // Equip in offhand
-                WorldPacket eqPacket(CMSG_AUTOEQUIP_ITEM_SLOT, 2);
-                ObjectGuid newItemGuid = item->GetGUID();
-                eqPacket << newItemGuid << uint8(EQUIPMENT_SLOT_OFFHAND);
-                WorldPackets::Item::AutoEquipItemSlot nicePacket(std::move(eqPacket));
-                nicePacket.Read();
-                bot->GetSession()->HandleAutoEquipItemSlotOpcode(nicePacket);
+                WorldPackets::Item::AutoEquipItemSlot packet;
+                packet.itemGuid = item->GetObjectGuid();
+                packet.dstslot = uint8(EQUIPMENT_SLOT_OFFHAND);
+                bot->GetSession()->HandleAutoEquipItemSlotOpcode(packet);
 
                 std::ostringstream out;
                 out << "Equipping " << chat->FormatItem(itemProto) << " in offhand";
@@ -316,12 +308,10 @@ void EquipAction::EquipItem(Item* item)
 
         // Equip the item in the chosen slot
         {
-            WorldPacket packet(CMSG_AUTOEQUIP_ITEM_SLOT, 2);
-            ObjectGuid itemguid = item->GetGUID();
-            packet << itemguid << dstSlot;
-            WorldPackets::Item::AutoEquipItemSlot nicePacket(std::move(packet));
-            nicePacket.Read();
-            bot->GetSession()->HandleAutoEquipItemSlotOpcode(nicePacket);
+            WorldPackets::Item::AutoEquipItemSlot packet;
+            packet.itemGuid = item->GetObjectGuid();
+            packet.dstslot =  dstSlot;
+            bot->GetSession()->HandleAutoEquipItemSlotOpcode(packet);
         }
     }
 
@@ -398,7 +388,7 @@ bool EquipUpgradesPacketAction::Execute(Event event)
         p >> itemSlot;
         p >> itemId;
 
-        ItemTemplate const* item = sObjectMgr->GetItemTemplate(itemId);
+        ItemTemplate const* item = sObjectMgr.GetItemTemplate(itemId);
         if (item->InventoryType == INVTYPE_NON_EQUIP)
             return false;
     }
@@ -412,5 +402,51 @@ bool EquipUpgradeAction::Execute(Event /*event*/)
 {
     ItemIds items = SelectInventoryItemsToEquip();
     EquipItems(items);
+    return true;
+}
+
+bool EquipUpgradeDestroyAction::Execute(Event /*event*/)
+{
+    ItemIds items = SelectInventoryItemsToEquip();
+    EquipItems(items);
+
+    bool cleanEquip = sRandomPlayerbotMgr.IsAddclassBot(bot);
+    CollectItemsVisitor visitor;
+    IterateItems(&visitor, ITERATE_ITEMS_IN_BAGS);
+    for (auto i = visitor.items.begin(); i != visitor.items.end(); ++i)
+    {
+        Item* item = *i;
+        if (!item)
+            continue;
+
+        ItemTemplate const* itemTemplate = item->GetTemplate();
+        if (!itemTemplate)
+            continue;
+
+        if (itemTemplate->Quality > ITEM_QUALITY_RARE)
+            continue;
+
+        switch (itemTemplate->Class)
+        {
+            case ITEM_CLASS_WEAPON:
+            case ITEM_CLASS_ARMOR:
+            {
+                if (!cleanEquip || bot->GetLevel() < itemTemplate->RequiredLevel)
+                    continue;
+                break;
+            }
+            case ITEM_CLASS_PROJECTILE:
+            case ITEM_CLASS_REAGENT:
+            case ITEM_CLASS_CONSUMABLE:
+                break;
+            default:
+                continue;
+        }
+
+        uint8 bagIndex = item->GetBagSlot();
+        uint8 slot  = item->GetSlot();
+        bot->DestroyItem(bagIndex, slot, true);
+    }
+
     return true;
 }

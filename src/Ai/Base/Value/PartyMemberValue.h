@@ -22,7 +22,7 @@ public:
 class SpellEntryPredicate
 {
 public:
-    virtual bool Check(SpellInfo const* /*spellInfo*/) = 0;
+    virtual bool Check(SpellEntry const* /*spellInfo*/) = 0;
 };
 
 class PartyMemberValue : public UnitCalculatedValue

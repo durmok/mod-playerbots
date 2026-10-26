@@ -7,7 +7,7 @@
 #include "TellLosAction.h"
 #include "ChatHelper.h"
 #include "Event.h"
-#include "ItemTemplate.h"
+#include "ItemPrototype.h"
 #include "ObjectMgr.h"
 #include "Playerbots.h"
 #include "StatsWeightCalculator.h"
@@ -60,7 +60,7 @@ void TellLosAction::ListUnits(std::string const title, GuidVector units)
     {
         if (Unit* unit = botAI->GetUnit(guid))
         {
-            botAI->TellMaster(unit->GetNameForLocaleIdx(sWorld->GetDefaultDbcLocale()));
+            botAI->TellMaster(unit->GetNameForLocaleIdx(sObjectMgr.GetIndexForLocale(sWorld.GetDefaultDbcLocale())));
         }
     }
 }
@@ -78,36 +78,40 @@ void TellLosAction::ListGameObjects(std::string const title, GuidVector gos)
 bool TellAuraAction::Execute(Event /*event*/)
 {
     botAI->TellMaster("--- Auras ---");
-    sLog->outMessage("playerbot", LOG_LEVEL_DEBUG, "--- Auras ---");
-    Unit::AuraApplicationMap& map = bot->GetAppliedAuras();
-    for (Unit::AuraApplicationMap::iterator i = map.begin(); i != map.end(); ++i)
+    sLog.Out(LOG_BASIC, LOG_LVL_DEBUG, "--- Auras ---");
+    Unit::SpellAuraHolderMap& map = bot->GetSpellAuraHolderMap();
+    for (Unit::SpellAuraHolderMap::iterator i = map.begin(); i != map.end(); ++i)
     {
-        Aura* aura = i->second->GetBase();
-        if (!aura)
-            continue;
-        const std::string auraName = aura->GetSpellInfo()->SpellName[0];
-        sLog->outMessage("playerbot", LOG_LEVEL_DEBUG, "Info of Aura - name: " + auraName);
-        AuraObjectType type = aura->GetType();
-        WorldObject* owner = aura->GetOwner();
-        std::string owner_name = owner ? owner->GetName() : "unknown";
-        float distance = bot->GetDistance2d(owner);
-        Unit* caster = aura->GetCaster();
+        SpellAuraHolder const& holder = *i->second;
+        // for (uint8 effIndex = 0; effIndex < MAX_EFFECT_INDEX; effIndex++)
+        // {
+
+        // Aura* aura = i->second->GetBase();
+        // if (!aura)
+        //     continue;
+        const std::string auraName = holder.GetSpellInfo()->SpellName[0];
+        sLog.outDebug("Info of Aura - name: %s", auraName.c_str());
+        // AuraObjectType type = aura->GetType();
+        // WorldObject* owner = aura->GetOwner();
+        // std::string owner_name = owner ? owner->GetName() : "unknown";
+        // float distance = bot->GetDistance2d(owner);
+        Unit* caster = holder.GetCaster();
         std::string caster_name = caster ? caster->GetName() : "unknown";
-        bool is_area = aura->IsArea();
-        int32 duration = aura->GetDuration();
-        int32 spellId = aura->GetSpellInfo()->Id;
-        bool isPositive = aura->GetSpellInfo()->IsPositive();
-        sLog->outMessage("playerbot", LOG_LEVEL_DEBUG,
-                         "Info of Aura - name: " + auraName + " caster: " + caster_name + " type: " +
-                             std::to_string(type) + " owner: " + owner_name + " distance: " + std::to_string(distance) +
+        bool is_area = holder.IsAreaAura();
+        int32 duration = holder.GetDuration();
+        int32 spellId = holder.GetSpellInfo()->Id;
+        bool isPositive = holder.GetSpellInfo()->IsPositive();
+        sLog.outDebug(("Info of Aura - name: " + auraName + " caster: " + caster_name + " type: " +
+                             /*std::to_string(type) + " owner: " + owner_name + " distance: " + std::to_string(distance) +*/
                              " isArea: " + std::to_string(is_area) + " duration: " + std::to_string(duration) +
-                             " spellId: " + std::to_string(spellId) + " isPositive: " + std::to_string(isPositive));
+                             " spellId: " + std::to_string(spellId) + " isPositive: " + std::to_string(isPositive)).c_str());
 
         botAI->TellMaster("Info of Aura - name: " + auraName + " caster: " + caster_name + " type: " +
-                          std::to_string(type) + " owner: " + owner_name + " distance: " + std::to_string(distance) +
+                          //std::to_string(type) + " owner: " + owner_name + " distance: " + std::to_string(distance) +
                           " isArea: " + std::to_string(is_area) + " duration: " + std::to_string(duration) +
                           " spellId: " + std::to_string(spellId) + " isPositive: " + std::to_string(isPositive));
 
+        /*
         if (type == DYNOBJ_AURA_TYPE)
         {
             DynamicObject* dyn_owner = aura->GetDynobjOwner();
@@ -123,6 +127,10 @@ bool TellAuraAction::Execute(Event /*event*/)
                               " radius: " + std::to_string(radius) + " spell id: " + std::to_string(spellId) +
                               " duration: " + std::to_string(duration));
         }
+        */
+
+
+        // }
     }
     return true;
 }
@@ -140,7 +148,7 @@ bool TellCalculateItemAction::Execute(Event event)
     ItemWithRandomProperty item = chat->parseItemWithRandomProperty(text);
     StatsWeightCalculator calculator(bot);
 
-    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(item.itemId);
+    ItemTemplate const* proto = sObjectMgr.GetItemTemplate(item.itemId);
     if (!proto)
         return false;
     float score = calculator.CalculateItem(item.itemId, item.randomPropertyId);

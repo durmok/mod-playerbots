@@ -179,7 +179,7 @@ bool SetFocusHealTargetsAction::Execute(Event event)
             continue;
         }
 
-        ObjectGuid const& targetGuid = target->GetGUID();
+        ObjectGuid const& targetGuid = target->GetObjectGuid();
         if (add)
         {
             if (std::find(focusHealTargets.begin(), focusHealTargets.end(), targetGuid) ==

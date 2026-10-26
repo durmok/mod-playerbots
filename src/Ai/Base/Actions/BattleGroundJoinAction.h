@@ -9,14 +9,15 @@
 
 #include "Action.h"
 #include "DBCEnums.h"
+#include "BattleGroundDefines.h"
 
 class PlayerbotAI;
 
-struct CreatureData;
+// struct CreatureData;
 
-enum ArenaType : uint8;
-enum BattlegroundQueueTypeId : uint8;
-enum BattlegroundBracketId : uint8;
+// enum ArenaType : uint8;
+// enum BattleGroundQueueTypeId : uint8;
+// enum BattleGroundBracketId : uint8;
 
 class BGJoinAction : public Action
 {
@@ -24,10 +25,10 @@ public:
     BGJoinAction(PlayerbotAI* botAI, std::string const name = "bg join") : Action(botAI, name) {}
 
     bool isUseful() override;
-    bool canJoinBg(BattlegroundQueueTypeId queueTypeId, BattlegroundBracketId bracketId);
-    virtual bool shouldJoinBg(BattlegroundQueueTypeId queueTypeId, BattlegroundBracketId bracketId);
+    bool canJoinBg(BattleGroundQueueTypeId queueTypeId, BattleGroundBracketId bracketId);
+    virtual bool shouldJoinBg(BattleGroundQueueTypeId queueTypeId, BattleGroundBracketId bracketId);
     bool Execute(Event event) override;
-    virtual bool gatherArenaTeam(ArenaType type);
+    // virtual bool gatherArenaTeam(ArenaType type);
 
 protected:
     bool JoinQueue(uint32 type);
@@ -40,7 +41,7 @@ class FreeBGJoinAction : public BGJoinAction
 public:
     FreeBGJoinAction(PlayerbotAI* botAI, std::string const name = "free bg join") : BGJoinAction(botAI, name) {}
 
-    bool shouldJoinBg(BattlegroundQueueTypeId queueTypeId, BattlegroundBracketId bracketId) override;
+    bool shouldJoinBg(BattleGroundQueueTypeId queueTypeId, BattleGroundBracketId bracketId) override;
 };
 
 class BGLeaveAction : public Action

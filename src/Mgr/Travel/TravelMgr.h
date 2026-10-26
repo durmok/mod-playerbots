@@ -8,7 +8,8 @@
 #define PLAYERBOTS_TRAVELMGR_H
 
 #include "AiObject.h"
-#include "CreatureData.h"
+#include "CreatureDefines.h"
+#include "Map.h"
 #include "GameObject.h"
 #include "GridDefines.h"
 #include "PlayerbotAIConfig.h"
@@ -244,9 +245,9 @@ public:
     Map* getMap();
     float getHeight();  // remove const - whipowill
 
-    std::set<Transport*> getTransports(uint32 entry = 0);
+    std::set<GenericTransport*> getTransports(uint32 entry = 0);
 
-    CellCoord getCellCoord() { return Acore::ComputeCellCoord(GetPositionX(), GetPositionY()); }
+    CellCoord getCellCoord() { return MaNGOS::ComputeCellCoord(GetPositionX(), GetPositionY()); }
     GridCoord getGridCoord()
     {
         CellCoord cellCoord = getCellCoord();
@@ -410,8 +411,8 @@ class GuidPosition : public ObjectGuid, public WorldPosition
 public:
     GuidPosition() : ObjectGuid(), WorldPosition(), loadedFromDB(false) { }
     GuidPosition(WorldObject* wo);
-    GuidPosition(CreatureData const& creData);
-    GuidPosition(GameObjectData const& goData);
+    GuidPosition(ObjectGuid::LowType lowguid, CreatureData const& creData);
+    GuidPosition(ObjectGuid::LowType lowguid, GameObjectData const& goData);
     CreatureTemplate const* GetCreatureTemplate();
     GameObjectTemplate const* GetGameObjectTemplate();
 
@@ -424,7 +425,7 @@ public:
     bool HasNpcFlag(NPCFlags flag);
     bool IsCreatureOrGOAccessible(); // For loaded grids check if the creature/gameobject is in world + alive
 
-    operator bool() const { return !IsEmpty(); }
+    operator bool() const { return !ObjectGuid::IsEmpty(); }
     bool operator==(ObjectGuid const& guid) const { return GetRawValue() == guid.GetRawValue(); }
     bool operator!=(ObjectGuid const& guid) const { return GetRawValue() != guid.GetRawValue(); }
     bool operator<(ObjectGuid const& guid) const { return GetRawValue() < guid.GetRawValue(); }

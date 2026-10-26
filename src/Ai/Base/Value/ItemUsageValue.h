@@ -8,13 +8,14 @@
 #define PLAYERBOTS_ITEMUSAGEVALUE_H
 
 #include "NamedObjectContext.h"
+#include "Vmangos.h"
 #include "Value.h"
 
 class Item;
 class Player;
 class PlayerbotAI;
 
-struct ItemTemplate;
+struct ItemPrototype;
 struct ParsedItemUsage
 {
     uint32 itemId = 0;

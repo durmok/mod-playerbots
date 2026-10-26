@@ -23,7 +23,7 @@ public:
             return;
 
         Player* bot = botAI->GetBot();
-        float threat = threatMgr->GetThreat(bot);
+        float threat = threatMgr->getThreat(bot);
         if (!result)
         {
             minThreat = threat;
@@ -58,7 +58,7 @@ public:
         if (Group* group = botAI->GetBot()->GetGroup())
         {
             ObjectGuid guid = group->GetTargetIcon(4);
-            if (guid && attacker->GetGUID() == guid)
+            if (guid && attacker->GetObjectGuid() == guid)
                 return;
         }
 
@@ -81,8 +81,8 @@ public:
             if (new_unit == currentTarget)
                 return true;
         }
-        float new_threat = new_unit->GetThreatMgr().GetThreat(bot);
-        float old_threat = old_unit->GetThreatMgr().GetThreat(bot);
+        float new_threat = new_unit->GetThreatMgr().getThreat(bot);
+        float old_threat = old_unit->GetThreatMgr().getThreat(bot);
         float new_dis = bot->GetDistance(new_unit);
         float old_dis = bot->GetDistance(old_unit);
         // hasAggro? -> withinMelee? -> threat
@@ -122,9 +122,9 @@ Unit* TankTargetValue::Calculate()
                 // rti target is attacking a non-tank player
                 if (!PlayerbotAI::IsTank(victimPlayer))
                     return rtiTarget;
-                // rti target is attacking a tank player, check if the tank is a bot and has the same rti setting
+                // rti target is attacking a tank player, check if the tank is a bot and has the same rti setting, or is a player attacking the same rti target
                 PlayerbotAI* victimBotAI = GET_PLAYERBOT_AI(victimPlayer);
-                if (!victimBotAI || victimBotAI->GetAiObjectContext()->GetValue<std::string>("rti")->Get() != rti)
+                if ((!victimBotAI && victimPlayer->GetVictim() != rtiTarget) || victimBotAI->GetAiObjectContext()->GetValue<std::string>("rti")->Get() != rti)
                     return rtiTarget;
             }
         }

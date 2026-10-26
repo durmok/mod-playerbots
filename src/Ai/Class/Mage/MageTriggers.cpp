@@ -9,8 +9,8 @@
 #include "Player.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
-#include "Spell.h"
-#include "SpellAuraEffects.h"
+#include "Spells/Spell.h"
+#include "SpellAuras.h"
 #include "Value.h"
 
 bool NoManaGemTrigger::IsActive()
@@ -87,7 +87,7 @@ bool NoFocusMagicTrigger::IsActive()
         if (!member || member == bot || !member->IsAlive())
             continue;
 
-        if (member->HasAura(SPELL_FOCUS_MAGIC, bot->GetGUID()))
+        if (member->HasAura(SPELL_FOCUS_MAGIC))
             return false;
     }
     return true;
@@ -108,11 +108,16 @@ bool FlamestrikeNearbyTrigger::IsActive()
 {
     for (uint32 spellId : FLAMESTRIKE_SPELL_IDS)
     {
-        Aura* aura = bot->GetAura(spellId, bot->GetGUID());
+        Aura* aura = bot->GetAura(spellId);
         if (!aura)
             continue;
 
-        DynamicObject* dynObj = aura->GetDynobjOwner();
+        Unit *caster = aura->GetCaster();
+        if (!caster)
+            continue;
+
+        // DynamicObject* dynObj = aura->GetDynobjOwner();
+        DynamicObject* dynObj = caster->GetDynObject(spellId);
         if (!dynObj)
             continue;
 

@@ -71,7 +71,7 @@ bool MoveToRpgTargetAction::Execute(Event /*event*/)
 
     if (sPlayerbotAIConfig.RandomBotsWalkingRPG)
         if (!bot->IsOutdoors())
-            bot->m_movementInfo.AddMovementFlag(MOVEMENTFLAG_WALKING);
+            bot->m_movementInfo.AddMovementFlag(MOVEFLAG_WALK_MODE);
 
     float angle = 0.f;
     float distance = 1.0f;
@@ -91,7 +91,7 @@ bool MoveToRpgTargetAction::Execute(Event /*event*/)
     x += cos(angle) * INTERACTION_DISTANCE * distance;
     y += sin(angle) * INTERACTION_DISTANCE * distance;
     bool exact = true;
-    if (!wo->GetMap()->CheckCollisionAndGetValidCoords(wo, wo->GetPositionX(), wo->GetPositionY(), wo->GetPositionZ(),
+    if (wo->IsUnit() && !wo->GetMap()->CheckCollisionAndGetValidCoords(wo->ToUnit(), wo->GetPositionX(), wo->GetPositionY(), wo->GetPositionZ(),
                                                        x, y, z))
     {
         x = wo->GetPositionX();

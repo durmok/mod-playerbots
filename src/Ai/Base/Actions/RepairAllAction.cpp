@@ -18,7 +18,8 @@ bool RepairAllAction::Execute(Event /*event*/)
         if (!unit)
             continue;
 
-        if (bot->HasUnitState(UNIT_STATE_DIED))
+        // if (bot->HasUnitState(UNIT_STATE_DIED))
+        if (bot->IsDead())
             bot->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
 
         bot->SetFacingToObject(unit);
@@ -31,11 +32,11 @@ bool RepairAllAction::Execute(Event /*event*/)
         }
 
         // Repair weapons first.
-        uint32 totalCost = bot->DurabilityRepair(EQUIPMENT_SLOT_MAINHAND, true, discountMod, false);
-        totalCost += bot->DurabilityRepair(EQUIPMENT_SLOT_RANGED, true, discountMod, false);
-        totalCost += bot->DurabilityRepair(EQUIPMENT_SLOT_OFFHAND, true, discountMod, false);
+        uint32 totalCost = bot->DurabilityRepair(EQUIPMENT_SLOT_MAINHAND, true, discountMod);
+        totalCost += bot->DurabilityRepair(EQUIPMENT_SLOT_RANGED, true, discountMod);
+        totalCost += bot->DurabilityRepair(EQUIPMENT_SLOT_OFFHAND, true, discountMod);
 
-        totalCost += bot->DurabilityRepairAll(true, discountMod, false);
+        totalCost += bot->DurabilityRepairAll(true, discountMod);
 
         if (botAI->HasCheat(BotCheatMask::gold))
         {

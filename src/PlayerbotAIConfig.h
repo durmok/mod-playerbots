@@ -9,13 +9,17 @@
 
 #include "DBCEnums.h"
 #include "SharedDefines.h"
+#include "Vmangos.h"
 #include <algorithm>
 #include <map>
 #include <mutex>
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
+
+class Log;
 
 enum class BotCheatMask : uint32
 {
@@ -174,6 +178,7 @@ public:
     uint32 MinRandomBotsPriceChangeInterval, MaxRandomBotsPriceChangeInterval;
     uint32 DisabledWithoutRealPlayerLoginDelay, DisabledWithoutRealPlayerLogoutDelay;
     bool RandomBotJoinLfg;
+    std::unordered_set<uint32> RandomBotAccountSet;
 
     // Professions
     bool EnableFishingWithMaster;
@@ -448,6 +453,7 @@ public:
             AltMaintenanceGemsEnchants;
     int32 AutoGearCommand, AutoGearCommandAltBots, AutoGearQualityLimit, AutoGearScoreLimit;
     int32 AutoGearBisCommand;
+    int32 BattleBotAccountCount;
 
     uint32 UseGroundMountAtMinLevel;
     uint32 UseFastGroundMountAtMinLevel;

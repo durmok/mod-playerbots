@@ -12,9 +12,9 @@
 bool PassLeadershipToMasterAction::Execute(Event /*event*/)
 {
     if (Player* master = GetMaster())
-        if (master && master != bot && bot->GetGroup() && bot->GetGroup()->IsMember(master->GetGUID()))
+        if (master && master != bot && bot->GetGroup() && bot->GetGroup()->IsMember(master->GetObjectGuid()))
         {
-            auto setLeaderOp = std::make_unique<GroupSetLeaderOperation>(bot->GetGUID(), master->GetGUID());
+            auto setLeaderOp = std::make_unique<GroupSetLeaderOperation>(bot->GetObjectGuid(), master->GetObjectGuid());
             PlayerbotWorldThreadProcessor::instance().QueueOperation(std::move(setLeaderOp));
 
             if (!message.empty())
@@ -34,11 +34,11 @@ bool PassLeadershipToMasterAction::Execute(Event /*event*/)
 
 bool PassLeadershipToMasterAction::isUseful()
 {
-    return botAI->IsAltBot() && bot->GetGroup() && bot->GetGroup()->IsLeader(bot->GetGUID());
+    return botAI->IsAltBot() && bot->GetGroup() && bot->GetGroup()->IsLeader(bot->GetObjectGuid());
 }
 
 bool GiveLeaderAction::isUseful()
 {
     return (IsRealPlayer(botAI->GetMaster()) || IsSelfBot(botAI->GetMaster())) && bot->GetGroup() &&
-           bot->GetGroup()->IsLeader(bot->GetGUID());
+           bot->GetGroup()->IsLeader(bot->GetObjectGuid());
 }

@@ -25,6 +25,8 @@ LootTargetValue::LootTargetValue(PlayerbotAI* botAI, std::string const name)
 
 bool CanLootValue::Calculate()
 {
+    if (bot->isMoving() || bot->IsMounted())
+        return false;
     LootObject loot = AI_VALUE(LootObject, "loot target");
     LootObjectStack* availableLoot = AI_VALUE(LootObjectStack*, "available loot");
     return !loot.IsEmpty() && availableLoot->CanAttemptLoot(loot.guid) && loot.IsLootPossible(bot) &&

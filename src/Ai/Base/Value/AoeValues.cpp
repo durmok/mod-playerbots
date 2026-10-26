@@ -7,7 +7,7 @@
 #include "AoeValues.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
-#include "SpellAuraEffects.h"
+#include "SpellAuras.h"
 
 GuidVector FindMaxDensity(Player* bot)
 {
@@ -103,7 +103,7 @@ bool HasAreaDebuffValue::Calculate()
             if (!proto)
                 continue;
 
-            uint32 trigger_spell_id = proto->Effects[aurEff->GetEffIndex()].TriggerSpell;
+            uint32 trigger_spell_id = proto->EffectTriggerSpell[aurEff->GetEffIndex()];
             if (trigger_spell_id == 29767)  // Overload
             {
                 return true;
@@ -126,25 +126,27 @@ Aura* AreaDebuffValue::Calculate()
         bot->GetAuraEffectsByType(SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
     Unit::AuraEffectList const& aurasPeriodicTriggerSpell =
         bot->GetAuraEffectsByType(SPELL_AURA_PERIODIC_TRIGGER_SPELL);
-    Unit::AuraEffectList const& aurasPeriodicTriggerWithValueSpell =
-        bot->GetAuraEffectsByType(SPELL_AURA_PERIODIC_TRIGGER_SPELL_WITH_VALUE);
+    // Unit::AuraEffectList const& aurasPeriodicTriggerWithValueSpell =
+    //     bot->GetAuraEffectsByType(SPELL_AURA_PERIODIC_TRIGGER_SPELL_WITH_VALUE);
     Unit::AuraEffectList const& aurasDummy = bot->GetAuraEffectsByType(SPELL_AURA_DUMMY);
     for (Unit::AuraEffectList const& list : {aurasPeriodicDamage, aurasPeriodicDamagePercent, aurasPeriodicTriggerSpell,
-                                             aurasPeriodicTriggerWithValueSpell, aurasDummy})
+                                             /*aurasPeriodicTriggerWithValueSpell, */aurasDummy})
     {
         for (auto i = list.begin(); i != list.end(); ++i)
         {
             AuraEffect* aurEff = *i;
             if (!aurEff)
                 continue;
-            Aura* aura = aurEff->GetBase();
+            SpellAuraHolder* aura = aurEff->GetBase();
             if (!aura)
                 continue;
-            AuraObjectType type = aura->GetType();
+            // AuraObjectType type = aura->GetType();
             bool isPositive = aura->GetSpellInfo()->IsPositive();
-            if (type == DYNOBJ_AURA_TYPE && !isPositive)
+            Unit *caster = aura->GetCaster();
+            // if (type == DYNOBJ_AURA_TYPE && !isPositive)
+            if (caster && !isPositive)
             {
-                DynamicObject* dynOwner = aura->GetDynobjOwner();
+                DynamicObject* dynOwner = caster->GetDynObject(aura->GetSpellInfo()->Id);
                 if (!dynOwner)
                 {
                     continue;
@@ -152,7 +154,7 @@ Aura* AreaDebuffValue::Calculate()
                 // float radius = dynOwner->GetRadius();
                 // if (radius > 12.0f)
                 //     continue;
-                return aura;
+                return aurEff;
             }
         }
     }

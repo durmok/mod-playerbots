@@ -55,7 +55,7 @@ bool MoveToTravelTargetAction::Execute(Event /*event*/)
             if (!urand(0, 5))
             {
                 std::ostringstream out;
-                if (botAI->GetMaster() && !bot->GetGroup()->IsMember(botAI->GetMaster()->GetGUID()))
+                if (botAI->GetMaster() && !bot->GetGroup()->IsMember(botAI->GetMaster()->GetObjectGuid()))
                     out << "Waiting a bit for ";
                 else
                     out << "Please hurry up ";
@@ -81,7 +81,7 @@ bool MoveToTravelTargetAction::Execute(Event /*event*/)
     // bot wasn't already moving), which made bots oscillate between
     // two random points around the same quest POI instead of
     // committing to one approach.
-    uint32 botLow = bot->GetGUID().GetCounter();
+    uint32 botLow = bot->GetObjectGuid().GetCounter();
     int32 destSeed = static_cast<int32>(location.GetPositionX()) * 73856093 ^
                      static_cast<int32>(location.GetPositionY()) * 19349663;
     uint32 seed = botLow ^ static_cast<uint32>(destSeed);

@@ -34,7 +34,7 @@ Unit* AggressiveTargetValue::Calculate()
         if (!unit->IsInWorld() || unit->IsDuringRemoveFromWorld())
             continue;
 
-        if (unit->ToCreature() && !unit->ToCreature()->GetCreatureTemplate()->lootid &&
+        if (unit->ToCreature() && !unit->ToCreature()->GetCreatureTemplate()->loot_id &&
             bot->GetReactionTo(unit) >= REP_NEUTRAL)
             continue;
 

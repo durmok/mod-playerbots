@@ -8,7 +8,8 @@
 #define PLAYERBOTS_CHECKMAILACTION_H
 
 #include "Action.h"
-#include "DatabaseEnvFwd.h"
+#include "DatabaseEnv.h"
+#include "MasterPlayer.h"
 
 class PlayerbotAI;
 
@@ -23,7 +24,7 @@ public:
     bool isUseful() override;
 
 private:
-    void ProcessMail(Mail* mail, Player* owner, CharacterDatabaseTransaction trans);
+    void ProcessMail(MasterPlayer* mplayer, Mail* mail, Player* owner);
 };
 
 #endif

@@ -7,9 +7,9 @@
 #ifndef _PLAYERBOTS_DATABASE_H
 #define _PLAYERBOTS_DATABASE_H
 
-#include "DatabaseEnvFwd.h"
+#include "DatabaseEnv2Fwd.h"
 #include "ModuleDatabasePool.h"
-#include "MySQLConnection.h"
+#include "MySQLConnection2.h"
 #include "PreparedStatement.h"
 #include "Transaction.h"
 #include <memory>
@@ -117,7 +117,7 @@ enum PlayerbotsDatabaseStatements : uint32
     MAX_PLAYERBOTS_STATEMENTS
 };
 
-class PlayerbotsDatabaseConnection : public MySQLConnection
+class PlayerbotsDatabaseConnection : public MySQLConnection2
 {
 public:
     typedef PlayerbotsDatabaseStatements Statements;
@@ -163,12 +163,12 @@ public:
     }
 
 protected:
-    MySQLConnection* CreateConnection(MySQLConnectionInfo& connInfo) override
+    MySQLConnection2* CreateConnection(MySQLConnectionInfo& connInfo) override
     {
         return new PlayerbotsDatabaseConnection(connInfo);
     }
 
-    MySQLConnection* CreateConnection(ProducerConsumerQueue<SQLOperation*>* queue,
+    MySQLConnection2* CreateConnection(ProducerConsumerQueue<SQLOperation*>* queue,
         MySQLConnectionInfo& connInfo) override
     {
         return new PlayerbotsDatabaseConnection(queue, connInfo);

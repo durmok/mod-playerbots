@@ -42,7 +42,7 @@ bool GiveItemAction::Execute(Event /*event*/)
             out << "Got " << chat->FormatItem(item->GetTemplate(), item->GetCount()) << " from " << bot->GetName();
 
             bot->MoveItemFromInventory(item->GetBagSlot(), item->GetSlot(), true);
-            item->SetOwnerGUID(target->GetGUID());
+            item->SetOwnerGuid(target->GetObjectGuid());
             receiver->MoveItemToInventory(dest, item, true);
 
             receiverAi->TellMasterNoFacing(out.str());

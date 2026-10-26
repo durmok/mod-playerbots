@@ -84,8 +84,8 @@ bool DemonicEmpowermentTrigger::IsActive()
 
 bool DecimationTrigger::IsActive()
 {
-    Aura* aura = botAI->GetAura(getName(), GetTarget(), false, true);
-    return aura && aura->GetDuration() > 3000;
+    Aura const* aura = botAI->GetAura(getName(), GetTarget(), false, true);
+    return aura && aura->GetAuraDuration() > 3000;
 }
 
 // Checks if the bot's mana is below 85% and health is above a low health threshold
@@ -211,7 +211,7 @@ bool WrongPetTrigger::IsActive()
     {
         CreatureTemplate const* ct = pet->GetCreatureTemplate();
         // Check if the pet's NPC entry matches the expected one for the enabled strategy
-        if (ct && ct->Entry == enabledPet->npcEntry)
+        if (ct && ct->entry == enabledPet->npcEntry)
             correctPet = true;
     }
 

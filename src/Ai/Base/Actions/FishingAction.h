@@ -16,7 +16,7 @@ extern const uint32 FISHING_SPELL;
 extern const uint32 FISHING_POLE;
 extern const uint32 FISHING_BOBBER;
 
-WorldPosition FindWaterRadial(Player* bot, float x, float y, float z, Map* map, uint32 phaseMask, float minDistance,
+WorldPosition FindWaterRadial(Player* bot, float x, float y, float z, Map* map, float minDistance,
                               float maxDistance, float increment, bool checkLOS = false, int numDirections = 16);
 
 class PlayerbotAI;

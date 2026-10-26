@@ -97,14 +97,16 @@ bool SendMailAction::Execute(Event event)
         body << "Thanks,\n";
         body << bot->GetName() << "\n";
 
-        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+        // CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+        if (!CharacterDatabase.BeginTransaction())
+            return false;
 
         MailDraft draft("Money you asked for", body.str());
-        draft.AddMoney(money);
+        draft.SetMoney(money);
         bot->SetMoney(bot->GetMoney() - money);
-        draft.SendMailTo(trans, MailReceiver(receiver), MailSender(bot));
+        draft.SendMailTo( MailReceiver(receiver), MailSender(bot));
 
-        CharacterDatabase.CommitTransaction(trans);
+        CharacterDatabase.CommitTransaction();
 
         std::ostringstream out;
         botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
@@ -160,19 +162,21 @@ bool SendMailAction::Execute(Event event)
                     return false;
                 }
 
-                draft.AddCOD(price);
+                draft.SetCOD(price);
             }
 
-            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+            // CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+            if (!CharacterDatabase.BeginTransaction())
+                return false;
 
             bot->MoveItemFromInventory(item->GetBagSlot(), item->GetSlot(), true);
-            item->DeleteFromInventoryDB(trans);
-            item->SetOwnerGUID(receiver->GetGUID());
-            item->SaveToDB(trans);
+            item->DeleteFromInventoryDB();
+            item->SetOwnerGuid(receiver->GetObjectGuid());
+            item->SaveToDB();
             draft.AddItem(item);
-            draft.SendMailTo(trans, MailReceiver(receiver), MailSender(bot));
+            draft.SendMailTo(MailReceiver(receiver), MailSender(bot));
 
-            CharacterDatabase.CommitTransaction(trans);
+            CharacterDatabase.CommitTransaction();
 
             std::ostringstream out;
             out << PlayerbotTextMgr::instance().GetBotTextOrDefault(

@@ -31,7 +31,7 @@ static constexpr float VAELASTRASZ_RANGED_BIAS_BOSS_WEIGHT = 1.0f - VAELASTRASZ_
 
 bool BwlOnyxiaScaleCloakAuraCheckAction::Execute(Event /*event*/)
 {
-    bot->AddAura(static_cast<uint32>(BlackwingLairSpells::SPELL_ONYXIA_SCALE_CLOAK), bot);
+    bot->AddAura(static_cast<uint32>(BlackwingLairSpells::SPELL_ONYXIA_SCALE_CLOAK), 0, bot);
     return true;
 }
 
@@ -160,9 +160,9 @@ bool BwlVaelastraszMoveAwayAction::CalculateFleeDirection(Unit const* boss, floa
     fleeY = 0.0f;
     bool bossDead = !boss || !boss->IsAlive();
 
-    if (Group const* group = bot->GetGroup())
+    if (Group * group = bot->GetGroup())
     {
-        for (GroupReference const* gref = group->GetFirstMember(); gref; gref = gref->next())
+        for (GroupReference * gref = group->GetFirstMember(); gref; gref = gref->next())
         {
             Player* p = gref->GetSource();
             if (!p || p == bot || !p->IsAlive() || p->GetMapId() != bot->GetMapId())
@@ -304,9 +304,12 @@ static constexpr float WYRMGUARD_SAFE_DISTANCE = 16.0f;
 Unit* BwlDeathTalonWyrmguardTankMoveAwayAction::GetTarget()
 {
     // Find a nearby wyrmguard within 16 yards being tanked by someone else
-    for (auto const& [guid, ref] : bot->GetThreatMgr().GetThreatenedByMeList())
+    // for (auto const& ref : bot->GetThreatMgr().GetThreatenedByMeList())
+    HostileReference* ref = bot->GetHostileRefManager().getFirst();
+    while (ref)
     {
-        Unit* unit = ref->GetOwner();
+        Unit* unit = ref->getSourceUnit();
+        ref = ref->next();
         if (!unit || !unit->IsAlive() || unit->GetEntry() != static_cast<uint32>(BlackwingLairNPCs::NPC_DEATH_TALON_WYRMGUARD))
             continue;
         if (bot->GetDistance2d(unit) > WYRMGUARD_SAFE_DISTANCE)
@@ -324,9 +327,12 @@ bool BwlDeathTalonWyrmguardTankMoveAwayAction::isUseful()
         return false;
 
     // Must be actively tanking a wyrmguard before moving away from another tank's
-    for (auto const& [guid, ref] : bot->GetThreatMgr().GetThreatenedByMeList())
+    // for (auto const& ref : bot->GetThreatMgr().GetThreatenedByMeList())
+    HostileReference* ref = bot->GetHostileRefManager().getFirst();
+    while (ref)
     {
-        Unit* unit = ref->GetOwner();
+        Unit* unit = ref->getSourceUnit();
+        ref = ref->next();
         if (unit && unit->IsAlive() && unit->GetEntry() == static_cast<uint32>(BlackwingLairNPCs::NPC_DEATH_TALON_WYRMGUARD) &&
             unit->GetVictim() == bot)
             return true;
@@ -352,9 +358,12 @@ Unit* BwlDeathTalonWyrmguardRangedMoveAwayAction::GetTarget()
     // Find the closest wyrmguard within 16 yards
     Unit* closest = nullptr;
     float closestDist = WYRMGUARD_SAFE_DISTANCE;
-    for (auto const& [guid, ref] : bot->GetThreatMgr().GetThreatenedByMeList())
+    // for (auto const& ref : bot->GetThreatMgr().GetThreatenedByMeList())
+    HostileReference* ref = bot->GetHostileRefManager().getFirst();
+    while (ref)
     {
-        Unit* unit = ref->GetOwner();
+        Unit* unit = ref->getSourceUnit();
+        ref = ref->next();
         if (!unit || !unit->IsAlive() || unit->GetEntry() != static_cast<uint32>(BlackwingLairNPCs::NPC_DEATH_TALON_WYRMGUARD))
             continue;
         float dist = bot->GetDistance2d(unit);

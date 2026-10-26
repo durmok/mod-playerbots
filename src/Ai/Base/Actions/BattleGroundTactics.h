@@ -7,7 +7,7 @@
 #ifndef PLAYERBOTS_BATTLEGROUNDTACTICS_H
 #define PLAYERBOTS_BATTLEGROUNDTACTICS_H
 
-#include "BattlegroundAV.h"
+#include "BattleGroundAV.h"
 #include "MovementActions.h"
 
 class ChatHandler;
@@ -97,17 +97,22 @@ static std::unordered_map<uint8, AVNodePositionData> AVNodeMovementTargets = {
 
 typedef std::vector<BattleBotWaypoint> BattleBotPath;
 
+namespace bg_tactics
+{
+
 extern std::vector<BattleBotPath*> const vPaths_WS;
 extern std::vector<BattleBotPath*> const vPaths_AB;
 extern std::vector<BattleBotPath*> const vPaths_AV;
 extern std::vector<BattleBotPath*> const vPaths_EY;
 extern std::vector<BattleBotPath*> const vPaths_IC;
 
+}
+
 class BGTactics : public MovementAction
 {
 public:
     static bool HandleConsoleCommand(ChatHandler* handler, char const* args);
-    uint8 static GetBotStrategyForTeam(Battleground* bg, TeamId teamId);
+    uint8 static GetBotStrategyForTeam(BattleGround* bg, TeamId teamId);
 
     BGTactics(PlayerbotAI* botAI, std::string const name = "bg tactics") : MovementAction(botAI, name) {}
 
@@ -134,6 +139,7 @@ private:
     bool IsLockedInsideKeep();
 };
 
+/*
 class ArenaTactics : public MovementAction
 {
 public:
@@ -142,7 +148,8 @@ public:
     bool Execute(Event event) override;
 
 private:
-    bool moveToCenter(Battleground* bg);
+    bool moveToCenter(BattleGround* bg);
 };
+*/
 
 #endif

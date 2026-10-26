@@ -74,7 +74,9 @@ bool McMoveFromLavaAction::Execute(Event /*event*/)
             if (!member || member == bot || !member->IsAlive() || member->GetMapId() != bot->GetMapId())
                 continue;
 
-            if (member->GetLiquidData().Flags & MAP_LIQUID_TYPE_MAGMA)
+            GridMapLiquidData liq;
+            member->GetLiquidData(&liq);
+            if (liq.type_flags & MAP_LIQUID_TYPE_MAGMA)
                 continue;
 
             float dist = bot->GetDistance(member);
@@ -136,9 +138,9 @@ bool McGolemaggMarkBossAction::Execute(Event /*event*/)
         if (Group* group = bot->GetGroup())
         {
             ObjectGuid currentSkullGuid = group->GetTargetIcon(RtiTargetValue::skullIndex);
-            if (currentSkullGuid.IsEmpty() || currentSkullGuid != boss->GetGUID())
+            if (currentSkullGuid.IsEmpty() || currentSkullGuid != boss->GetObjectGuid())
             {
-                group->SetTargetIcon(RtiTargetValue::skullIndex, bot->GetGUID(), boss->GetGUID());
+                group->SetTargetIcon(RtiTargetValue::skullIndex, bot->GetObjectGuid(), boss->GetObjectGuid());
                 return true;
             }
         }
@@ -153,7 +155,7 @@ bool McGolemaggTankAction::MoveUnitToPosition(Unit* target, Position const& tank
         return Attack(target);
     if (target->GetVictim() == bot)
     {
-        float distanceToTankPosition = bot->GetExactDist2d(tankPosition.GetPositionX(), tankPosition.GetPositionY());
+        float distanceToTankPosition = bot->GetPosition().GetExactDist2d(tankPosition.GetPositionX(), tankPosition.GetPositionY());
         if (distanceToTankPosition > maxDistance)
         {
             float dX = tankPosition.GetPositionX() - bot->GetPositionX();
@@ -210,7 +212,7 @@ bool McGolemaggMainTankAttackGolemaggAction::Execute(Event /*event*/)
 
 bool McGolemaggHealerPositionAction::Execute(Event /*event*/)
 {
-    if (bot->GetExactDist2d(GOLEMAGG_HEALER_POSITION) <= HEALER_POSITION_TOLERANCE)
+    if (bot->GetPosition().GetExactDist2d(GOLEMAGG_HEALER_POSITION) <= HEALER_POSITION_TOLERANCE)
         return false;
 
     return MoveTo(bot->GetMapId(), GOLEMAGG_HEALER_POSITION.GetPositionX(), GOLEMAGG_HEALER_POSITION.GetPositionY(),
@@ -283,11 +285,11 @@ bool McGolemaggAssistTankAttackCoreRagerAction::Execute(Event event)
         (otherCoreRagerVictim == bot && otherCoreRager->HasAura(SPELL_GOLEMAGGS_TRUST)))
     {
         // Step 4.1: Move Core Ragers to dedicated tank position (only if Golemagg is far enough away from said position)
-        float bossDistanceToCoreRagerTankPosition = boss->GetExactDist2d(
+        float bossDistanceToCoreRagerTankPosition = boss->GetPosition().GetExactDist2d(
             CORE_RAGER_TANK_POSITION.GetPositionX(), CORE_RAGER_TANK_POSITION.GetPositionY());
         if (bossDistanceToCoreRagerTankPosition > GOLEMAGGS_TRUST_DISTANCE)
         {
-            float distanceToTankPosition = bot->GetExactDist2d(CORE_RAGER_TANK_POSITION.GetPositionX(),
+            float distanceToTankPosition = bot->GetPosition().GetExactDist2d(CORE_RAGER_TANK_POSITION.GetPositionX(),
                                                                CORE_RAGER_TANK_POSITION.GetPositionY());
             if (distanceToTankPosition > CORE_RAGER_STEP_DISTANCE)
                 return MoveUnitToPosition(myCoreRager, CORE_RAGER_TANK_POSITION, CORE_RAGER_STEP_DISTANCE);
@@ -303,9 +305,12 @@ bool McGolemaggAssistTankAttackCoreRagerAction::Execute(Event event)
 Unit* McCoreHoundMarkAction::GetTarget()
 {
     Unit* highestHealthHound = nullptr;
-    for (auto const& [guid, ref] : bot->GetThreatMgr().GetThreatenedByMeList())
+    // for (auto const& ref : bot->GetThreatMgr().GetThreatenedByMeList())
+    HostileReference* ref = bot->GetHostileRefManager().getFirst();
+    while (ref)
     {
-        Unit* unit = ref->GetOwner();
+        Unit* unit = ref->getSourceUnit();
+        ref = ref->next();
         if (unit && unit->IsAlive() && unit->GetEntry() == NPC_CORE_HOUND)
         {
             if (!highestHealthHound || unit->GetHealth() > highestHealthHound->GetHealth())
@@ -318,7 +323,7 @@ Unit* McCoreHoundMarkAction::GetTarget()
 
     Group* group = bot->GetGroup();
     ObjectGuid currentSkullGuid = group ? group->GetTargetIcon(RtiTargetValue::skullIndex) : ObjectGuid::Empty;
-    if (!currentSkullGuid.IsEmpty() && currentSkullGuid != highestHealthHound->GetGUID())
+    if (!currentSkullGuid.IsEmpty() && currentSkullGuid != highestHealthHound->GetObjectGuid())
     {
         // Only switch skull if the new target has meaningfully more health (10% buffer) to prevent rapid re-marking
         if (Unit* currentSkullUnit = botAI->GetUnit(currentSkullGuid))
@@ -326,7 +331,7 @@ Unit* McCoreHoundMarkAction::GetTarget()
                 return nullptr;
     }
 
-    if (currentSkullGuid.IsEmpty() || currentSkullGuid != highestHealthHound->GetGUID())
+    if (currentSkullGuid.IsEmpty() || currentSkullGuid != highestHealthHound->GetObjectGuid())
         return highestHealthHound;
 
     return nullptr;
@@ -338,6 +343,6 @@ bool McCoreHoundMarkAction::Execute(Event /*event*/)
     if (!target)
         return false;
 
-    bot->GetGroup()->SetTargetIcon(RtiTargetValue::skullIndex, bot->GetGUID(), target->GetGUID());
+    bot->GetGroup()->SetTargetIcon(RtiTargetValue::skullIndex, bot->GetObjectGuid(), target->GetObjectGuid());
     return true;
 }

@@ -9,6 +9,7 @@
 #include "PlayerbotAI.h"
 #include "Playerbots.h"
 #include "TotemsShamanStrategy.h"
+#include "Totem.h"
 
 bool CastTotemAction::isUseful()
 {
@@ -30,7 +31,8 @@ bool CastFireNovaAction::isUseful() {
     if (!target)
         return false;
 
-    Creature* fireTotem = bot->GetMap()->GetCreature(bot->m_SummonSlot[1]);
+    // Creature* fireTotem = bot->GetMap()->GetCreature(bot->m_SummonSlot[1]);
+    Totem* fireTotem = bot->GetTotem(TOTEM_SLOT_FIRE);
     if (!fireTotem)
         return false;
 
@@ -61,10 +63,10 @@ bool CastLavaBurstAction::isUseful()
     static const uint32 FLAME_SHOCK_SPELL_IDS[] =
         {8050, 8052, 8053, 10447, 10448, 29228, 25457, 49232, 49233};
 
-    ObjectGuid botGuid = bot->GetGUID();
+    ObjectGuid botGuid = bot->GetObjectGuid();
     for (uint32 spellId : FLAME_SHOCK_SPELL_IDS)
     {
-        if (target->HasAura(spellId, botGuid))
+        if (target->HasAura(spellId))
             return true;
     }
 
@@ -78,6 +80,7 @@ bool CastSpiritWalkAction::Execute(Event /*event*/)
     constexpr uint32 SPIRIT_WOLF = 29264;
     constexpr uint32 SPIRIT_WALK_SPELL = 58875;
 
+    /*
     for (Unit* unit : bot->m_Controlled)
     {
         if (unit->GetEntry() == SPIRIT_WOLF && unit->HasSpell(SPIRIT_WALK_SPELL))
@@ -86,6 +89,7 @@ bool CastSpiritWalkAction::Execute(Event /*event*/)
             return true;
         }
     }
+    */
 
     return false;
 }
@@ -108,13 +112,16 @@ bool SetTotemAction::Execute(Event /*event*/)
     if (!totemSpell)
         return false;
 
-    if (ActionButton const* button = bot->GetActionButton(actionButtonId);
+    MasterPlayer* mplayer = bot->GetSession()->GetMasterPlayer();
+    mplayer->GetActionButtons();
+
+    if (ActionButton const* button = mplayer->GetActionButton(actionButtonId);
         button && button->GetType() == ACTION_BUTTON_SPELL &&
         button->GetAction() == totemSpell)
     {
         return false;
     }
 
-    bot->addActionButton(actionButtonId, totemSpell, ACTION_BUTTON_SPELL);
+    mplayer->addActionButton(actionButtonId, totemSpell, ACTION_BUTTON_SPELL);
     return true;
 }

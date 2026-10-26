@@ -39,8 +39,8 @@ bool TradeAction::Execute(Event event)
 
         if (!player->GetTrader())
         {
-            WorldPacket packet(CMSG_INITIATE_TRADE);
-            packet << player->GetGUID();
+            WorldPackets::Trade::InitiateTrade packet;
+            packet.tradeTargetGuid = player->GetObjectGuid();
             bot->GetSession()->HandleInitiateTradeOpcode(packet);
             return true;
         }
@@ -51,8 +51,8 @@ bool TradeAction::Execute(Event event)
     uint32 copper = chat->parseMoney(text);
     if (copper > 0)
     {
-        WorldPacket packet(CMSG_SET_TRADE_GOLD, 4);
-        packet << copper;
+        WorldPackets::Trade::SetTradeGold packet;
+        packet.gold = copper;
         bot->GetSession()->HandleSetTradeGoldOpcode(packet);
     }
 
@@ -96,8 +96,8 @@ bool TradeAction::TradeItem(Item const* item, int8 slot)
             {
                 tradeSlot = i;
 
-                WorldPacket packet(CMSG_CLEAR_TRADE_ITEM, 1);
-                packet << (uint8)tradeSlot;
+                WorldPackets::Trade::ClearTradeItem packet;
+                packet.tradeSlot = (uint8)tradeSlot;
                 bot->GetSession()->HandleClearTradeItemOpcode(packet);
                 pTrade->SetItem(TradeSlots(i), nullptr);
                 return true;
@@ -114,10 +114,16 @@ bool TradeAction::TradeItem(Item const* item, int8 slot)
     if (tradeSlot == -1)
         return false;
 
+    /*
     WorldPacket packet(CMSG_SET_TRADE_ITEM, 3);
     packet << (uint8)tradeSlot;
     packet << (uint8)item->GetBagSlot();
     packet << (uint8)item->GetSlot();
+    */
+    WorldPackets::Trade::SetTradeItem packet;
+    packet.tradeSlot = (uint8)tradeSlot;
+    packet.bag = (uint8)item->GetBagSlot();
+    packet.slot = (uint8)item->GetSlot();
     bot->GetSession()->HandleSetTradeItemOpcode(packet);
     return true;
 }

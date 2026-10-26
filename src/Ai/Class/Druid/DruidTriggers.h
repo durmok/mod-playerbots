@@ -327,14 +327,14 @@ public:
         if (!target || !target->IsAlive() || !target->IsInWorld())
             return false;
 
-        Aura* lacerate = botAI->GetAura("lacerate", target, false, false);
+        Aura const* lacerate = botAI->GetAura("lacerate", target, false, false);
         if (!lacerate)
             return true;
 
         if (lacerate->GetStackAmount() < 5)
             return true;
 
-        return lacerate->GetDuration() <= 6000;
+        return lacerate->GetAuraDuration() <= 6000;
     }
 };
 
@@ -379,13 +379,13 @@ public:
         if (cp < 5)
             return false;
 
-        Aura* roar = botAI->GetAura("savage roar", bot);
-        bool roarCheck = !roar || roar->GetDuration() > 10000;
+        Aura const* roar = botAI->GetAura("savage roar", bot);
+        bool roarCheck = !roar || roar->GetAuraDuration() > 10000;
         if (!roarCheck)
             return false;
 
-        Aura* rip = botAI->GetAura("rip", target, true);
-        bool ripCheck = !rip || rip->GetDuration() > 10000;
+        Aura const* rip = botAI->GetAura("rip", target, true);
+        bool ripCheck = !rip || rip->GetAuraDuration() > 10000;
         if (!ripCheck)
             return false;
 

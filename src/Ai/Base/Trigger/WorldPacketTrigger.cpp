@@ -12,6 +12,16 @@ void WorldPacketTrigger::ExternalEvent(WorldPacket& revData, Player* eventOwner)
     packet = revData;
     owner = eventOwner;
     triggered = true;
+    allPackets.emplace_back(packet, owner);
+}
+
+void WorldPacketTrigger::ExternalEvent(std::shared_ptr<ClientPacket const> revData, Player* eventOwner)
+{
+    clientPacket = revData->CloneShared();
+    owner = eventOwner;
+    triggered = true;
+    allClientPackets.emplace_back(revData->CloneShared(), owner);
+
 }
 
 Event WorldPacketTrigger::Check()
@@ -19,7 +29,16 @@ Event WorldPacketTrigger::Check()
     if (!triggered)
         return Event();
 
-    return Event(getName(), packet, owner);
+    if (!packet.empty())
+        return Event(getName(), packet, std::move(allPackets), owner);
+    else if (clientPacket)
+        return Event(getName(), clientPacket, std::move(allClientPackets), owner);
 }
 
-void WorldPacketTrigger::Reset() { triggered = false; }
+void WorldPacketTrigger::Reset() {
+    triggered = false;
+    packet.clear();
+    clientPacket = nullptr;
+    allPackets.clear();
+    allClientPackets.clear();
+}

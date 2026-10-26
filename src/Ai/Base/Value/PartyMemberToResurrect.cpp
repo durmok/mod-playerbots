@@ -14,9 +14,9 @@ public:
     {
         for (uint8 i = 0; i < 3; ++i)
         {
-            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_RESURRECT ||
-                spellInfo->Effects[i].Effect == SPELL_EFFECT_RESURRECT_NEW ||
-                spellInfo->Effects[i].Effect == SPELL_EFFECT_SELF_RESURRECT)
+            if (spellInfo->Effect[i] == SPELL_EFFECT_RESURRECT ||
+                spellInfo->Effect[i] == SPELL_EFFECT_RESURRECT_NEW ||
+                spellInfo->Effect[i] == SPELL_EFFECT_SELF_RESURRECT)
                 return true;
         }
 
@@ -32,7 +32,7 @@ public:
     bool Check(Unit* unit) override
     {
         Player* player = unit->ToPlayer();
-        return player && !player->isResurrectRequested() && player->getDeathState() == DeathState::Corpse &&
+        return player && !player->IsRessurectRequested() && player->getDeathState() == DeathState::CORPSE&&
                !value->IsTargetOfSpellCast(player, predicate);
     }
 

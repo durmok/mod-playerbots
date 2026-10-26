@@ -10,7 +10,7 @@
 #include "Chat.h"
 #include "ChatFilter.h"
 #include "ChatHelper.h"
-#include "CreatureData.h"
+#include "CreatureDefines.h"
 #include "Event.h"
 #include "ForceRebuff.h"
 #include "Item.h"
@@ -94,7 +94,7 @@ public:
     uint32 extractSpellId(std::string const str)
     {
         char* source = (char*)str.c_str();
-        return extractSpellIdFromLink(source);
+        return ExtractSpellIdFromLink(&source);
     }
 };
 
@@ -356,10 +356,12 @@ public:
     void AddHandler(uint16 opcode, std::string const handler);
     void Handle(ExternalEventHelper& helper);
     void AddPacket(WorldPacket const& packet);
+    void AddPacket(ClientPacket const& packet);
 
 private:
     std::map<uint16, std::string> handlers;
     std::stack<WorldPacket> queue;
+    std::stack<std::shared_ptr<ClientPacket const>> clientQueue;
 };
 
 class ChatCommandHolder
@@ -414,7 +416,7 @@ public:
     void HandleCommand(uint32 type, std::string const text, Player* fromPlayer);
     void QueueChatResponse(const ChatQueuedReply reply);
     void HandleBotOutgoingPacket(WorldPacket const& packet);
-    void HandleMasterIncomingPacket(WorldPacket const& packet);
+    void HandleMasterIncomingPacket(ClientPacket const& packet);
     void HandleMasterOutgoingPacket(WorldPacket const& packet);
     void HandleTeleportAck();
     void ChangeEngine(BotState type);
@@ -512,7 +514,7 @@ public:
     Item* FindConsumable(uint32 itemId) const;
     Item* FindStoneFor(Item* weapon) const;
     Item* FindOilFor(Item* weapon) const;
-    void ImbueItem(Item* item, uint32 targetFlag, ObjectGuid targetGUID);
+    void ImbueItem(Item* item, SpellCastTargets targets);
     void ImbueItem(Item* item, uint8 targetInventorySlot);
     void ImbueItem(Item* item, Unit* target);
     void ImbueItem(Item* item);
@@ -534,7 +536,7 @@ public:
     bool CanCastSpell(uint32 spellid, float x, float y, float z, bool checkHasSpell = true,
                       Item* itemTarget = nullptr);
 
-    Aura* GetAura(std::string const spellName, Unit* unit, bool checkIsOwner = false, bool checkDuration = false,
+    Aura const* GetAura(std::string const spellName, Unit* unit, bool checkIsOwner = false, bool checkDuration = false,
                   int checkStack = -1);
     bool CastSpell(uint32 spellId, Unit* target, Item* itemTarget = nullptr);
     bool CastSpell(uint32 spellId, float x, float y, float z, Item* itemTarget = nullptr);
@@ -617,7 +619,7 @@ public:
     std::set<uint32> GetCurrentIncompleteQuestIds();
     void PetFollow();
     static float GetItemScoreMultiplier(ItemQualities quality);
-    static bool IsHealingSpell(uint32 spellFamilyName, flag96 spellFamilyFlags);
+    static bool IsHealingSpell(SpellEntry const* spell);
     static SpellFamilyNames Class2SpellFamilyName(uint8 cls);
     NewRpgInfo rpgInfo;
     NewRpgStatistic rpgStatistic;
@@ -627,6 +629,15 @@ public:
 
     // Schedules a callback to run once after <delayMs> milliseconds.
     void AddTimedEvent(std::function<void()> callback, uint32 delayMs);
+
+    template<typename... Args>
+    inline void Debug(MaNGOS::FormatStringView fmt, Args&&... args)
+    {
+        if (!HasStrategy("debug", BOT_STATE_NON_COMBAT)) 
+            return;
+        sLog.outMessage("playerbots", LogLevel::LOG_LVL_BASIC, MaNGOS::StringFormat(fmt, std::forward<Args>(args)...));
+    }
+    bool isDebug;
 
 private:
     static void _fillGearScoreData(Player* player, Item* item, std::vector<uint32>* gearScore, uint32& twoHandScore,

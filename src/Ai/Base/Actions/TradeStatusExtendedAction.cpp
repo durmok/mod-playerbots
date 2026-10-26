@@ -27,7 +27,7 @@ bool TradeStatusExtendedAction::Execute(Event event)
     uint8 isTraderData;
     uint32 unknown1, slotCount1, slotCount2, tradeGold, spellCast;
     p >> isTraderData;
-    p >> unknown1;
+    // p >> unknown1;
     p >> slotCount1;
     p >> slotCount2;
     p >> tradeGold;
@@ -52,9 +52,9 @@ bool TradeStatusExtendedAction::Execute(Event event)
         p >> wrapped;
         p >> giftCreator;
         p >> permEnchant;
-        p >> gem1;
-        p >> gem2;
-        p >> gem3;
+        // p >> gem1;
+        // p >> gem2;
+        // p >> gem3;
         p >> creator;
         p >> spellCharges;
         p >> suffixFactor;

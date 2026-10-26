@@ -24,7 +24,7 @@ bool TellEmblemsAction::Execute(Event /*event*/)
 
     for (uint32 itemId : emblemIds)
     {
-        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+        ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemId);
         if (!proto)
             continue;
 

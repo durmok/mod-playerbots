@@ -10,7 +10,7 @@
 #include "ChatHelper.h"
 #include "Event.h"
 #include "GuildMgr.h"
-#include "GuildTaskMgr.h"
+// #include "GuildTaskMgr.h"
 #include "ItemUsageValue.h"
 #include "LootObjectStack.h"
 #include "LootStrategyValue.h"
@@ -35,10 +35,14 @@ bool LootAction::Execute(Event /*event*/)
 
     if (!prevLoot.IsEmpty() && prevLoot.guid != lootObject.guid)
     {
+        /*
         WorldPacket* packet = new WorldPacket(CMSG_LOOT_RELEASE, 8);
         *packet << prevLoot.guid;
         bot->GetSession()->QueuePacket(packet);
-        // bot->GetSession()->HandleLootReleaseOpcode(packet);
+        */
+        WorldPackets::Loot::LootRelease packet;
+        packet.guid = prevLoot.guid;
+        bot->GetSession()->HandleLootReleaseOpcode(packet);
     }
 
     if (lootObject.guid.IsGameObject() && sPlayerbotAIConfig.DisallowedGameObjects.contains(lootObject.guid.GetEntry()))
@@ -116,7 +120,8 @@ bool OpenLootAction::DoLoot(LootObject& lootObject)
 
     if (bot->IsMounted())
     {
-        bot->RemoveAurasByType(SPELL_AURA_MOUNTED);
+        // bot->RemoveAurasByType(SPELL_AURA_MOUNTED);
+        bot->Unmount();
         botAI->SetNextCheckDelay(sPlayerbotAIConfig.ReactDelay);
         return false;
     }
@@ -133,7 +138,7 @@ bool OpenLootAction::DoLoot(LootObject& lootObject)
 
     if (creature)
     {
-        SkillType skill = creature->GetCreatureTemplate()->GetRequiredLootSkill();
+        uint32 skill = creature->GetCreatureTemplate()->GetRequiredLootSkill();
         if (!CanOpenLock(skill, lootObject.reqSkillValue))
             return false;
 
@@ -204,13 +209,13 @@ uint32 OpenLootAction::GetOpeningSpell(LootObject& lootObject, GameObject* go)
     {
         uint32 spellId = itr->first;
 
-        if (itr->second->State == PLAYERSPELL_REMOVED || !itr->second->Active)
+        if (itr->second.state == PLAYERSPELL_REMOVED || !itr->second.active)
             continue;
 
         if (spellId == MINING || spellId == HERB_GATHERING)
             continue;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (!spellInfo)
             continue;
 
@@ -223,7 +228,7 @@ uint32 OpenLootAction::GetOpeningSpell(LootObject& lootObject, GameObject* go)
         if (spellId == MINING || spellId == HERB_GATHERING)
             continue;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (spellInfo && CanOpenLock(lootObject, spellInfo, go))
             return spellId;
     }
@@ -238,11 +243,11 @@ bool OpenLootAction::CanOpenLock(LootObject& lootObject, SpellInfo const* spellI
 
     for (uint8 effIndex = 0; effIndex <= EFFECT_2; effIndex++)
     {
-        if (spellInfo->Effects[effIndex].Effect != SPELL_EFFECT_OPEN_LOCK &&
-            spellInfo->Effects[effIndex].Effect != SPELL_EFFECT_SKINNING)
+        if (spellInfo->Effect[effIndex] != SPELL_EFFECT_OPEN_LOCK &&
+            spellInfo->Effect[effIndex] != SPELL_EFFECT_SKINNING)
             continue;
 
-        if (uint32(spellInfo->Effects[effIndex].MiscValue) == lootObject.GetLockType())
+        if (uint32(spellInfo->EffectMiscValue[effIndex]) == lootObject.GetLockType())
             return CanOpenLock(lootObject.skillId, lootObject.reqSkillValue);
     }
 
@@ -317,15 +322,15 @@ uint32 stackCount = urand(1, proto->GetMaxStackSize());
     if (!item)
         return false;
 
-    uint32 auction_time = uint32(urand(8, 24) * HOUR * sWorld->getConfig(CONFIG_FLOAT_RATE_AUCTION_TIME));
+    uint32 auction_time = uint32(urand(8, 24) * HOUR * sWorld.getConfig(CONFIG_FLOAT_RATE_AUCTION_TIME));
 
     AuctionEntry* auctionEntry = new AuctionEntry;
-    auctionEntry->Id = sObjectMgr->GenerateAuctionID();
-    auctionEntry->itemGuidLow = item->GetGUID().GetCounter();
+    auctionEntry->Id = sObjectMgr.GenerateAuctionID();
+    auctionEntry->itemGuidLow = item->GetObjectGuid().GetCounter();
     auctionEntry->itemTemplate = item->GetEntry();
     auctionEntry->itemCount = item->GetCount();
     auctionEntry->itemRandomPropertyId = item->GetItemRandomPropertyId();
-    auctionEntry->owner = bot->GetGUID().GetCounter();
+    auctionEntry->owner = bot->GetObjectGuid().GetCounter();
     auctionEntry->startbid = bidPrice;
     auctionEntry->bidder = 0;
     auctionEntry->bid = 0;
@@ -371,7 +376,7 @@ bool StoreLootAction::Execute(Event event)
 
     LootObjectStack* availableLoot = AI_VALUE(LootObjectStack*, "available loot");
     ObjectGuid currentLoot = bot->GetLootGUID();
-    if (loot_type == LOOT_NONE)
+    if (!loot_type)
     {
         availableLoot->RetryLoot(guid);
         if (AI_VALUE(LootObject, "loot target").guid == guid)
@@ -396,7 +401,7 @@ bool StoreLootAction::Execute(Event event)
     availableLoot->LootOpened(guid);
 
     if (!currentLoot)
-        bot->SetLootGUID(guid);
+        bot->SetLootGuid(guid);
 
     if (gold > 0)
     {
@@ -404,6 +409,8 @@ bool StoreLootAction::Execute(Event event)
         bot->GetSession()->QueuePacket(packet);
         // bot->GetSession()->HandleLootMoneyOpcode(packet);
     }
+
+    bool isAltBot = botAI->IsAltBot();
 
     for (uint8 i = 0; i < items; ++i)
     {
@@ -426,9 +433,53 @@ bool StoreLootAction::Execute(Event event)
         if (loot_type != LOOT_SKINNING && !IsLootAllowed(itemid, botAI))
             continue;
 
-        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemid);
+        ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemid);
         if (!proto)
             continue;
+
+        // #include "SSCHelpers.h"
+        // #include "TKHelpers.h"
+        // using namespace TkHelpers;
+        // using namespace SerpentShrineCavernHelpers;
+        switch (itemid) {
+            // Lady Vashj <Coilfang Matron>
+            case 31088:
+            // Kael'thas Sunstrider
+            case 30311:
+            case 30312:
+            case 30313:
+            case 30314:
+            case 30316:
+            case 30317:
+            case 30318:
+            case 30319:
+                break;
+            default:
+                {
+                    // for low level bots to auto pick poor or normal equipment
+                    bool takeit = false;
+                    if (isAltBot)
+                    {
+                        if (proto->Quality < ITEM_QUALITY_UNCOMMON)
+                        {
+                            switch (proto->Class)
+                            {
+                                case ITEM_CLASS_WEAPON:
+                                case ITEM_CLASS_ARMOR:
+                                {
+                                    ItemUsage usage = AI_VALUE2(ItemUsage, "item usage", std::to_string(proto->ItemId));
+                                    takeit = usage == ITEM_USAGE_EQUIP || usage == ITEM_USAGE_REPLACE || usage == ITEM_USAGE_BAD_EQUIP;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (takeit)
+                        break;
+                    else
+                        continue;
+                }
+        }
 
         if (!IsRealPlayer(botAI->GetMaster()) && AI_VALUE(uint8, "bag space") > 80)
         {
@@ -453,18 +504,18 @@ bool StoreLootAction::Execute(Event event)
                 continue;
         }
 
-        Player* master = botAI->GetMaster();
-        if (sRandomPlayerbotMgr.IsRandomBot(bot) && master)
-        {
-            uint32 price = itemcount * proto->BuyPrice * sRandomPlayerbotMgr.GetBuyMultiplier(bot) + gold;
-            if (price)
-                sRandomPlayerbotMgr.AddTradeDiscount(bot, master, price);
+        // Player* master = botAI->GetMaster();
+        // if (sRandomPlayerbotMgr.IsRandomBot(bot) && master)
+        // {
+        //     uint32 price = itemcount * proto->BuyPrice * sRandomPlayerbotMgr.GetBuyMultiplier(bot) + gold;
+        //     if (price)
+        //         sRandomPlayerbotMgr.AddTradeDiscount(bot, master, price);
 
-            if (Group* group = bot->GetGroup())
-                for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
-                    if (ref->GetSource() != bot)
-                        GuildTaskMgr::instance().CheckItemTask(itemid, itemcount, ref->GetSource(), bot);
-        }
+        //     if (Group* group = bot->GetGroup())
+        //         for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+        //             if (ref->GetSource() != bot)
+        //                 GuildTaskMgr::instance().CheckItemTask(itemid, itemcount, ref->GetSource(), bot);
+        // }
 
         WorldPacket* packet = new WorldPacket(CMSG_AUTOSTORE_LOOT_ITEM, 1);
         *packet << itemindex;
@@ -474,11 +525,11 @@ bool StoreLootAction::Execute(Event event)
 
         if (proto->Quality > ITEM_QUALITY_NORMAL && !urand(0, 50) &&
             botAI->HasStrategy("emote", BOT_STATE_NON_COMBAT) && sPlayerbotAIConfig.RandomBotEmote)
-            botAI->PlayEmote(TEXT_EMOTE_CHEER);
+            botAI->PlayEmote(TEXTEMOTE_CHEER);
 
         if (proto->Quality >= ITEM_QUALITY_RARE && !urand(0, 1) && botAI->HasStrategy("emote", BOT_STATE_NON_COMBAT) &&
             sPlayerbotAIConfig.RandomBotEmote)
-            botAI->PlayEmote(TEXT_EMOTE_CHEER);
+            botAI->PlayEmote(TEXTEMOTE_CHEER);
 
         BroadcastHelper::BroadcastLootingItem(botAI, bot, proto);
     }
@@ -500,7 +551,7 @@ bool StoreLootAction::IsLootAllowed(uint32 itemid, PlayerbotAI* botAI)
     AiObjectContext* context = botAI->GetAiObjectContext();
     LootStrategy* lootStrategy = AI_VALUE(LootStrategy*, "loot strategy");
 
-    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemid);
+    ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemid);
     if (!proto)
         return false;
 
@@ -520,15 +571,15 @@ bool StoreLootAction::IsLootAllowed(uint32 itemid, PlayerbotAI* botAI)
     for (uint8 slot = 0; slot < MAX_QUEST_LOG_SIZE; ++slot)
     {
         uint32 entry = botAI->GetBot()->GetQuestSlotQuestId(slot);
-        Quest const* quest = sObjectMgr->GetQuestTemplate(entry);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(entry);
         if (!quest)
             continue;
 
         for (uint8 i = 0; i < 4; i++)
         {
-            if (quest->RequiredItemId[i] == itemid)
+            if (quest->ReqItemId[i] == itemid)
             {
-                // if (AI_VALUE2(uint32, "item count", proto->Name1) < quest->RequiredItemCount[i])
+                // if (AI_VALUE2(uint32, "item count", proto->Name1) < quest->ReqItemCount[i])
                 // {
                 //     if (botAI->GetMaster() && sPlayerbotAIConfig.SyncQuestWithPlayer)
                 //         return false; //Quest is autocomplete for the bot so no item needed.

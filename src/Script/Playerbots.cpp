@@ -6,18 +6,19 @@
 
 #include "Playerbots.h"
 #include "BattleGroundTactics.h"
+#include "BattlePlayerbotMgr.h"
 #include "BattlefieldScript.h"
 #include "Channel.h"
 #include "CheckMountStateAction.h"
-#include "Config.h"
+#include "Config/Config.h"
 #include "BuiltInConfig.h"
 #include "DBUpdater.h"
-#include "DatabaseEnv.h"
+#include "DatabaseEnv2.h"
 #include "PlayerbotsDatabase.h"
 #include <mysqld_error.h>
 #include "AllMapScript.h"
 #include "GlobalScript.h"
-#include "GuildTaskMgr.h"
+// #include "GuildTaskMgr.h"
 #include "PlayerScript.h"
 #include "PlayerbotAIConfig.h"
 #include "PlayerbotCommandScript.h"
@@ -30,6 +31,22 @@
 #include "SessionScript.h"
 #include "WorldScript.h"
 #include "cmath"
+
+std::recursive_mutex PLAYERBOTS_LOCK;
+
+std::lock_guard<std::recursive_mutex> LockPlayerbots()
+{
+    return std::lock_guard<std::recursive_mutex>(PLAYERBOTS_LOCK);
+}
+
+std::optional<std::unique_lock<std::recursive_mutex>> TryLockPlayerbots()
+{
+    std::unique_lock<std::recursive_mutex> lock(PLAYERBOTS_LOCK, std::try_to_lock); 
+    if (lock.owns_lock())
+        return lock;
+    else
+        return std::nullopt;
+}
 
 class PlayerbotsDatabaseScript : public DatabaseScript
 {
@@ -109,10 +126,10 @@ public:
     void OnDatabaseGetDBRevision(std::map<std::string, std::string>& revisions) override
     {
         std::string revision;
-        if (QueryResult resultPlayerbot =
+        if (QueryResult2 resultPlayerbot =
                 PlayerbotsDatabase.Query("SELECT date FROM version_db_playerbots ORDER BY date DESC LIMIT 1"))
         {
-            Field* fields = resultPlayerbot->Fetch();
+            Field2* fields = resultPlayerbot->Fetch();
             revision = fields[0].Get<std::string>();
         }
 
@@ -144,10 +161,13 @@ public:
 
     void OnPlayerLogin(Player* player) override
     {
+        auto lock = LockPlayerbots();
+
         if (!player->GetSession()->IsHeadless())
         {
             PlayerbotsMgr::instance().AddPlayerbotData(player, false);
             sRandomPlayerbotMgr.OnPlayerLogin(player);
+            sBattlePlayerbotMgr.OnPlayerLogin(player);
 
             // Before modifying the following messages, please make sure it does not violate the GNU GPLv2
             // license especially if you are distributing a repack or hosting a public server
@@ -172,6 +192,8 @@ public:
 
     void OnPlayerBeforeLogout(Player* player) override
     {
+        auto lock = LockPlayerbots();
+
         if (PlayerbotMgr* playerbotMgr = GET_PLAYERBOT_MGR(player))
         {
             PlayerbotAI* botAI = PlayerbotsMgr::instance().GetPlayerbotAI(player);
@@ -181,15 +203,18 @@ public:
         }
 
         sRandomPlayerbotMgr.OnPlayerLogout(player);
+        sBattlePlayerbotMgr.OnPlayerLogout(player);
     }
 
     void OnPlayerCreatureKillCredit(Player* player, Creature* killed) override
     {
-        GuildTaskMgr::instance().CheckKillTask(player, killed);
+        // GuildTaskMgr::instance().CheckKillTask(player, killed);
     }
 
     void OnPlayerBeforePetitionSign(Player* player, ObjectGuid /*petitionGuid*/, bool& alreadySignedByAccount) override
     {
+        auto lock = LockPlayerbots();
+
         if (!alreadySignedByAccount)
             return;
 
@@ -222,7 +247,7 @@ public:
         // This is intentionally done via the event queue (instead of directly here) because erasing
         // from other players' visibility maps inside the teleport call stack can hit unsafe re-entrancy
         // or iterator invalidation while visibility updates are in progress
-        ObjectGuid guid = player->GetGUID();
+        ObjectGuid guid = player->GetObjectGuid();
         player->m_Events.AddEventAtOffset(
             [guid, mapid]()
             {
@@ -246,6 +271,8 @@ public:
 
     void OnPlayerAfterUpdate(Player* player, uint32 diff) override
     {
+        auto lock = LockPlayerbots();
+
         PlayerbotAI* const botAI = PlayerbotsMgr::instance().GetPlayerbotAI(player);
 
         if (botAI != nullptr)
@@ -261,8 +288,10 @@ public:
 
     using PlayerScript::OnPlayerCanUseChat;  // keep the base overloads visible
 
-    bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 lang, std::string& msg, Player* receiver) override
+    bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 lang, std::string const& msg, Player* receiver) override
     {
+        auto lock = LockPlayerbots();
+
         if (type != CHAT_MSG_WHISPER || lang == LANG_ADDON)
         {
             return true;
@@ -286,8 +315,10 @@ public:
         return true;
     }
 
-    bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 lang, std::string& msg, Group* group) override
+    bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 lang, std::string const& msg, Group* group) override
     {
+        auto lock = LockPlayerbots();
+
         // Addon traffic (DBM, Carbonite, ...) is no bot command; its text used to trigger item commands like trade.
         if (lang == LANG_ADDON)
             return true;
@@ -310,8 +341,10 @@ public:
         return true;
     }
 
-    bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 lang, std::string& msg, Guild* /*guild*/) override
+    bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 lang, std::string const& msg, Guild* /*guild*/) override
     {
+        auto lock = LockPlayerbots();
+
         if (type != CHAT_MSG_GUILD || lang == LANG_ADDON)
             return true;
 
@@ -336,8 +369,10 @@ public:
         return true;
     }
 
-    bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 /*lang*/, std::string& msg, Channel* channel) override
+    bool OnPlayerCanUseChat(Player* player, uint32 type, uint32 /*lang*/, std::string const& msg, Channel* channel) override
     {
+        auto lock = LockPlayerbots();
+
         PlayerbotMgr* const playerbotMgr = PlayerbotsMgr::instance().GetPlayerbotMgr(player);
 
         if (playerbotMgr != nullptr && channel->GetFlags() & 0x18)
@@ -348,9 +383,10 @@ public:
         return true;
     }
 
+    /*
     bool OnPlayerBeforeAchievementComplete(Player* player, AchievementEntry const* achievement) override
     {
-        if ((sRandomPlayerbotMgr.IsRandomBot(player) || sRandomPlayerbotMgr.IsAddclassBot(player)) &&
+        if ((sRandomPlayerbotMgr.IsRandomBot(player) || sRandomPlayerbotMgr.IsAddclassBot(player) || sRandomPlayerbotMgr.IsBattleBot(player)) &&
             (achievement->flags & (ACHIEVEMENT_FLAG_REALM_FIRST_REACH | ACHIEVEMENT_FLAG_REALM_FIRST_KILL)))
         {
             return false;
@@ -358,9 +394,11 @@ public:
 
         return true;
     }
+    */
 
-    void OnPlayerGiveXP(Player* player, uint32& amount, Unit* /*victim*/, uint8 /*xpSource*/) override
+    void OnPlayerGiveXP(Player* player, uint32& amount, Unit const* /*victim*/, uint8 /*xpSource*/) override
     {
+        /*
         // early return
         if (sPlayerbotAIConfig.RandomBotXPRate == 1.0 || !player)
             return;
@@ -385,6 +423,11 @@ public:
 
         // otherwise apply bot XP multiplier.
         amount = static_cast<uint32>(std::round(static_cast<float>(amount) * sPlayerbotAIConfig.RandomBotXPRate));
+        */
+
+        if (player && player->GetSession()->IsHeadless() )
+            amount = 0;
+        return;
     }
 };
 
@@ -395,6 +438,8 @@ public:
 
     void OnDestructPlayer(Player* player) override
     {
+        auto lock = LockPlayerbots();
+
         PlayerbotAI* botAI = PlayerbotsMgr::instance().GetPlayerbotAI(player);
 
         if (botAI != nullptr)
@@ -415,6 +460,8 @@ public:
 
     void OnPacketSent(WorldSession* session, WorldPacket const& packet) override
     {
+        auto lock = LockPlayerbots();
+
         Player* player = session->GetPlayer();
 
         if (player == nullptr)
@@ -429,8 +476,10 @@ public:
             playerbotMgr->HandleMasterOutgoingPacket(packet);
     }
 
-    bool CanPacketReceive(WorldSession* session, WorldPacket const& packet) override
+    bool CanPacketReceive(WorldSession* session, ClientPacket const& packet) override
     {
+        auto lock = LockPlayerbots();
+
         if (Player* player = session->GetPlayer())
             if (PlayerbotMgr* playerbotMgr = GET_PLAYERBOT_MGR(player))
                 playerbotMgr->HandleMasterIncomingPacket(packet);
@@ -449,6 +498,8 @@ public:
     // Runs on the world thread for every real session: drains the packet queues of the bots it owns
     void OnSessionUpdate(WorldSession* session, uint32 /*diff*/) override
     {
+        auto lock = LockPlayerbots();
+
         if (Player* player = session->GetPlayer())
             if (PlayerbotMgr* playerbotMgr = GET_PLAYERBOT_MGR(player))
                 playerbotMgr->UpdateSessions();
@@ -465,6 +516,8 @@ public:
     // Bots have no client to render object updates; only self bots still need them
     bool CanSendObjectUpdatesToPlayer(Map* /*map*/, Player* player) override
     {
+        auto lock = LockPlayerbots();
+
         PlayerbotAI* botAI = PlayerbotsMgr::instance().GetPlayerbotAI(player);
 
         if (botAI == nullptr)
@@ -474,6 +527,7 @@ public:
     }
 };
 
+/*
 class PlayerbotsGlobalScript : public GlobalScript
 {
 public:
@@ -495,6 +549,7 @@ public:
         return false;
     }
 };
+*/
 
 class PlayerbotsWorldScript : public WorldScript
 {
@@ -540,17 +595,24 @@ public:
 
     void OnUpdate(uint32 diff) override
     {
+        auto lock = LockPlayerbots();
+
         PlayerbotHolder::UpdatePendingLogins();  // Headless sessions whose login holder is in flight
         sRandomPlayerbotMgr.UpdateSessions();  // Per-bot packet queues, world thread only
+        sBattlePlayerbotMgr.UpdateSessions();
         PlayerbotWorldThreadProcessor::instance().Update(diff);
         sRandomPlayerbotMgr.UpdateAI(diff);  // World thread only
+        sBattlePlayerbotMgr.UpdateAI(diff);
     }
 
     // Runs before the sessions are kicked on server shutdown
     void OnShutdown() override
     {
+        auto lock = LockPlayerbots();
+
         LOG_INFO("playerbots", "Logging out all bots...");
         sRandomPlayerbotMgr.LogoutAllBots();
+        sBattlePlayerbotMgr.LogoutAllBots();
         PlayerbotHolder::ClearPendingLogins();
     }
 };
@@ -560,13 +622,15 @@ class PlayerBotsBGScript : public BGScript
 public:
     PlayerBotsBGScript() : BGScript("PlayerBotsBGScript") {}
 
-    void OnBattlegroundStart(Battleground* bg) override
+    void OnBattlegroundStart(BattleGround* bg) override
     {
         BGStrategyData data;
 
-        BattlegroundTypeId bgType = bg->GetBgTypeID();
+        BattleGroundTypeId bgType = bg->GetBgTypeID();
+        /*
         if (bgType == BATTLEGROUND_RB)  // a random-queue game: the rolled map
             bgType = bg->GetBgTypeID(true);
+        */
 
         switch (bgType)
         {
@@ -582,10 +646,12 @@ public:
                 data.allianceStrategy = urand(0, AV_STRATEGY_MAX - 1);
                 data.hordeStrategy = urand(0, AV_STRATEGY_MAX - 1);
                 break;
+            /*
             case BATTLEGROUND_EY:
                 data.allianceStrategy = urand(0, EY_STRATEGY_MAX - 1);
                 data.hordeStrategy = urand(0, EY_STRATEGY_MAX - 1);
                 break;
+            */
             default:
                 break;
         }
@@ -593,7 +659,7 @@ public:
         bgStrategies[bg->GetInstanceID()] = data;
     }
 
-    void OnBattlegroundEnd(Battleground* bg, TeamId /*winnerTeam*/) override { bgStrategies.erase(bg->GetInstanceID()); }
+    void OnBattlegroundEnd(BattleGround* bg, TeamId /*winnerTeam*/) override { bgStrategies.erase(bg->GetInstanceID()); }
 };
 
 // Workaround for missing InitEnabledHooksIfNeeded for new BattlefieldScript in ScriptMgr
@@ -604,14 +670,14 @@ public:
 };
 
 void AddPlayerbotsSecureLoginScripts();
-void AddPlayerbotsSelfBotAfkScripts();
+// void AddPlayerbotsSelfBotAfkScripts();
 
-void AddSC_MagtheridonBotScripts();
-void AddSC_TempestKeepBotScripts();
-void AddSC_HyjalBotScripts();
-void AddSC_IcecrownBotScripts();
-void AddSC_RubySanctumBotScripts();
-void AddSC_randombot_level_mgr();
+// void AddSC_MagtheridonBotScripts();
+// void AddSC_TempestKeepBotScripts();
+// void AddSC_HyjalBotScripts();
+// void AddSC_IcecrownBotScripts();
+// void AddSC_RubySanctumBotScripts();
+// void AddSC_randombot_level_mgr();
 
 void AddPlayerbotsScripts()
 {
@@ -622,17 +688,17 @@ void AddPlayerbotsScripts()
     new PlayerbotsServerScript();
     new PlayerbotsSessionScript();
     new PlayerbotsAllMapScript();
-    new PlayerbotsGlobalScript();
+    // new PlayerbotsGlobalScript();
     new PlayerbotsWorldScript();
     new PlayerBotsBGScript();
     AddPlayerbotsSecureLoginScripts();
-    AddPlayerbotsSelfBotAfkScripts();
+    // AddPlayerbotsSelfBotAfkScripts();
     AddPlayerbotsCommandscripts();
     PlayerBotsGuildValidationScript();
-    AddSC_MagtheridonBotScripts();
-    AddSC_TempestKeepBotScripts();
-    AddSC_HyjalBotScripts();
-    AddSC_IcecrownBotScripts();
-    AddSC_RubySanctumBotScripts();
-    AddSC_randombot_level_mgr();
+    // AddSC_MagtheridonBotScripts();
+    // AddSC_TempestKeepBotScripts();
+    // AddSC_HyjalBotScripts();
+    // AddSC_IcecrownBotScripts();
+    // AddSC_RubySanctumBotScripts();
+    // AddSC_randombot_level_mgr();
 }

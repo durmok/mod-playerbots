@@ -7,7 +7,7 @@
 #include "GuildManagementActions.h"
 #include "BroadcastHelper.h"
 #include "GuildMgr.h"
-#include "GuildPackets.h"
+#include "Guild.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
 
@@ -84,23 +84,23 @@ bool GuidManageAction::PlayerIsValid(Player* member) { return !member->GetGuildI
 
 uint8 GuidManageAction::GetRankId(Player* member)
 {
-    return sGuildMgr->GetGuildById(member->GetGuildId())->GetMember(member->GetGUID())->GetRankId();
+    return sGuildMgr.GetGuildById(member->GetGuildId())->GetMember(member->GetObjectGuid())->RankId;
 }
 
 bool GuildInviteAction::isUseful()
 {
-    return bot->GetGuildId() && sGuildMgr->GetGuildById(bot->GetGuildId())->HasRankRight(bot, GR_RIGHT_INVITE);
+    return bot->GetGuildId() && sGuildMgr.GetGuildById(bot->GetGuildId())->HasRankRight(bot, GR_RIGHT_INVITE);
 }
 
 bool GuildInviteAction::PlayerIsValid(Player* member)
 {
-    return !member->GetGuildId() && (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GUILD) ||
+    return !member->GetGuildId() && (sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_GUILD) ||
                                      (bot->GetTeamId() == member->GetTeamId()));
 }
 
 bool GuildPromoteAction::isUseful()
 {
-    return bot->GetGuildId() && sGuildMgr->GetGuildById(bot->GetGuildId())->HasRankRight(bot, GR_RIGHT_PROMOTE);
+    return bot->GetGuildId() && sGuildMgr.GetGuildById(bot->GetGuildId())->HasRankRight(bot, GR_RIGHT_PROMOTE);
 }
 
 bool GuildPromoteAction::PlayerIsValid(Player* member)
@@ -110,7 +110,7 @@ bool GuildPromoteAction::PlayerIsValid(Player* member)
 
 bool GuildDemoteAction::isUseful()
 {
-    return bot->GetGuildId() && sGuildMgr->GetGuildById(bot->GetGuildId())->HasRankRight(bot, GR_RIGHT_DEMOTE);
+    return bot->GetGuildId() && sGuildMgr.GetGuildById(bot->GetGuildId())->HasRankRight(bot, GR_RIGHT_DEMOTE);
 }
 
 bool GuildDemoteAction::PlayerIsValid(Player* member)
@@ -120,7 +120,7 @@ bool GuildDemoteAction::PlayerIsValid(Player* member)
 
 bool GuildRemoveAction::isUseful()
 {
-    return bot->GetGuildId() && sGuildMgr->GetGuildById(bot->GetGuildId())->HasRankRight(bot, GR_RIGHT_REMOVE);
+    return bot->GetGuildId() && sGuildMgr.GetGuildById(bot->GetGuildId())->HasRankRight(bot, GR_RIGHT_REMOVE);
 }
 
 bool GuildRemoveAction::PlayerIsValid(Player* member)
@@ -132,8 +132,8 @@ bool GuildManageNearbyAction::Execute(Event /*event*/)
 {
     uint32 found = 0;
 
-    Guild* guild = sGuildMgr->GetGuildById(bot->GetGuildId());
-    Guild::Member* botMember = guild->GetMember(bot->GetGUID());
+    Guild* guild = sGuildMgr.GetGuildById(bot->GetGuildId());
+    MemberSlot* botMember = guild->GetMember(bot->GetObjectGuid());
 
     GuidVector nearGuids = botAI->GetAiObjectContext()->GetValue<GuidVector>("nearest friendly players")->Get();
     for (auto& guid : nearGuids)
@@ -143,7 +143,7 @@ bool GuildManageNearbyAction::Execute(Event /*event*/)
         if (!player || bot == player)
             continue;
 
-        if (player->isDND())
+        if (player->IsDND())
             continue;
 
         // Promote or demote nearby members based on chance.
@@ -151,7 +151,7 @@ bool GuildManageNearbyAction::Execute(Event /*event*/)
         {
             uint32 dCount = AI_VALUE(uint32, "death count");
 
-            if (!urand(0, 30) && dCount < 2 && guild->GetRankRights(botMember->GetRankId()) & GR_RIGHT_PROMOTE)
+            if (!urand(0, 30) && dCount < 2 && guild->GetRankRights(botMember->RankId) & GR_RIGHT_PROMOTE)
             {
                 BroadcastHelper::BroadcastGuildMemberPromotion(botAI, bot, player);
 
@@ -159,7 +159,7 @@ bool GuildManageNearbyAction::Execute(Event /*event*/)
                 continue;
             }
 
-            if (!urand(0, 30) && dCount > 2 && guild->GetRankRights(botMember->GetRankId()) & GR_RIGHT_DEMOTE)
+            if (!urand(0, 30) && dCount > 2 && guild->GetRankRights(botMember->RankId) & GR_RIGHT_DEMOTE)
             {
                 BroadcastHelper::BroadcastGuildMemberDemotion(botAI, bot, player);
 
@@ -176,7 +176,7 @@ bool GuildManageNearbyAction::Execute(Event /*event*/)
         if (guild->GetMemberSize() > 1000)
             return false;
 
-        if ((guild->GetRankRights(botMember->GetRankId()) & GR_RIGHT_INVITE) == 0)
+        if ((guild->GetRankRights(botMember->RankId) & GR_RIGHT_INVITE) == 0)
             continue;
 
         if (player->GetGuildIdInvited())
@@ -196,7 +196,7 @@ bool GuildManageNearbyAction::Execute(Event /*event*/)
                 continue;
         }
 
-        bool sameGroup = bot->GetGroup() && bot->GetGroup()->IsMember(player->GetGUID());
+        bool sameGroup = bot->GetGroup() && bot->GetGroup()->IsMember(player->GetObjectGuid());
 
         if (!sameGroup && ServerFacade::instance().GetDistance2d(bot, player) > sPlayerbotAIConfig.SpellDistance)
             continue;
@@ -264,7 +264,7 @@ bool GuildManageNearbyAction::Execute(Event /*event*/)
                 if (sameGroup)
                 {
                     WorldPacket data;
-                    ChatHandler::BuildChatPacket(data, bot->GetGroup()->isRaidGroup() ? CHAT_MSG_RAID : CHAT_MSG_PARTY, line.c_str(), LANG_UNIVERSAL, CHAT_TAG_NONE, bot->GetGUID(), bot->GetName());
+                    ChatHandler::BuildChatPacket(data, bot->GetGroup()->isRaidGroup() ? CHAT_MSG_RAID : CHAT_MSG_PARTY, line.c_str(), LANG_UNIVERSAL, CHAT_TAG_NONE, bot->GetObjectGuid(), bot->GetName());
                     bot->GetGroup()->BroadcastPacket(&data, true);
                 }
                 else
@@ -287,10 +287,10 @@ bool GuildManageNearbyAction::isUseful()
     if (!bot->GetGuildId())
         return false;
 
-    Guild* guild = sGuildMgr->GetGuildById(bot->GetGuildId());
-    Guild::Member* botMember = guild->GetMember(bot->GetGUID());
+    Guild* guild = sGuildMgr.GetGuildById(bot->GetGuildId());
+    MemberSlot* botMember = guild->GetMember(bot->GetObjectGuid());
 
-    return guild->GetRankRights(botMember->GetRankId()) & (GR_RIGHT_DEMOTE | GR_RIGHT_PROMOTE | GR_RIGHT_INVITE);
+    return guild->GetRankRights(botMember->RankId) & (GR_RIGHT_DEMOTE | GR_RIGHT_PROMOTE | GR_RIGHT_INVITE);
 }
 
 bool GuildLeaveAction::Execute(Event event)
@@ -302,7 +302,7 @@ bool GuildLeaveAction::Execute(Event event)
         return false;
     }
 
-    WorldPackets::Guild::GuildLeave data = WorldPacket(CMSG_GUILD_LEAVE);
+    NullClientPacket data = NullClientPacket(CMSG_GUILD_LEAVE);
     bot->GetSession()->HandleGuildLeaveOpcode(data);
     return true;
 }

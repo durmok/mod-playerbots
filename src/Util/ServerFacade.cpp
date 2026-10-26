@@ -10,8 +10,8 @@
 
 float ServerFacade::GetDistance2d(Unit* unit, WorldObject* wo)
 {
-    ASSERT_NOTNULL(unit);
-    ASSERT_NOTNULL(wo);
+    ASSERT(unit != nullptr);
+    ASSERT(wo != nullptr);
 
     float dist = unit->GetDistance2d(wo);
     return std::round(dist * 10.0f) / 10.0f;
@@ -52,10 +52,14 @@ void ServerFacade::SetFacingTo(Player* bot, WorldObject* wo, bool /*force*/)
     // {
     bot->SetOrientation(angle);
 
+    /*
     if (!bot->IsRooted())
         // enforce (bool self) true otherwhise when using real-client with SelfBot wont
         // recieve update; e.g. will not face the target when using (mostly ranged) attack
         bot->SendMovementFlagUpdate(true);
+    */
+
+    bot->SendMovementPacket(MSG_MOVE_SET_FACING, false);
 }
 
 Unit* ServerFacade::GetChaseTarget(Unit* target)

@@ -10,6 +10,7 @@
 #include "Event.h"
 #include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
+#include "Spells/Spell.h"
 
 std::map<uint32, SkillLineAbilityEntry const*> SetCraftAction::skillSpells;
 
@@ -45,14 +46,19 @@ bool SetCraftAction::Execute(Event event)
     }
 
     uint32 itemId = *itemIds.begin();
-    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+    ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemId);
     if (!proto)
         return false;
 
     if (skillSpells.empty())
     {
-        for (SkillLineAbilityEntry const* skillLine : sSkillLineAbilityStore)
-            skillSpells[skillLine->Spell] = skillLine;
+        // sObjectMgr.GetMaxSkillLineAbilityId();
+        // sObjectMgr.GetSkillLineAbility();
+        for (uint32 i = 0; i < sObjectMgr.GetMaxSkillLineAbilityId(); i++)
+        {
+            SkillLineAbilityEntry const* skillLine = sObjectMgr.GetSkillLineAbility(i);
+            skillSpells[skillLine->spellId] = skillLine;
+        }
     }
 
     data.required.clear();
@@ -62,10 +68,10 @@ bool SetCraftAction::Execute(Event event)
     {
         uint32 spellId = itr->first;
 
-        if (itr->second->State == PLAYERSPELL_REMOVED || !itr->second->Active)
+        if (itr->second.state == PLAYERSPELL_REMOVED || !itr->second.active)
             continue;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (!spellInfo)
             continue;
 
@@ -74,8 +80,8 @@ bool SetCraftAction::Execute(Event event)
         {
             for (uint8 i = 0; i < 3; ++i)
             {
-                if (spellInfo->Effects[i].Effect == SPELL_EFFECT_CREATE_ITEM &&
-                    itemId == spellInfo->Effects[i].ItemType)
+                if (spellInfo->Effect[i] == SPELL_EFFECT_CREATE_ITEM &&
+                    itemId == spellInfo->EffectItemType[i])
                 {
                     for (uint32 x = 0; x < MAX_SPELL_REAGENTS; ++x)
                     {
@@ -118,7 +124,7 @@ void SetCraftAction::TellCraft()
         return;
     }
 
-    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(data.itemId);
+    ItemTemplate const* proto = sObjectMgr.GetItemTemplate(data.itemId);
     if (!proto)
         return;
 
@@ -130,7 +136,7 @@ void SetCraftAction::TellCraft()
         uint32 item = i->first;
         uint32 required = i->second;
 
-        if (ItemTemplate const* reagent = sObjectMgr->GetItemTemplate(item))
+        if (ItemTemplate const* reagent = sObjectMgr.GetItemTemplate(item))
         {
             if (first)
                 first = false;
@@ -158,7 +164,7 @@ uint32 SetCraftAction::GetCraftFee(CraftData& data)
     if (data.IsEmpty())
         return 0;
 
-    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(data.itemId);
+    ItemTemplate const* proto = sObjectMgr.GetItemTemplate(data.itemId);
     if (!proto)
         return 0;
 

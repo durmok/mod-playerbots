@@ -16,10 +16,12 @@
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
 #include "PositionValue.h"
+#include "PointMovementGenerator.h"
 #include "SharedDefines.h"
 #include "TemporarySummon.h"
 #include "ThreatManager.h"
 #include "Timer.h"
+#include "WaitMoveCompleteValue.h"
 #include <string>
 
 bool LowManaTrigger::IsActive()
@@ -41,8 +43,11 @@ bool LowEnergyTrigger::IsActive()
 
 bool NoPetTrigger::IsActive()
 {
+    /*
     return bot->GetMinionGUID().IsEmpty() && !AI_VALUE(Unit*, "pet target") && !bot->GetGuardianPet() &&
            !bot->GetFirstControlled() && !AI_VALUE2(bool, "mounted", "self target");
+    */
+    return !AI_VALUE(Unit*, "pet target") && !AI_VALUE2(bool, "mounted", "self target");
 }
 
 bool HasPetTrigger::IsActive()
@@ -52,7 +57,9 @@ bool HasPetTrigger::IsActive()
 
 bool PetAttackTrigger::IsActive()
 {
-    Guardian* pet = bot->GetGuardianPet();
+    Pet* pet = bot->GetPet();
+    if (!pet)
+        pet = bot->GetMiniPet();
     if (!pet)
         return false;
 
@@ -85,6 +92,42 @@ bool EnoughManaTrigger::IsActive()
 {
     return AI_VALUE2(bool, "has mana", "self target") &&
            AI_VALUE2(uint8, "mana", "self target") > sPlayerbotAIConfig.HighMana;
+}
+
+bool EatDrinkTrigger::IsActive()
+{
+    if (bot->isDead() || bot->isSwimming())
+        return false;
+
+    uint32 healthLimit = sPlayerbotAIConfig.MediumHealth;
+    uint32 manaLimit = sPlayerbotAIConfig.HighMana;
+
+    if (botAI->HasStrategy("stay", botAI->GetState()))
+    {
+        healthLimit = 100;
+        manaLimit = 100;
+    }
+    else
+    {
+        Player* master = GetMaster();
+        if (master && master->IsAlive())
+        {
+            if (bot->GetDistance(master) >= 15 || master->IsMounted())
+                return false;
+
+            if (master->IsSitState())
+            {
+                healthLimit = 100;
+                manaLimit = 100;
+            }
+        }
+    }
+
+    bool needEat = AI_VALUE2(uint8, "health", GetTargetName()) < healthLimit;
+    bool needDrink =  AI_VALUE2(bool, "has mana", GetTargetName()) &&
+           AI_VALUE2(uint8, "mana", "self target") < manaLimit;
+
+    return needEat || needDrink;
 }
 
 bool RageAvailable::IsActive() { return AI_VALUE2(uint8, "rage", "self target") >= amount; }
@@ -121,7 +164,7 @@ bool BuffTrigger::IsActive()
     if (!target)
         return false;
 
-    Aura* aura = botAI->GetAura(spell, target, checkIsOwner, checkDuration);
+    Aura const* aura = botAI->GetAura(spell, target, checkIsOwner, checkDuration);
     return ai::buff::BuffBelowRefreshTarget(botAI, aura, beforeDuration);
 }
 
@@ -246,7 +289,7 @@ bool DebuffOnBossTrigger::IsActive()
         return false;
 
     Creature* creature = GetTarget()->ToCreature();
-    return creature && (creature->IsDungeonBoss() || creature->isWorldBoss());
+    return creature && (/*creature->IsDungeonBoss() ||*/ creature->IsWorldBoss());
 }
 
 bool SpellTrigger::IsActive() { return GetTarget(); }
@@ -289,6 +332,25 @@ bool RandomTrigger::IsActive()
         k = 1;
 
     return (rand() % k) == 0;
+}
+
+MaxIntervalTrigger::MaxIntervalTrigger(PlayerbotAI* botAI, std::string const name, uint32 intervalSecs)
+    : Trigger(botAI, name), nextTime(0)
+{
+    this->intervalMilli = intervalSecs * 1000;
+    if (this->intervalMilli < sPlayerbotAIConfig.RepeatDelay)
+        this->intervalMilli = sPlayerbotAIConfig.RepeatDelay;
+}
+
+bool MaxIntervalTrigger::IsActive()
+{
+    uint32 now = getMSTime();
+    if (now >= nextTime)
+    {
+        nextTime = now + urand(sPlayerbotAIConfig.RepeatDelay, this->intervalMilli);
+        return true;
+    }
+    return false;
 }
 
 bool AndTrigger::IsActive() { return ls && rs && ls->IsActive() && rs->IsActive(); }
@@ -383,14 +445,14 @@ bool InterruptSpellTrigger::IsActive()
 bool DeflectSpellTrigger::IsActive()
 {
     Unit* target = GetTarget();
-    if (!target || !target->IsNonMeleeSpellCast(true) || target->GetTarget() != bot->GetGUID())
+    if (!target || !target->IsNonMeleeSpellCast(true) || target->GetTarget() != bot->GetObjectGuid())
         return false;
 
     uint32 spellid = context->GetValue<uint32>("spell id", spell)->Get();
     if (!spellid)
         return false;
 
-    SpellInfo const* deflectSpell = sSpellMgr->GetSpellInfo(spellid);
+    SpellInfo const* deflectSpell = sSpellMgr.GetSpellInfo(spellid);
     if (!deflectSpell)
         return false;
 
@@ -402,14 +464,14 @@ bool DeflectSpellTrigger::IsActive()
     if (spell == "feedback")
         return true;
 
-    SpellSchoolMask deflectSchool = SpellSchoolMask(deflectSpell->Effects[EFFECT_0].MiscValue);
+    SpellSchoolMask deflectSchool = SpellSchoolMask(deflectSpell->EffectMiscValue[EFFECT_0]);
     SpellSchoolMask attackSchool = SPELL_SCHOOL_MASK_NONE;
 
     if (Spell* spell = target->GetCurrentSpell(CURRENT_GENERIC_SPELL))
     {
         if (SpellInfo const* tarSpellInfo = spell->GetSpellInfo())
         {
-            attackSchool = tarSpellInfo->GetSchoolMask();
+            attackSchool = tarSpellInfo->GetSpellSchoolMask();
             if (deflectSchool == attackSchool)
                 return true;
         }
@@ -528,7 +590,51 @@ bool IsNotFacingTargetTrigger::IsActive()
     if (botAI->HasStrategy("stay", botAI->GetState()))
         return false;
 
+    if (bot->IsMoving())
+        return false;
+
     return !AI_VALUE2(bool, "facing", "current target");
+}
+
+bool IsNotWithinLOSTargetTrigger::IsActive()
+{
+    if (bot->isMoving())
+        return false;
+    if (botAI->HasStrategy("stay", botAI->GetState()))
+        return false;
+    Unit* target = AI_VALUE(Unit*, "current target");
+    if (!target)
+        return false;
+    if (bot->IsWithinLOSInMap(target))
+        return false;
+    if (!bot->IsInMap(target))
+        return false;
+    return true;
+}
+
+bool MoveCompleteTrigger::IsActive()
+{
+    WaitMoveComplete* wmc = AI_VALUE(WaitMoveComplete*, "wait move complete");
+    if (!wmc->IsStarted())
+        return false;
+
+    if (bot->isDead())
+        return true;
+
+    if (bot->GetMotionMaster()->GetCurrentMovementGeneratorType() != POINT_MOTION_TYPE)
+        return true;
+
+    PointMovementGenerator<Player>* mg = dynamic_cast<PointMovementGenerator<Player>*>(bot->GetMotionMaster()->top());
+    if (!mg)
+        return true;
+
+    // check if target point is expected point
+    float x, y ,z;
+    mg->GetDestination(x, y, z);
+    if (!wmc->GetDestPosition().IsInDist(x, y, z, 0.1))
+        return true;
+
+    return false;
 }
 
 bool HasCcTargetTrigger::IsActive()
@@ -671,12 +777,12 @@ bool IsMountedTrigger::IsActive() { return AI_VALUE2(bool, "mounted", "self targ
 
 bool CorpseNearTrigger::IsActive()
 {
-    return bot->GetCorpse() && bot->GetCorpse()->IsWithinDistInMap(bot, CORPSE_RECLAIM_RADIUS, true);
+    return !botAI->GetMaster() && bot->GetCorpse() && bot->GetCorpse()->IsWithinDistInMap(bot, CORPSE_RECLAIM_RADIUS, true);
 }
 
-bool IsFallingTrigger::IsActive() { return bot->HasUnitMovementFlag(MOVEMENTFLAG_FALLING); }
+bool IsFallingTrigger::IsActive() { return /*bot->HasUnitMovementFlag(MOVEMENTFLAG_FALLING);*/ bot->IsFalling(); }
 
-bool IsFallingFarTrigger::IsActive() { return bot->HasUnitMovementFlag(MOVEMENTFLAG_FALLING_FAR); }
+bool IsFallingFarTrigger::IsActive() { return /*bot->HasUnitMovementFlag(MOVEMENTFLAG_FALLING_FAR)*/ false; }
 
 bool HasAreaDebuffTrigger::IsActive() { return AI_VALUE2(bool, "has area debuff", "self target"); }
 
@@ -698,9 +804,9 @@ bool NewPetTrigger::IsActive()
     ObjectGuid currentPetGuid = ObjectGuid::Empty;
 
     if (Pet* pet = bot->GetPet())
-        currentPetGuid = pet->GetGUID();
-    else if (Guardian* guardian = bot->GetGuardianPet())
-        currentPetGuid = guardian->GetGUID();
+        currentPetGuid = pet->GetObjectGuid();
+    else if (Pet* guardian = bot->GetMiniPet())
+        currentPetGuid = guardian->GetObjectGuid();
 
     if (currentPetGuid != lastPetGuid)
     {

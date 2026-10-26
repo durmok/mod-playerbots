@@ -12,14 +12,14 @@
 
 void NearestNonBotPlayersValue::FindUnits(std::list<Unit*>& targets)
 {
-    Acore::AnyUnitInObjectRangeCheck u_check(bot, range);
-    Acore::UnitListSearcher<Acore::AnyUnitInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, range);
+    MaNGOS::AnyUnitInObjectRangeCheck u_check(bot, range);
+    MaNGOS::UnitListSearcher<MaNGOS::AnyUnitInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, range);
 }
 
 bool NearestNonBotPlayersValue::AcceptUnit(Unit* unit)
 {
-    ObjectGuid guid = unit->GetGUID();
+    ObjectGuid guid = unit->GetObjectGuid();
     return guid.IsPlayer() && !GET_PLAYERBOT_AI(((Player*)unit)) &&
            (!((Player*)unit)->IsGameMaster() || ((Player*)unit)->isGMVisible());
 }

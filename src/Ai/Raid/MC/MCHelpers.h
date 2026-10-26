@@ -7,6 +7,8 @@
 #ifndef PLAYERBOTS_MCHELPERS_H
 #define PLAYERBOTS_MCHELPERS_H
 
+#include "Platform/Define.h"
+
 namespace MoltenCoreHelpers
 {
 enum MoltenCoreNPCs

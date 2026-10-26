@@ -5,14 +5,15 @@
  */
 
 #include "PlayerbotGuildMgr.h"
-#include "CharacterCache.h"
-#include "DatabaseEnv.h"
+// #include "CharacterCache.h"
+#include "DatabaseEnv2.h"
 #include "Guild.h"
 #include "GuildMgr.h"
 #include "Player.h"
 #include "PlayerbotAIConfig.h"
 #include "RandomPlayerbotFactory.h"
 #include "ScriptMgr.h"
+#include "Playerbots.h"
 
 void PlayerbotGuildMgr::Init()
 {
@@ -29,14 +30,14 @@ bool PlayerbotGuildMgr::CreateGuild(Player* player, std::string guildName)
     Guild* guild = new Guild();
     if (!guild->Create(player, guildName))
     {
-        LOG_ERROR("playerbots", "Error creating guild [ {} ] with leader [ {} ]", guildName,
+        LOG_ERROR("playerbots", "Error creating guild [ {} ] with leader [ {} ]", guildName.c_str(),
             player->GetName());
         delete guild;
         return false;
     }
-    sGuildMgr->AddGuild(guild);
+    sGuildMgr.AddGuild(guild);
 
-    LOG_DEBUG("playerbots", "Guild created: id={} name='{}'", guild->GetId(), guildName);
+    LOG_DEBUG("playerbots", "Guild created: id={} name='{}'", guild->GetId(), guildName.c_str());
     SetGuildEmblem(guild->GetId());
 
     GuildCache entry;
@@ -52,7 +53,7 @@ bool PlayerbotGuildMgr::CreateGuild(Player* player, std::string guildName)
 
 bool PlayerbotGuildMgr::SetGuildEmblem(uint32 guildId)
 {
-    Guild* guild = sGuildMgr->GetGuildById(guildId);
+    Guild* guild = sGuildMgr.GetGuildById(guildId);
     if (!guild)
         return false;
 
@@ -64,7 +65,7 @@ bool PlayerbotGuildMgr::SetGuildEmblem(uint32 guildId)
     br = urand(0, 7);
     st = urand(0, 180);
 
-    guild->HandleSetEmblem(EmblemInfo(st, cl, br, bc, bg));
+    guild->SetEmblem(st, cl, br, bc, bg);
     return true;
 }
 
@@ -104,7 +105,7 @@ std::string PlayerbotGuildMgr::AssignToGuild(Player* player)
         {
             if (_guildNames[key])
             {
-                LOG_INFO("playerbots","Assigning player [{}] to guild [{}]", player->GetName(), key);
+                LOG_INFO("playerbots","Assigning player [{}] to guild [{}]", player->GetName(), key.c_str());
                 return key;
             }
         }
@@ -120,7 +121,7 @@ void PlayerbotGuildMgr::OnGuildUpdate(Guild* guild)
         return;
 
     GuildCache& entry = it->second;
-    entry.memberCount = guild->GetMemberCount();
+    entry.memberCount = guild->GetMemberSize();
     if (entry.memberCount < entry.maxMembers)
         entry.status = 1;
     else if (entry.memberCount >= entry.maxMembers)
@@ -151,7 +152,7 @@ void PlayerbotGuildMgr::LoadGuildNames()
     _guildNames.clear();
     _shuffled_guild_keys.clear();
 
-    QueryResult result = CharacterDatabase.Query(
+    QueryResult2 result = CharacterDatabase2.Query(
         "SELECT {} FROM playerbots_guild_names",
         RandomPlayerbotFactory::GetLocalizedNameSelector("name"));
 
@@ -163,7 +164,7 @@ void PlayerbotGuildMgr::LoadGuildNames()
 
     do
     {
-        Field* fields = result->Fetch();
+        Field2* fields = result->Fetch();
 
         std::string name = fields[0].Get<std::string>();
         if (!name.empty())
@@ -182,7 +183,8 @@ void PlayerbotGuildMgr::LoadGuildNames()
 
 void PlayerbotGuildMgr::ValidateGuildCache()
 {
-    QueryResult result = CharacterDatabase.Query("SELECT guildid, name FROM guild");
+    /*
+    QueryResult2 result = CharacterDatabase2.Query("SELECT guild_id, name FROM guild");
     if (!result)
     {
         LOG_ERROR("playerbots", "No guilds found in database, resetting guild cache");
@@ -193,7 +195,7 @@ void PlayerbotGuildMgr::ValidateGuildCache()
     std::unordered_map<uint32, std::string> dbGuilds;
     do
     {
-        Field* fields = result->Fetch();
+        Field2* fields = result->Fetch();
         uint32 guildId = fields[0].Get<uint32>();
         std::string guildName = fields[1].Get<std::string>();
         dbGuilds[guildId] = guildName;
@@ -206,12 +208,12 @@ void PlayerbotGuildMgr::ValidateGuildCache()
         cache.name = it->second;
         cache.maxMembers = sPlayerbotAIConfig.RandomBotGuildSizeMax;
 
-        Guild* guild = sGuildMgr ->GetGuildById(guildId);
+        Guild* guild = sGuildMgr.GetGuildById(guildId);
         if (!guild)
             continue;
 
-        cache.memberCount = guild->GetMemberCount();
-        ObjectGuid leaderGuid = guild->GetLeaderGUID();
+        cache.memberCount = guild->GetMemberSize();
+        ObjectGuid leaderGuid = guild->GetLeaderGuid();
         CharacterCacheEntry const* leaderEntry = sCharacterCache->GetCharacterCacheByGuid(leaderGuid);
         uint32 leaderAccount = leaderEntry->AccountId;
         cache.hasRealPlayer = !(sPlayerbotAIConfig.IsInRandomAccountList(leaderAccount));
@@ -233,6 +235,7 @@ void PlayerbotGuildMgr::ValidateGuildCache()
             }
         }
     }
+    */
 }
 
 void PlayerbotGuildMgr::DeleteRandomBotGuilds()
@@ -240,24 +243,24 @@ void PlayerbotGuildMgr::DeleteRandomBotGuilds()
     LOG_INFO("playerbots", "Deleting randombot guilds...");
     std::vector<uint32> guildsToDisband;
 
-    if (QueryResult result = CharacterDatabase.Query("SELECT guildid, leaderguid FROM guild"))
+    if (QueryResult2 result = CharacterDatabase2.Query("SELECT guild_id, leaderguid FROM guild"))
     {
         do
         {
-            Field* fields = result->Fetch();
+            Field2* fields = result->Fetch();
             uint32 guildId = fields[0].Get<uint32>();
-            ObjectGuid leader = ObjectGuid::Create<HighGuid::Player>(fields[1].Get<uint32>());
+            ObjectGuid leader = ObjectGuid(HighGuid::HIGHGUID_PLAYER, fields[1].Get<uint32>());
 
             // The leader's account is checked instead of the 'add' event or anything else that depends on the
             // bot being online.
-            if (sPlayerbotAIConfig.IsInRandomAccountList(sCharacterCache->GetCharacterAccountIdByGuid(leader)))
+            if (sPlayerbotAIConfig.IsInRandomAccountList(sObjectMgr.GetPlayerAccountIdByGUID(leader)))
                 guildsToDisband.push_back(guildId);
         } while (result->NextRow());
     }
 
     for (uint32 guildId : guildsToDisband)
     {
-        if (Guild* guild = sGuildMgr->GetGuildById(guildId))
+        if (Guild* guild = sGuildMgr.GetGuildById(guildId))
             guild->Disband();
     }
     LOG_INFO("playerbots", "Randombot guilds deleted");
@@ -301,6 +304,7 @@ class BotGuildCacheWorldScript : public WorldScript
             if (_validateTimer >= _validateInterval) // Validate every hour
             {
                 _validateTimer = 0;
+                auto lock = LockPlayerbots();
                 PlayerbotGuildMgr::instance().ValidateGuildCache();
                 LOG_INFO("playerbots", "Scheduled guild cache validation");
             }

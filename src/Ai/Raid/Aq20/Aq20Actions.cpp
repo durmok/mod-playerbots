@@ -36,14 +36,16 @@ bool Aq20UseCrystalAction::Execute(Event /*event*/)
                 return false;
 
             // this makes crystal do its animation (then disappear after)
-            WorldPacket data1(CMSG_GAMEOBJ_USE);
-            data1 << crystal->GetGUID();
+            WorldPackets::Misc::GameObjectUse data1;
+            data1.guid = crystal->GetObjectGuid();
             bot->GetSession()->HandleGameObjectUseOpcode(data1);
 
+            /*
             // this makes crystal actually remove the buff and put on debuff (took a while to figure that out)
             WorldPacket data2(CMSG_GAMEOBJ_USE);
-            data2 << crystal->GetGUID();
+            data2 << crystal->GetObjectGuid();
             bot->GetSession()->HandleGameobjectReportUse(data2);
+            */
 
             return true;
         }

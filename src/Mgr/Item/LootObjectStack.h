@@ -16,14 +16,14 @@ class AiObjectContext;
 class Player;
 class WorldObject;
 
-struct ItemTemplate;
+struct ItemPrototype;
 
 class LootStrategy
 {
 public:
     LootStrategy() {}
     virtual ~LootStrategy() {};
-    virtual bool CanLoot(ItemTemplate const* proto, AiObjectContext* context) = 0;
+    virtual bool CanLoot(ItemPrototype const* proto, AiObjectContext* context) = 0;
     virtual std::string const GetName() = 0;
 };
 
@@ -63,7 +63,7 @@ private:
     uint8 _lockRequirementCount = 0;
     uint32 _lockType = 0;
     bool _hasUnsupportedLockRequirement = false;
-    static bool IsNeededForQuest(Player* bot, uint32 itemId);
+    // static bool IsNeededForQuest(Player* bot, uint32 itemId);
 };
 
 class LootTarget

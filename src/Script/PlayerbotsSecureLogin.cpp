@@ -42,12 +42,12 @@ namespace
         {
             if (PlayerbotMgr* mgr = GET_PLAYERBOT_MGR(master))
             {
-                mgr->LogoutPlayerBot(target->GetGUID());
+                mgr->LogoutPlayerBot(target->GetObjectGuid());
                 return;
             }
         }
 
-        sRandomPlayerbotMgr.LogoutPlayerBot(target->GetGUID());
+        sRandomPlayerbotMgr.LogoutPlayerBot(target->GetObjectGuid());
     }
 }
 
@@ -57,17 +57,18 @@ public:
     PlayerbotsSecureLoginServerScript()
         : ServerScript("PlayerbotsSecureLoginServerScript", { SERVERHOOK_CAN_PACKET_RECEIVE }) {}
 
-    bool CanPacketReceive(WorldSession* /*session*/, WorldPacket const& packet) override
+    bool CanPacketReceive(WorldSession* /*session*/, ClientPacket const& packet) override
     {
         if (packet.GetOpcode() != CMSG_PLAYER_LOGIN)
             return true;
 
-        WorldPacket pkt(packet);
-        ObjectGuid loginGuid;
-        pkt >> loginGuid;
+        WorldPackets::Character::PlayerLogin const& pkt = dynamic_cast<WorldPackets::Character::PlayerLogin const&>(packet);
+        ObjectGuid loginGuid = pkt.guid;
 
         if (!loginGuid)
             return true;
+
+        auto lock = LockPlayerbots();
 
         Player* existingAltbot = FindOnlineAltbotByGuid(loginGuid);
         if (existingAltbot)

@@ -13,7 +13,7 @@
  */
 
 #include "PerfMonitor.h"
-#include "Config.h"
+#include "Config/Config.h"
 #include "Playerbots.h"
 #include <cmath>
 #include <ctime>
@@ -549,7 +549,7 @@ void PerfMonitor::DumpJson(bool perTick)
     std::ofstream file(tempPath.c_str(), std::ios::out | std::ios::trunc);
     if (!file)
     {
-        LOG_ERROR("playerbots", "Performance monitor could not write {}", tempPath);
+        LOG_ERROR("playerbots", "Performance monitor could not write {}", tempPath.c_str());
         return;
     }
 
@@ -558,7 +558,7 @@ void PerfMonitor::DumpJson(bool perTick)
 
     if (!file)
     {
-        LOG_ERROR("playerbots", "Performance monitor failed to write {}", tempPath);
+        LOG_ERROR("playerbots", "Performance monitor failed to write {}", tempPath.c_str());
 
         std::error_code removeError;
         std::filesystem::remove(tempPath, removeError);
@@ -569,14 +569,14 @@ void PerfMonitor::DumpJson(bool perTick)
     std::filesystem::rename(tempPath, path, renameError);
     if (renameError)
     {
-        LOG_ERROR("playerbots", "Performance monitor could not replace {}: {}", path, renameError.message());
+        LOG_ERROR("playerbots", "Performance monitor could not replace {}: {}", path.c_str(), renameError.message().c_str());
 
         std::error_code removeError;
         std::filesystem::remove(tempPath, removeError);
         return;
     }
 
-    LOG_INFO("playerbots", "Performance monitor dump written to {}", path);
+    LOG_INFO("playerbots", "Performance monitor dump written to {}", path.c_str());
 }
 
 void PerfMonitor::Reset()

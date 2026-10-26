@@ -5,7 +5,7 @@
  */
 
 #include "GuildCreateActions.h"
-#include "ArenaTeam.h"
+// #include "ArenaTeam.h"
 #include "BudgetValues.h"
 #include "Event.h"
 #include "GuildMgr.h"
@@ -13,6 +13,7 @@
 #include "RandomPlayerbotFactory.h"
 #include "ServerFacade.h"
 #include "SharedDefines.h"
+#include "Guild.h"
 
 bool BuyPetitionAction::Execute(Event /*event*/)
 {
@@ -28,9 +29,10 @@ bool BuyPetitionAction::Execute(Event /*event*/)
         if (guildName.empty())
             continue;
 
+        /*
         WorldPacket data(CMSG_PETITION_BUY);
 
-        data << pCreature->GetGUID();
+        data << pCreature->GetObjectGuid();
         data << uint32(0);
         data << uint64(0);
         data << guildName.c_str();
@@ -52,6 +54,11 @@ bool BuyPetitionAction::Execute(Event /*event*/)
 
         data << uint32(0);  // index
         data << uint32(0);
+        */
+
+        WorldPackets::Petition::PetitionBuy data;
+        data.guidNPC = pCreature->GetObjectGuid();
+        data.name = std::move(guildName);
 
         bot->GetSession()->HandlePetitionBuyOpcode(data);
 
@@ -123,15 +130,20 @@ bool PetitionOfferAction::Execute(Event event)
     if (!player)
         return false;
 
+    /*
     WorldPacket data(CMSG_OFFER_PETITION);
 
     data << uint32(0);
-    data << petitions.front()->GetGUID();
+    data << petitions.front()->GetObjectGuid();
     data << guid;
+    */
+    WorldPackets::Petition::OfferPetition data;
+    data.itemGuid = petitions.front()->GetObjectGuid();
+    data.playerGuid = guid;
 
-    QueryResult result =
-        CharacterDatabase.Query("SELECT playerguid FROM petition_sign WHERE player_account = {} AND petitionguid = {}",
-                                player->GetSession()->GetAccountId(), petitions.front()->GetGUID().GetCounter());
+    QueryResult2 result =
+        CharacterDatabase2.Query("SELECT player_guid FROM petition_sign WHERE player_account = {} AND petition_guid = {}",
+                                player->GetSession()->GetAccountId(), petitions.front()->GetObjectGuid().GetCounter());
     if (result)
     {
         return false;
@@ -139,8 +151,8 @@ bool PetitionOfferAction::Execute(Event event)
 
     bot->GetSession()->HandleOfferPetitionOpcode(data);
 
-    result = CharacterDatabase.Query("SELECT playerguid FROM petition_sign WHERE petitionguid = {}",
-                                     petitions.front()->GetGUID().GetCounter());
+    result = CharacterDatabase2.Query("SELECT player_guid FROM petition_sign WHERE petition_guid = {}",
+                                     petitions.front()->GetObjectGuid().GetCounter());
     uint8 signs = result ? (uint8)result->GetRowCount() : 0;
 
     context->GetValue<uint8>("petition signs")->Set(signs);
@@ -204,7 +216,7 @@ bool PetitionOfferNearbyAction::Execute(Event /*event*/)
 bool PetitionOfferNearbyAction::isUseful()
 {
     return !bot->GetGuildId() && AI_VALUE2(uint32, "item count", chat->FormatQItem(5863)) &&
-           AI_VALUE(uint8, "petition signs") < sWorld->getIntConfig(CONFIG_MIN_PETITION_SIGNS);
+           AI_VALUE(uint8, "petition signs") < sWorld.getConfig(CONFIG_UINT32_MIN_PETITION_SIGNS);
 }
 
 bool PetitionTurnInAction::Execute(Event /*event*/)
@@ -222,14 +234,16 @@ bool PetitionTurnInAction::Execute(Event /*event*/)
         if (!pCreature)
             continue;
 
-        WorldPacket data(CMSG_TURN_IN_PETITION, 8);
+        // WorldPacket data(CMSG_TURN_IN_PETITION, 8);
+        WorldPackets::Petition::TurnInPetition data;
 
         Item* petition = petitions.front();
 
         if (!petition)
             return false;
 
-        data << petition->GetGUID();
+        // data << petition->GetObjectGuid();
+        data.itemGuid = petition->GetObjectGuid();
 
         bot->GetSession()->HandleTurnInPetitionOpcode(data);
 
@@ -244,7 +258,7 @@ bool PetitionTurnInAction::Execute(Event /*event*/)
                 bot->ModifyMoney(int32(REQUIRED - have)); // add only the missing amount to bot to reach 10g
             }
 
-            Guild* guild = sGuildMgr->GetGuildById(bot->GetGuildId());
+            Guild* guild = sGuildMgr.GetGuildById(bot->GetGuildId());
 
             uint32 st, cl, br, bc, bg;
             bg = urand(0, 51);
@@ -252,12 +266,14 @@ bool PetitionTurnInAction::Execute(Event /*event*/)
             cl = urand(0, 17);
             br = urand(0, 7);
             st = urand(0, 180);
-            EmblemInfo emblemInfo(st, cl, br, bc, bg);
+            // EmblemInfo emblemInfo(st, cl, br, bc, bg);
 
-            guild->HandleSetEmblem(emblemInfo); // official core handling
+            guild->SetEmblem(st, cl, br, bc, bg); // official core handling
 
             // LANG_GUILD_VETERAN -> can invite
-            guild->HandleSetRankInfo(2, {}, GR_RIGHT_GCHATLISTEN | GR_RIGHT_GCHATSPEAK | GR_RIGHT_INVITE);
+            // guild->SetRankInfo(2, {}, GR_RIGHT_GCHATLISTEN | GR_RIGHT_GCHATSPEAK | GR_RIGHT_INVITE);
+            guild->SetRankRights(2, GR_RIGHT_GCHATLISTEN | GR_RIGHT_GCHATSPEAK | GR_RIGHT_INVITE);
+            guild->SetRankName(2, {});
         }
 
         return true;
@@ -283,14 +299,14 @@ bool PetitionTurnInAction::Execute(Event /*event*/)
 bool PetitionTurnInAction::isUseful()
 {
     bool inCity = false;
-    if (AreaTableEntry const* zone = sAreaTableStore.LookupEntry(bot->GetZoneId()))
+    if (AreaTableEntry const* zone = sAreaTableStore.LookupEntry<AreaEntry>(bot->GetZoneId()))
     {
-        if (zone->flags & AREA_FLAG_CAPITAL)
+        if (zone->Flags & AREA_FLAG_CAPITAL)
             inCity = true;
     }
 
     return inCity && !bot->GetGuildId() && AI_VALUE2(uint32, "item count", chat->FormatQItem(5863)) &&
-           AI_VALUE(uint8, "petition signs") >= sWorld->getIntConfig(CONFIG_MIN_PETITION_SIGNS) &&
+           AI_VALUE(uint8, "petition signs") >= sWorld.getConfig(CONFIG_UINT32_MIN_PETITION_SIGNS) &&
            !context->GetValue<TravelTarget*>("travel target")->Get()->isTraveling();
 }
 
@@ -320,9 +336,9 @@ bool BuyTabardAction::Execute(Event /*event*/)
 bool BuyTabardAction::isUseful()
 {
     bool inCity = false;
-    if (AreaTableEntry const* zone = sAreaTableStore.LookupEntry(bot->GetZoneId()))
+    if (AreaTableEntry const* zone = sAreaTableStore.LookupEntry<AreaEntry>(bot->GetZoneId()))
     {
-        if (zone->flags & AREA_FLAG_CAPITAL)
+        if (zone->Flags & AREA_FLAG_CAPITAL)
             inCity = true;
     }
 

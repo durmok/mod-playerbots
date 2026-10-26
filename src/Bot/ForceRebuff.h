@@ -6,14 +6,14 @@
 #ifndef PLAYERBOTS_FORCEREBUFF_H
 #define PLAYERBOTS_FORCEREBUFF_H
 
-#include "Define.h"
+#include "Platform/Define.h"
 #include "Strategy.h"
 #include <string>
 #include <vector>
 
 class Player;
 class PlayerbotAI;
-class SpellInfo;
+class SpellEntry;
 
 class ForceRebuffState
 {
@@ -34,7 +34,7 @@ public:
     bool IsBuffPendingThisCycle() const { return buffPendingThisCycle; }
     bool IsBuffProposedThisCycle() const { return buffProposedThisCycle; }
 
-    void NoteCast(SpellInfo const* spellInfo) { lastGcdSpell = spellInfo; }
+    void NoteCast(SpellEntry const* spellInfo) { lastGcdSpell = spellInfo; }
     bool IsOnGlobalCooldown() const;
 
     bool BuffBelowRefreshTarget(int32 remaining, int32 maxDuration, uint32 baseBeforeDuration) const;
@@ -45,7 +45,7 @@ private:
     bool replyToReadyCheck = false;
     bool buffPendingThisCycle = false;
     bool buffProposedThisCycle = false;
-    SpellInfo const* lastGcdSpell = nullptr;
+    SpellEntry const* lastGcdSpell = nullptr;
     uint32 beginMs = 0;
 };
 

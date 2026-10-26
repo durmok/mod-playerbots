@@ -94,7 +94,8 @@ bool BankAction::Withdraw(uint32 itemid)
 bool BankAction::Deposit(Item* pItem)
 {
     ItemPosCountVec dest;
-    InventoryResult msg = bot->CanBankItem(NULL_BAG, NULL_SLOT, dest, pItem, false);
+    uint8 bagSlot = 0;
+    InventoryResult msg = bot->CanBankItem(NULL_BAG, NULL_SLOT, dest, pItem, false, bagSlot);
     if (msg != EQUIP_ERR_OK)
     {
         bot->SendEquipError(msg, pItem, nullptr);

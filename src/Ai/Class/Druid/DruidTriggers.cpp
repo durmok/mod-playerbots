@@ -57,7 +57,7 @@ bool BlanketHotTrigger::IsActive()
 bool AquaticFormTrigger::IsActive()
 {
     return !bot->IsInCombat() && !botAI->HasAura("aquatic form", bot) &&
-           bot->GetLiquidData().Status == LIQUID_MAP_UNDER_WATER;
+           bot->GetLiquidStatus() == LIQUID_MAP_UNDER_WATER;
 }
 
 bool ProwlTrigger::IsActive()

@@ -9,16 +9,16 @@
 #include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
 
-bool AcceptAllQuestsAction::ProcessQuest(Quest const* quest, Object* questGiver)
+bool AcceptAllQuestsAction::ProcessQuest(Quest const* quest, WorldObject* questGiver)
 {
-    if (!AcceptQuest(quest, questGiver->GetGUID())) return false;
+    if (!AcceptQuest(quest, questGiver->GetObjectGuid())) return false;
 
     auto text_quest = ChatHelper::FormatQuest(quest);
     bot->PlayDistanceSound(620);
 
     if (botAI->HasStrategy("debug quest", BotState::BOT_STATE_NON_COMBAT) || botAI->HasStrategy("debug rpg", BotState::BOT_STATE_COMBAT))
     {
-        LOG_INFO("playerbots", "{} => Quest [{}] accepted", bot->GetName(), quest->GetTitle());
+        LOG_INFO("playerbots", "{} => Quest [{}] accepted", bot->GetName(), quest->GetTitle().c_str());
         std::string text = PlayerbotTextMgr::instance().GetBotTextOrDefault(
             "quest_accept_debug",
             "Quest [%quest] accepted",
@@ -45,15 +45,17 @@ bool AcceptQuestAction::Execute(Event event)
 
     bool hasAccept = false;
 
-    if (event.getPacket().empty())
+    auto p = event.getClientPacket<WorldPackets::Quest::QuestgiverAcceptQuest>();
+
+    if (!p)
     {
         GuidVector npcs = AI_VALUE(GuidVector, "nearest npcs");
         for (auto i = npcs.begin(); i != npcs.end(); i++)
         {
             Unit* unit = botAI->GetUnit(*i);
-            if (unit && quest && unit->hasQuest(quest))
+            if (unit && quest && unit->HasQuest(quest))
             {
-                guid = unit->GetGUID().GetRawValue();
+                guid = unit->GetObjectGuid().GetRawValue();
                 break;
             }
             if (unit && text == "*" && bot->GetDistance(unit) <= INTERACTION_DISTANCE)
@@ -63,9 +65,9 @@ bool AcceptQuestAction::Execute(Event event)
         for (auto i = gos.begin(); i != gos.end(); i++)
         {
             GameObject* go = botAI->GetGameObject(*i);
-            if (go && quest && go->hasQuest(quest))
+            if (go && quest && go->HasQuest(quest))
             {
-                guid = go->GetGUID().GetRawValue();
+                guid = go->GetObjectGuid().GetRawValue();
                 break;
             }
             if (go && text == "*" && bot->GetDistance(go) <= INTERACTION_DISTANCE)
@@ -74,15 +76,17 @@ bool AcceptQuestAction::Execute(Event event)
     }
     else
     {
-        WorldPacket& p = event.getPacket();
-        p.rpos(0);
-        p >> guid >> quest;
+        // WorldPacket& p = event.getPacket();
+        // p.rpos(0);
+        // p >> guid >> quest;
+        guid = p->guid;
+        quest = p->quest;
     }
 
     if (!quest || !guid)
         return false;
 
-    Quest const* qInfo = sObjectMgr->GetQuestTemplate(quest);
+    Quest const* qInfo = sObjectMgr.GetQuestTemplate(quest);
     if (!qInfo)
         return false;
 
@@ -104,20 +108,23 @@ bool AcceptQuestShareAction::Execute(Event event)
     Player* master = GetMaster();
     Player* bot = botAI->GetBot();
 
-    WorldPacket& p = event.getPacket();
-    p.rpos(0);
-    uint32 quest;
-    p >> quest;
+    // WorldPacket& p = event.getPacket();
+    auto p = event.getClientPacket<WorldPackets::Quest::PushQuestToParty>();
+    if (!p)
+        return false;
+    // p.rpos(0);
+    uint32 quest = p->questId;
+    // p >> quest;
 
-    Quest const* qInfo = sObjectMgr->GetQuestTemplate(quest);
-    if (!qInfo || !bot->GetDivider())
+    Quest const* qInfo = sObjectMgr.GetQuestTemplate(quest);
+    if (!qInfo)
         return false;
 
     quest = qInfo->GetQuestId();
 
     if (bot->HasQuest(quest))
     {
-        bot->SetDivider(ObjectGuid::Empty);
+        // bot->SetDivider(ObjectGuid::Empty);
         botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
             "quest_already_have_error", "I have this quest", {}));
         return false;
@@ -126,19 +133,21 @@ bool AcceptQuestShareAction::Execute(Event event)
     if (!bot->CanTakeQuest(qInfo, false))
     {
         // can't take quest
-        bot->SetDivider(ObjectGuid::Empty);
+        // bot->SetDivider(ObjectGuid::Empty);
         botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
             "quest_cant_take_error", "I can't take this quest", {}));
 
         return false;
     }
 
+    /*
     if (!bot->GetDivider().IsEmpty())
     {
         // send msg to quest giving player
         master->SendPushToPartyResponse(bot, QUEST_PARTY_MSG_ACCEPT_QUEST);
         bot->SetDivider(ObjectGuid::Empty);
     }
+    */
 
     if (bot->CanAddQuest(qInfo, false))
     {
@@ -169,11 +178,14 @@ bool ConfirmQuestAction::Execute(Event event)
     Player* bot = botAI->GetBot();
     Player* requester = event.getOwner() ? event.getOwner() : GetMaster();
 
-    WorldPacket& p = event.getPacket();
-    p.rpos(0);
-    uint32 quest;
-    p >> quest;
-    Quest const* qInfo = sObjectMgr->GetQuestTemplate(quest);
+    // WorldPacket& p = event.getPacket();
+    auto p = event.getClientPacket<WorldPackets::Quest::QuestConfirmAccept>();
+    if (!p)
+        return false;
+    // p.rpos(0);
+    uint32 quest = p->questId;
+    // p >> quest;
+    Quest const* qInfo = sObjectMgr.GetQuestTemplate(quest);
 
     if (!qInfo)
         return false;

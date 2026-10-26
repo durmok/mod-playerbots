@@ -36,13 +36,13 @@ namespace BlackwingLairHelpers
         return PlayerbotAI::IsAssistTankOfIndex(bot, 0, true);
     }
 
-    bool IsNonBABotNearPosition(Player const* bot, Position const& position, float distance)
+    bool IsNonBABotNearPosition(Player * bot, Position const& position, float distance)
     {
-        Group const* group = bot->GetGroup();
+        Group * group = bot->GetGroup();
         if (!group)
             return false;
 
-        for (GroupReference const* gref = group->GetFirstMember(); gref; gref = gref->next())
+        for (GroupReference * gref = group->GetFirstMember(); gref; gref = gref->next())
         {
             Player const* p = gref->GetSource();
             if (!p || p == bot || !p->IsAlive() || p->GetMapId() != bot->GetMapId())

@@ -38,9 +38,11 @@ bool McShazzrahRangedTrigger::IsActive()
 
 bool McInLavaTrigger::IsActive()
 {
-    LiquidData const& liquid = bot->GetLiquidData();
-    return (liquid.Flags & MAP_LIQUID_TYPE_MAGMA) &&
-           (liquid.Status & (LIQUID_MAP_WATER_WALK | LIQUID_MAP_IN_WATER | LIQUID_MAP_UNDER_WATER));
+    GridMapLiquidData liquid;
+    GridMapLiquidStatus status = bot->GetLiquidData(&liquid);
+    // LiquidData const& liquid = bot->GetLiquidData();
+    return (liquid.type_flags & MAP_LIQUID_TYPE_MAGMA) &&
+           (status & (LIQUID_MAP_WATER_WALK | LIQUID_MAP_IN_WATER | LIQUID_MAP_UNDER_WATER));
 }
 
 bool McGolemaggMagmaSplashTrigger::IsActive()

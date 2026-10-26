@@ -18,6 +18,7 @@ public:
 
     uint32 GetType() const override { return STRATEGY_TYPE_NONCOMBAT; }
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
 };
 
 class CollisionStrategy : public Strategy

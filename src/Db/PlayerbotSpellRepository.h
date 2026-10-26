@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
-class SpellInfo;
+class SpellEntry;
 
 class PlayerbotSpellRepository
 {
@@ -32,7 +32,7 @@ public:
     SkillLineAbilityEntry const* GetSkillLine(uint32_t spellId) const;
     bool IsItemBuyable(uint32_t itemId) const;
     std::vector<uint32_t> const& GetOpeningSpells(uint32_t lockType) const;
-    uint32_t GetRequiredRidingSkill(SpellInfo const* mountSpell) const;
+    uint32_t GetRequiredRidingSkill(SpellEntry const* mountSpell) const;
 
 private:
     PlayerbotSpellRepository() = default;

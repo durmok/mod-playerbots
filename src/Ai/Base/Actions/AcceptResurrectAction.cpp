@@ -18,9 +18,9 @@ bool AcceptResurrectAction::Execute(Event event)
     ObjectGuid guid;
     p >> guid;
 
-    WorldPacket packet(CMSG_RESURRECT_RESPONSE, 8 + 1);
-    packet << guid;
-    packet << uint8(1);                                        // accept
+    WorldPackets::Misc::ResurrectResponse packet;
+    packet.resurrectorGuid = guid;
+    packet.accept = true;
     bot->GetSession()->HandleResurrectResponseOpcode(packet);  // queue the packet to get around race condition
 
     return true;

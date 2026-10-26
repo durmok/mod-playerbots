@@ -55,14 +55,14 @@ bool TameAction::Execute(Event event)
         std::set<std::string> exoticFamilies;
 
         // Loop over all creature templates and collect tameable families
-        CreatureTemplateContainer const* creatures = sObjectMgr->GetCreatureTemplates();
-        for (auto itr = creatures->begin(); itr != creatures->end(); ++itr)
+        CreatureInfoMap const& creatures = sObjectMgr.GetCreatureTemplates();
+        for (auto itr = creatures.begin(); itr != creatures.end(); ++itr)
         {
-            CreatureTemplate const& creature = itr->second;
-            if (!creature.IsTameable(true))
+            CreatureTemplate const& creature = *itr->second;
+            if (!creature.IsTameable())
                 continue;
 
-            CreatureFamilyEntry const* familyEntry = sCreatureFamilyStore.LookupEntry(creature.family);
+            CreatureFamilyEntry const* familyEntry = sCreatureFamilyStore.LookupEntry(creature.pet_family);
             if (!familyEntry)
                 continue;
 
@@ -157,7 +157,7 @@ bool TameAction::Execute(Event event)
         Player* bot = botAI->GetBot();
         PlayerbotFactory factory(bot, bot->GetLevel());
         factory.InitPet();
-        factory.InitPetTalents();
+        // factory.InitPetTalents();
 
         if (!lastPetName.empty() && lastPetId != 0)
         {
@@ -184,14 +184,14 @@ bool TameAction::SetPetByName(std::string const& name)
     std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
 
     // Get the full list of creature templates from the object manager
-    CreatureTemplateContainer const* creatures = sObjectMgr->GetCreatureTemplates();
+    CreatureInfoMap const& creatures = sObjectMgr.GetCreatureTemplates();
     Player* bot = botAI->GetBot();
 
     // Iterate through all creature templates
-    for (auto itr = creatures->begin(); itr != creatures->end(); ++itr)
+    for (auto itr = creatures.begin(); itr != creatures.end(); ++itr)
     {
-        CreatureTemplate const& creature = itr->second;
-        std::string creatureName = creature.Name;
+        CreatureTemplate const& creature = *itr->second;
+        std::string creatureName = creature.name;
         // Convert creature's name to lowercase for comparison
         std::transform(creatureName.begin(), creatureName.end(), creatureName.begin(), ::tolower);
 
@@ -199,7 +199,7 @@ bool TameAction::SetPetByName(std::string const& name)
         if (creatureName == lowerName)
         {
             // Skip if the creature isn't tameable at all
-            if (!creature.IsTameable(true))
+            if (!creature.IsTameable())
                 continue;
 
             // If the creature is exotic and the bot doesn't have Beast Mastery, show error and fail
@@ -213,14 +213,14 @@ bool TameAction::SetPetByName(std::string const& name)
             }
 
             // Skip if the creature isn't tameable by this bot (respecting exotic pet rules)
-            if (!creature.IsTameable(bot->CanTameExoticPets()))
+            if (!creature.IsTameable())
                 continue;
 
             // Store the found pet's name and entry ID for later use/feedback
-            lastPetName = creature.Name;
-            lastPetId = creature.Entry;
+            lastPetName = creature.name;
+            lastPetId = creature.entry;
             // Create and set this pet for the bot
-            return CreateAndSetPet(creature.Entry);
+            return CreateAndSetPet(creature.entry);
         }
     }
 
@@ -233,14 +233,14 @@ bool TameAction::SetPetByName(std::string const& name)
 bool TameAction::SetPetById(uint32 id)
 {
     // Look up the creature template by its numeric entry/id
-    CreatureTemplate const* creature = sObjectMgr->GetCreatureTemplate(id);
+    CreatureTemplate const* creature = sObjectMgr.GetCreatureTemplate(id);
     Player* bot = botAI->GetBot();
 
     // Proceed only if a valid creature was found
     if (creature)
     {
         // Check if this creature is ever tameable (ignore bot's own restrictions for now)
-        if (!creature->IsTameable(true))
+        if (!creature->IsTameable())
         {
             // If not tameable at all, show an error and fail
             botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
@@ -259,7 +259,7 @@ bool TameAction::SetPetById(uint32 id)
         }
 
         // Check if the bot is actually allowed to tame this pet (honoring exotic pet rules)
-        if (!creature->IsTameable(bot->CanTameExoticPets()))
+        if (!creature->IsTameable())
         {
             botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
                 "tame_no_pet_by_id", "No tameable pet found with id: %id", {{"%id", std::to_string(id)}}));
@@ -267,10 +267,10 @@ bool TameAction::SetPetById(uint32 id)
         }
 
         // Remember this pet's name and id for later feedback
-        lastPetName = creature->Name;
-        lastPetId = creature->Entry;
+        lastPetName = creature->name;
+        lastPetId = creature->entry;
         // Set and create the pet for the bot
-        return CreateAndSetPet(creature->Entry);
+        return CreateAndSetPet(creature->entry);
     }
 
     // If no valid creature was found by id, show an error
@@ -286,7 +286,7 @@ bool TameAction::SetPetByFamily(std::string const& family)
     std::transform(lowerFamily.begin(), lowerFamily.end(), lowerFamily.begin(), ::tolower);
 
     // Get all creature templates from the object manager
-    CreatureTemplateContainer const* creatures = sObjectMgr->GetCreatureTemplates();
+    CreatureInfoMap const& creatures = sObjectMgr.GetCreatureTemplates();
     Player* bot = botAI->GetBot();
 
     // Prepare a list of candidate creatures and track if any exotic pet is found
@@ -294,16 +294,16 @@ bool TameAction::SetPetByFamily(std::string const& family)
     bool foundExotic = false;
 
     // Iterate through all creature templates
-    for (auto itr = creatures->begin(); itr != creatures->end(); ++itr)
+    for (auto itr = creatures.begin(); itr != creatures.end(); ++itr)
     {
-        CreatureTemplate const& creature = itr->second;
+        CreatureTemplate const& creature = *itr->second;
 
         // Skip if this creature is never tameable
-        if (!creature.IsTameable(true))
+        if (!creature.IsTameable())
             continue;
 
         // Look up the family entry for this creature
-        CreatureFamilyEntry const* familyEntry = sCreatureFamilyStore.LookupEntry(creature.family);
+        CreatureFamilyEntry const* familyEntry = sCreatureFamilyStore.LookupEntry(creature.pet_family);
         if (!familyEntry)
             continue;
 
@@ -323,7 +323,7 @@ bool TameAction::SetPetByFamily(std::string const& family)
         }
 
         // Only add as candidate if this bot is allowed to tame it (including exotic rules)
-        if (!creature.IsTameable(bot->CanTameExoticPets()))
+        if (!creature.IsTameable())
             continue;
 
         candidates.push_back(&creature);
@@ -351,10 +351,10 @@ bool TameAction::SetPetByFamily(std::string const& family)
     CreatureTemplate const* selected = candidates[dis(gen)];
 
     // Save the selected pet's name and id for feedback
-    lastPetName = selected->Name;
-    lastPetId = selected->Entry;
+    lastPetName = selected->name;
+    lastPetId = selected->entry;
     // Attempt to create and set the new pet for the bot
-    return CreateAndSetPet(selected->Entry);
+    return CreateAndSetPet(selected->entry);
 }
 
 bool TameAction::RenamePet(std::string const& newName)
@@ -399,7 +399,7 @@ bool TameAction::RenamePet(std::string const& newName)
         normalized[i] = std::tolower(normalized[i]);
 
     // Check if the new name is reserved or forbidden
-    if (sObjectMgr->IsReservedName(normalized))
+    if (sObjectMgr.IsReservedName(normalized))
     {
         botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
             "tame_pet_name_forbidden_error",
@@ -411,7 +411,7 @@ bool TameAction::RenamePet(std::string const& newName)
     // Set the pet's name and save it to the database
     pet->SetName(normalized);
     pet->SavePetToDB(PET_SAVE_AS_CURRENT);
-    bot->GetSession()->SendPetNameQuery(pet->GetGUID(), pet->GetEntry());
+    bot->GetSession()->SendPetNameQuery(pet->GetObjectGuid(), pet->GetEntry());
 
     // Notify the master about the rename and give a tip to update the client name display
     botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
@@ -422,7 +422,7 @@ bool TameAction::RenamePet(std::string const& newName)
         {}));
 
     // Remove the current pet and (re-)cast Call Pet spell if the bot is a hunter
-    bot->RemovePet(nullptr, PET_SAVE_AS_CURRENT, true);
+    bot->RemovePet(PET_SAVE_AS_CURRENT);
     constexpr uint32 SPELL_CALL_PET = 883;
     if (bot->getClass() == CLASS_HUNTER && bot->HasSpell(SPELL_CALL_PET))
         bot->CastSpell(bot, SPELL_CALL_PET, true);
@@ -442,7 +442,7 @@ bool TameAction::CreateAndSetPet(uint32 creatureEntry)
     }
 
     // Retrieve the creature template for the given entry (pet species info)
-    CreatureTemplate const* creature = sObjectMgr->GetCreatureTemplate(creatureEntry);
+    CreatureTemplate const* creature = sObjectMgr.GetCreatureTemplate(creatureEntry);
     if (!creature)
     {
         botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
@@ -451,17 +451,19 @@ bool TameAction::CreateAndSetPet(uint32 creatureEntry)
     }
 
     // If the bot already has a current pet or an unslotted pet, remove them to avoid conflicts
-    if (bot->GetPetStable() && bot->GetPetStable()->CurrentPet)
+    if (bot->GetPet())
     {
-        bot->RemovePet(nullptr, PET_SAVE_AS_CURRENT);
-        bot->RemovePet(nullptr, PET_SAVE_NOT_IN_SLOT);
+        bot->RemovePet(PET_SAVE_AS_CURRENT);
+        bot->RemovePet(PET_SAVE_NOT_IN_SLOT);
     }
-    if (bot->GetPetStable() && bot->GetPetStable()->GetUnslottedHunterPet())
+    /*
+    if (bot->GetPet() && bot->GetPetStable()->GetUnslottedHunterPet())
     {
         bot->GetPetStable()->UnslottedPets.clear();
         bot->RemovePet(nullptr, PET_SAVE_AS_CURRENT);
         bot->RemovePet(nullptr, PET_SAVE_NOT_IN_SLOT);
     }
+    */
 
     // Create the new tamed pet from the specified creature entry
     Pet* pet = bot->CreateTamedPetFrom(creatureEntry, 0);
@@ -472,33 +474,39 @@ bool TameAction::CreateAndSetPet(uint32 creatureEntry)
         return false;
     }
 
+    /*
     // Set the pet's level to one below the bot's current level, then add to the map and set to full level
     pet->SetUInt32Value(UNIT_FIELD_LEVEL, bot->GetLevel() - 1);
-    pet->GetMap()->AddToMap(pet->ToCreature());
+    pet->GetMap()->Add(pet->ToCreature());
     pet->SetUInt32Value(UNIT_FIELD_LEVEL, bot->GetLevel());
     // Set the pet as the bot's active minion
     bot->SetMinion(pet, true);
     // Initialize talents appropriate for the pet's level
     pet->InitTalentForLevel();
+    */
     // Save pet to the database as the current pet
     pet->SavePetToDB(PET_SAVE_AS_CURRENT);
     // Initialize available pet spells
     bot->PetSpellInitialize();
 
+    PlayerbotFactory(bot, bot->GetLevel()).InitPetSpells();
+
+    /*
     // Further initialize pet stats to match the bot's level
     pet->InitStatsForLevel(bot->GetLevel());
     pet->SetLevel(bot->GetLevel());
     // Set happiness and health of the pet to maximum values
     pet->SetPower(POWER_HAPPINESS, pet->GetMaxPower(Powers(POWER_HAPPINESS)));
     pet->SetHealth(pet->GetMaxHealth());
+    */
 
     // Enable autocast for all active (not removed) non-passive spells the pet knows
-    for (PetSpellMap::const_iterator itr = pet->m_spells.begin(); itr != pet->m_spells.end(); ++itr)
+    for (PetSpellMap::const_iterator itr = pet->m_petSpells.begin(); itr != pet->m_petSpells.end(); ++itr)
     {
         if (itr->second.state == PETSPELL_REMOVED)
             continue;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(itr->first);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(itr->first);
         if (!spellInfo)
             continue;
 
@@ -521,7 +529,7 @@ bool TameAction::AbandonPet()
     if (pet && pet->getPetType() == HUNTER_PET)
     {
         // Remove the pet from the bot and mark it as deleted in the database
-        bot->RemovePet(pet, PET_SAVE_AS_DELETED);
+        bot->RemovePet(PET_SAVE_AS_DELETED);
         // Inform the bot's master/player that the pet was abandoned
         botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
             "tame_pet_abandoned", "Your pet has been abandoned.", {}));

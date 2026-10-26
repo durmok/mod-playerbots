@@ -5,7 +5,7 @@
  */
 
 #include "PetsAction.h"
-#include "CharmInfo.h"
+// #include "CharmInfo.h"
 #include "Creature.h"
 #include "CreatureAI.h"
 #include "Pet.h"
@@ -14,7 +14,7 @@
 #include "PlayerbotAIConfig.h"
 #include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
-#include "SpellInfo.h"
+#include "SpellEntry.h"
 #include "SpellMgr.h"
 #include <algorithm>
 #include <vector>
@@ -70,6 +70,7 @@ bool PetsAction::Execute(Event event)
     if (pet)
         targets.push_back(pet);
 
+    /*
     for (Unit::ControlSet::const_iterator itr = bot->m_Controlled.begin(); itr != bot->m_Controlled.end(); ++itr)
     {
         Creature* creature = dynamic_cast<Creature*>(*itr);
@@ -81,13 +82,14 @@ bool PetsAction::Execute(Event event)
             continue;
         targets.push_back(creature);
     }
+    */
 
     // If no pets or guardians are found, notify and return.
     if (targets.empty())
     {
-        std::string text = PlayerbotTextMgr::instance().GetBotTextOrDefault(
-            "pet_no_pet_error", "You have no pet or guardian pet.", {});
-        botAI->TellError(text);
+        // std::string text = PlayerbotTextMgr::instance().GetBotTextOrDefault(
+        //     "pet_no_pet_error", "You have no pet or guardian pet.", {});
+        // botAI->TellError(text);
         return false;
     }
 
@@ -144,7 +146,7 @@ bool PetsAction::Execute(Event event)
             }
             std::string text = PlayerbotTextMgr::instance().GetBotTextOrDefault(
                 "pet_stance_report", "Current stance of %type \"%name\": %stance.",
-                {{"type", type}, {"name", name}, {"stance", stance}});
+                {{"%type", type}, {"%name", name}, {"%stance", stance}});
             botAI->TellMaster(text);
         }
         return true;
@@ -187,7 +189,7 @@ bool PetsAction::Execute(Event event)
         }
         if (sPlayerbotAIConfig.IsPvpProhibited(bot->GetZoneId(), bot->GetAreaId()) &&
             (targetUnit->IsPlayer() || targetUnit->IsPet()) &&
-            (!bot->duel || bot->duel->Opponent != targetUnit))
+            (!bot->m_duel || bot->m_duel->opponent != targetUnit))
         {
             std::string text = PlayerbotTextMgr::instance().GetBotTextOrDefault(
                 "pet_pvp_prohibited_error", "I cannot command my pet to attack players in PvP prohibited areas.", {});
@@ -211,7 +213,8 @@ bool PetsAction::Execute(Event event)
                 if (petCreature->GetVictim())
                     petCreature->AttackStop();
 
-                if (!petCreature->IsPlayer() && petCreature->ToCreature()->IsAIEnabled)
+                // if (!petCreature->IsPlayer() && petCreature->ToCreature()->IsAIEnabled)
+                if (!petCreature->IsPlayer() && petCreature->ToCreature()->IsAINotifyScheduled())
                 {
                     // For AI-enabled creatures (NPC pets/guardians): issue attack command and set flags.
                     charmInfo->SetIsCommandAttack(true);
@@ -274,10 +277,11 @@ bool PetsAction::Execute(Event event)
         {
             // If not already in controlled motion, stop movement and set to idle.
             bool controlledMotion =
-                target->GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_CONTROLLED) != NULL_MOTION_TYPE;
+                target->IsControlled();
             if (!controlledMotion)
             {
-                target->StopMovingOnCurrentPos();
+                // target->StopMovingOnCurrentPos();
+                target->StopMoving();
                 target->GetMotionMaster()->Clear(false);
                 target->GetMotionMaster()->MoveIdle();
             }
@@ -292,12 +296,14 @@ bool PetsAction::Execute(Event event)
                 charmInfo->SetIsFollowing(false);
                 charmInfo->SetIsReturning(false);
                 charmInfo->SetIsAtStay(!controlledMotion);
-                charmInfo->SaveStayPosition(controlledMotion);
+                // charmInfo->SaveStayPosition(controlledMotion);
+                charmInfo->SaveStayPosition();
                 if (target->ToPet())
-                    target->ToPet()->ClearCastWhenWillAvailable();
+                    // target->ToPet()->ClearCastWhenWillAvailable();
+                    target->ToPet()->ClearCastingTarget();
 
-                charmInfo->SetForcedSpell(0);
-                charmInfo->SetForcedTargetGUID();
+                // charmInfo->SetForcedSpell(0);
+                // charmInfo->SetForcedTargetGUID();
             }
         }
         if (sPlayerbotAIConfig.PetChatCommandDebug == 1)
@@ -324,7 +330,7 @@ bool PetsAction::Execute(Event event)
         target->SetReactState(react);
         CharmInfo* charmInfo = target->GetCharmInfo();
         if (charmInfo)
-            charmInfo->SetPlayerReactState(react);
+            charmInfo->SetReactState(react);
     }
 
     // Inform the master of the new stance if debug is enabled.
@@ -362,13 +368,13 @@ bool TogglePetSpellAutoCastAction::Execute(Event /*event*/)
             pet->m_autospells.erase(autospellItr);
     }
     bool toggled = false;
-    for (PetSpellMap::const_iterator itr = pet->m_spells.begin(); itr != pet->m_spells.end(); ++itr)
+    for (PetSpellMap::const_iterator itr = pet->m_petSpells.begin(); itr != pet->m_petSpells.end(); ++itr)
     {
         if (itr->second.state == PETSPELL_REMOVED)
             continue;
 
         uint32 spellId = itr->first;
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (!spellInfo || !spellInfo->IsAutocastable())
             continue;
 
@@ -406,7 +412,8 @@ bool TogglePetSpellAutoCastAction::Execute(Event /*event*/)
 
 bool PetAttackAction::Execute(Event /*event*/)
 {
-    Guardian* pet = bot->GetGuardianPet();
+    // Guardian* pet = bot->GetGuardianPet();
+    Pet* pet = bot->GetPet();
     if (!pet)
         return false;
 
@@ -427,7 +434,7 @@ bool PetAttackAction::Execute(Event /*event*/)
 
     pet->ClearUnitState(UNIT_STATE_FOLLOW);
     pet->AttackStop();
-    pet->SetTarget(target->GetGUID());
+    pet->SetTarget(target->GetObjectGuid());
 
     pet->GetCharmInfo()->SetIsCommandAttack(true);
     pet->GetCharmInfo()->SetIsAtStay(false);
@@ -449,6 +456,7 @@ bool SetPetStanceAction::Execute(Event /*event*/)
     if (pet)
         targets.push_back(pet);
 
+    /*
     // Loop through all units controlled by the bot (could be pets, guardians, etc.)
     for (Unit::ControlSet::const_iterator itr = bot->m_Controlled.begin(); itr != bot->m_Controlled.end(); ++itr)
     {
@@ -461,6 +469,7 @@ bool SetPetStanceAction::Execute(Event /*event*/)
             continue;
         targets.push_back(creature);
     }
+    */
 
     // If there are no controlled pets or guardians, notify the player and exit
     if (targets.empty())
@@ -503,7 +512,7 @@ bool SetPetStanceAction::Execute(Event /*event*/)
         CharmInfo* charmInfo = target->GetCharmInfo();
         // If the creature has a CharmInfo, set the player-visible stance as well
         if (charmInfo)
-            charmInfo->SetPlayerReactState(react);
+            charmInfo->SetReactState(react);
     }
 
     // If debug is enabled in config, inform the master of the new stance

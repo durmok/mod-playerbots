@@ -30,7 +30,7 @@ public:
             return false;
 
         // Do not move if currently being targeted
-        if (!bot->getAttackers().empty())
+        if (!bot->GetAttackers().empty())
             return false;
 
         Unit* target = AI_VALUE(Unit*, "current target");

@@ -58,6 +58,21 @@ void ExternalEventHelper::HandlePacket(std::map<uint16, std::string>& handlers, 
     trigger->ExternalEvent(p, owner);
 }
 
+void ExternalEventHelper::HandlePacket(std::map<uint16, std::string>& handlers, std::shared_ptr<ClientPacket const> packet,
+                                       Player* owner)
+{
+    uint16 opcode = packet->GetOpcode();
+    std::string const name = handlers[opcode];
+    if (name.empty())
+        return;
+
+    Trigger* trigger = aiObjectContext->GetTrigger(name);
+    if (!trigger)
+        return;
+
+    trigger->ExternalEvent(std::move(packet), owner);
+}
+
 bool ExternalEventHelper::HandleCommand(std::string const name, std::string const param, Player* owner)
 {
     Trigger* trigger = aiObjectContext->GetTrigger(name);

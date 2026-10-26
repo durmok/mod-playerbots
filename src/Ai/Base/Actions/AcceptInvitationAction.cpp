@@ -18,7 +18,7 @@ bool AcceptInvitationAction::Execute(Event /*event*/)
     Group* grp = bot->GetGroupInvite();
     if (!grp)
         return false;
-    Player* inviter = ObjectAccessor::FindPlayer(grp->GetLeaderGUID());
+    Player* inviter = ObjectAccessor::FindPlayer(grp->GetLeaderGuid());
     if (!inviter)
         return false;
 
@@ -34,12 +34,14 @@ bool AcceptInvitationAction::Execute(Event /*event*/)
     if (bot->isAFK() && !IsSelfBot(bot))
         bot->ToggleAFK();
 
+    /*
     WorldPacket p;
     uint32 roles_mask = 0;
     p << roles_mask;
-    bot->GetSession()->HandleGroupAcceptOpcode(p);
+    */
+    bot->GetSession()->HandleGroupAcceptOpcode(NullClientPacket(CMSG_GROUP_ACCEPT));
 
-    if (!bot->GetGroup() || !bot->GetGroup()->IsMember(inviter->GetGUID()))
+    if (!bot->GetGroup() || !bot->GetGroup()->IsMember(inviter->GetObjectGuid()))
         return false;
 
     if (sRandomPlayerbotMgr.IsRandomBot(bot))
@@ -53,9 +55,10 @@ bool AcceptInvitationAction::Execute(Event /*event*/)
 
     botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault("hello", "Hello", {}));
 
-    if (sPlayerbotAIConfig.SummonWhenGroup && bot->GetDistance(inviter) > sPlayerbotAIConfig.SightDistance)
-    {
-        Teleport(inviter, bot, true);
-    }
+    // comment for FollowAction will handle it
+    // if (sPlayerbotAIConfig.SummonWhenGroup && bot->GetDistance(inviter) > sPlayerbotAIConfig.SightDistance)
+    // {
+    //     Teleport(inviter, bot, true);
+    // }
     return true;
 }

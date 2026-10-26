@@ -142,7 +142,7 @@ void InventoryAction::TellItems(std::map<uint32, uint32> itemMap, std::map<uint3
     std::vector<ItemTemplate const*> items;
     for (std::map<uint32, uint32>::iterator i = itemMap.begin(); i != itemMap.end(); i++)
     {
-        items.push_back(sObjectMgr->GetItemTemplate(i->first));
+        items.push_back(sObjectMgr.GetItemTemplate(i->first));
     }
 
     std::sort(items.begin(), items.end(), compare_items);
@@ -188,7 +188,7 @@ void InventoryAction::TellItems(std::map<uint32, uint32> itemMap, std::map<uint3
                 case ITEM_CLASS_KEY:
                     botAI->TellMaster("--- keys ---");
                     break;
-                case ITEM_CLASS_MISC:
+                case ITEM_CLASS_JUNK:
                     botAI->TellMaster("--- other ---");
                     break;
             }

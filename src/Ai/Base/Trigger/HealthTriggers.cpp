@@ -18,7 +18,7 @@ bool PartyMemberDeadTrigger::IsActive() { return GetTarget(); }
 
 bool CombatPartyMemberDeadTrigger::IsActive() { return GetTarget(); }
 
-bool DeadTrigger::IsActive() { return AI_VALUE2(bool, "dead", GetTargetName()); }
+bool DeadTrigger::IsActive() { return !botAI->GetMaster() && AI_VALUE2(bool, "dead", GetTargetName()); }
 
 bool AoeHealTrigger::IsActive() { return AI_VALUE2(uint8, "aoe heal", type) >= count; }
 

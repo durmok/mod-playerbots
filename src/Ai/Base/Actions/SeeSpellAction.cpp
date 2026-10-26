@@ -33,6 +33,7 @@ Creature* SeeSpellAction::CreateWps(Player* wpOwner, float x, float y, float z, 
 
 bool SeeSpellAction::Execute(Event event)
 {
+    /*
     // RTSC packet data
     WorldPacket p(event.getPacket());
     uint8 castCount;
@@ -46,14 +47,21 @@ bool SeeSpellAction::Execute(Event event)
         LOG_WARN("playerbots", "SeeSpellAction: Corrupt RTSC packet size={}, expected>={}", p.size(), rtscHeaderSize);
         return false;
     }
+    */
 
     Player* master = botAI->GetMaster();
     if (!master)
         return false;
 
     // read RTSC packet data
-    p.rpos(0); // set read position to start
-    p >> castCount >> spellId >> castFlags;
+    // p.rpos(0); // set read position to start
+    // p >> castCount >> spellId >> castFlags;
+    // p >> spellId;
+
+    auto p = event.getClientPacket<WorldPackets::Spell::CastSpell>();
+    if (!p)
+        return false;
+    uint32 spellId = p->spellId;
 
     // if (!botAI->HasStrategy("RTSC", botAI->GetState()))
     //     return false;
@@ -72,16 +80,18 @@ bool SeeSpellAction::Execute(Event event)
         return false;
 
     // should not throw exception,just defensive measure to prevent any crashes when core function breaks.
-    SpellCastTargets targets;
+    SpellCastTargets targets = p->targets;
     try
     {
-        targets.Read(p, master);
+        // targets.read(p);
+        /*
         if (!targets.GetDst())
         {
             // do not dereference a null destination; ignore malformed RTSC packets instead of crashing
             LOG_WARN("playerbots", "SeeSpellAction: (malformed) RTSC payload does not contain full targets data");
             return false;
         }
+        */
     }
     catch (ByteBufferException const&)
     {
@@ -90,7 +100,8 @@ bool SeeSpellAction::Execute(Event event)
         return false;
     }
 
-    WorldPosition spellPosition(master->GetMapId(), targets.GetDst()->_position);
+    // WorldPosition spellPosition(master->GetMapId(), targets.GetDst()->_position);
+    WorldPosition spellPosition(master->GetMapId(), Position(targets.m_destX, targets.m_destY, targets.m_destZ));
     SET_AI_VALUE(WorldPosition, "see spell location", spellPosition);
 
     bool selected = AI_VALUE(bool, "RTSC selected");

@@ -6,9 +6,10 @@
 
 #include "QuestValues.h"
 
-#include "MapMgr.h"
+#include "MapManager.h"
 #include "Playerbots.h"
 #include "SharedValueContext.h"
+#include "World.h"
 #include <array>
 
 // What kind of a relation does this entry have with this quest.
@@ -16,38 +17,38 @@ entryQuestRelationMap EntryQuestRelationMapValue::Calculate()
 {
     entryQuestRelationMap rMap;
 
-    for (auto relation : *sObjectMgr->GetCreatureQuestRelationMap())
+    for (auto relation : sObjectMgr.GetCreatureQuestRelationsMap())
         rMap[relation.first][relation.second] |= (int)QuestRelationFlag::questGiver;
 
-    for (auto relation : *sObjectMgr->GetCreatureQuestInvolvedRelationMap())
+    for (auto relation : sObjectMgr.GetCreatureQuestInvolvedRelationMap())
         rMap[relation.first][relation.second] |= (int)QuestRelationFlag::questTaker;
 
-    for (auto relation : *sObjectMgr->GetGOQuestRelationMap())
+    for (auto relation : sObjectMgr.GetGOQuestRelationMap())
         rMap[-(int32)relation.first][relation.second] |= (int)QuestRelationFlag::questGiver;
 
-    for (auto relation : *sObjectMgr->GetGOQuestInvolvedRelationMap())
+    for (auto relation : sObjectMgr.GetGOQuestInvolvedRelationMap())
         rMap[-(int32)relation.first][relation.second] |= (int)QuestRelationFlag::questGiver;
 
     // Quest objectives
-    ObjectMgr::QuestMap const& questMap = sObjectMgr->GetQuestTemplates();
+    ObjectMgr::QuestMap const& questMap = sObjectMgr.GetQuestTemplates();
 
     for (auto& questItr : questMap)
     {
         uint32 questId = questItr.first;
-        Quest* quest = questItr.second;
+        Quest * quest = &*questItr.second;
 
         for (uint32 objective = 0; objective < QUEST_OBJECTIVES_COUNT; objective++)
         {
             uint32 relationFlag = 1 << objective;
 
             // Kill objective
-            if (quest->RequiredNpcOrGo[objective])
-                rMap[quest->RequiredNpcOrGo[objective]][questId] |= relationFlag;
+            if (quest->ReqCreatureOrGOId[objective])
+                rMap[quest->ReqCreatureOrGOId[objective]][questId] |= relationFlag;
 
             // Loot objective
-            if (quest->RequiredItemId[objective])
+            if (quest->ReqItemId[objective])
             {
-                for (auto& entry : GAI_VALUE2(std::vector<int32>, "item drop list", quest->RequiredItemId[objective]))
+                for (auto& entry : GAI_VALUE2(std::vector<int32>, "item drop list", quest->ReqItemId[objective]))
                     rMap[entry][questId] |= relationFlag;
             }
         }
@@ -66,12 +67,12 @@ void FindQuestObjectData::GetObjectiveEntries()
 // `creature_multispawn` alternates rolled between on respawn. 0 = no alternate.
 static std::array<uint32, 3> SpawnEntries(CreatureData const& creData)
 {
-    return { creData.id, creData.id2, creData.id3 };
+    return { creData.creature_id[0], creData.creature_id[1], creData.creature_id[2]};
 }
 
 // Data worker. Checks for a specific creature what quest they are needed for and puts them in the proper place in the
 // quest map.
-void FindQuestObjectData::operator()(CreatureData const& creData)
+void FindQuestObjectData::operator()(ObjectGuid::LowType lowguid, CreatureData const& creData)
 {
     // The GuidPosition keeps the spawn's base entry, which can disagree with the alternate it
     // is filed under. It resolves by spawnId, and consumers read the map key.
@@ -88,14 +89,14 @@ void FindQuestObjectData::operator()(CreatureData const& creData)
         {
             uint32 questId = relation.first;
             uint32 flag = relation.second;
-            data[questId][flag][entry].push_back(GuidPosition(creData));
+            data[questId][flag][entry].push_back(GuidPosition(lowguid, creData));
         }
     }
 }
 
 // GameObject data worker. Checks for a specific gameObject what quest they are needed for and puts them in the proper
 // place in the quest map.
-void FindQuestObjectData::operator()(GameObjectData const& goData)
+void FindQuestObjectData::operator()(ObjectGuid::LowType lowguid, GameObjectData const& goData)
 {
     int32 entry = goData.id * -1;
 
@@ -103,7 +104,7 @@ void FindQuestObjectData::operator()(GameObjectData const& goData)
     {
         uint32 questId = relation.first;
         uint32 flag = relation.second;
-        data[questId][flag][entry].push_back(GuidPosition(goData));
+        data[questId][flag][entry].push_back(GuidPosition(lowguid, goData));
     }
 }
 
@@ -111,10 +112,10 @@ void FindQuestObjectData::operator()(GameObjectData const& goData)
 questGuidpMap QuestGuidpMapValue::Calculate()
 {
     FindQuestObjectData worker;
-    for (auto const& itr : sObjectMgr->GetAllCreatureData())
-        worker(itr.second);
-    for (auto const& itr : sObjectMgr->GetAllGOData())
-        worker(itr.second);
+    for (auto const& itr : sObjectMgr.GetAllCreatureData())
+        worker(itr.first, itr.second);
+    for (auto const& itr : sObjectMgr.GetAllGOData())
+        worker(itr.first, itr.second);
 
     return worker.GetResult();
 }
@@ -143,7 +144,7 @@ questGiverMap QuestGiversValue::Calculate()
 
                 if (hasQualifier)
                 {
-                    Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+                    Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
 
                     if (quest && (level < quest->GetMinLevel() || (int)level > quest->GetQuestLevel() + 10))
                         continue;
@@ -166,7 +167,7 @@ std::vector<GuidPosition> ActiveQuestGiversValue::Calculate()
     for (auto& qGiver : qGivers)
     {
         uint32 questId = qGiver.first;
-        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
         if (!quest)
         {
             continue;
@@ -187,7 +188,7 @@ std::vector<GuidPosition> ActiveQuestGiversValue::Calculate()
             if (creatureTemplate)
             {
                 if (bot->GetFactionReactionTo(bot->GetFactionTemplateEntry(),
-                                              sFactionTemplateStore.LookupEntry(creatureTemplate->faction)) <
+                                              sObjectMgr.GetFactionTemplateEntry(creatureTemplate->faction)) <
                     REP_FRIENDLY)
                     continue;
             }
@@ -214,14 +215,14 @@ std::vector<GuidPosition> ActiveQuestTakersValue::Calculate()
     {
         uint32 questId = questStatus.first;
 
-        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
 
         if (!quest)
         {
             continue;
         }
 
-        QuestStatus status = questStatus.second.Status;
+        QuestStatus status = questStatus.second.m_status;
         if ((status != QUEST_STATUS_COMPLETE || bot->GetQuestRewardStatus(questId)) &&
             (!quest->IsAutoComplete() || !bot->CanTakeQuest(quest, false)))
             continue;
@@ -240,10 +241,10 @@ std::vector<GuidPosition> ActiveQuestTakersValue::Calculate()
         {
             if (entry.first > 0)
             {
-                if (CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(entry.first))
+                if (CreatureTemplate const* info = sObjectMgr.GetCreatureTemplate(entry.first))
                 {
                     if (bot->GetFactionReactionTo(bot->GetFactionTemplateEntry(),
-                                                  sFactionTemplateStore.LookupEntry(info->faction)) < REP_FRIENDLY)
+                                                  sObjectMgr.GetFactionTemplateEntry(info->faction)) < REP_FRIENDLY)
                         continue;
                 }
             }
@@ -273,31 +274,31 @@ std::vector<GuidPosition> ActiveQuestObjectivesValue::Calculate()
     {
         uint32 questId = questStatus.first;
 
-        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
         if (!quest)
         {
             continue;
         }
 
         QuestStatusData statusData = questStatus.second;
-        if (statusData.Status != QUEST_STATUS_INCOMPLETE)
+        if (statusData.m_status != QUEST_STATUS_INCOMPLETE)
             continue;
 
         for (uint32 objective = 0; objective < QUEST_OBJECTIVES_COUNT; objective++)
         {
-            if (quest->RequiredItemCount[objective])
+            if (quest->ReqItemCount[objective])
             {
-                uint32 reqCount = quest->RequiredItemCount[objective];
-                uint32 hasCount = statusData.ItemCount[objective];
+                uint32 reqCount = quest->ReqItemCount[objective];
+                uint32 hasCount = statusData.m_itemcount[objective];
 
                 if (!reqCount || hasCount >= reqCount)
                     continue;
             }
 
-            if (quest->RequiredNpcOrGoCount[objective])
+            if (quest->ReqCreatureOrGOCount[objective])
             {
-                uint32 reqCount = quest->RequiredNpcOrGoCount[objective];
-                uint32 hasCount = statusData.CreatureOrGOCount[objective];
+                uint32 reqCount = quest->ReqCreatureOrGOCount[objective];
+                uint32 hasCount = statusData.m_creatureOrGOcount[objective];
 
                 if (!reqCount || hasCount >= reqCount)
                     continue;
@@ -339,7 +340,7 @@ uint8 FreeQuestLogSlotValue::Calculate()
         if (!questId)
             continue;
 
-        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
         if (!quest)
             continue;
 
@@ -353,27 +354,27 @@ uint32 DialogStatusValue::getDialogStatus(Player* bot, int32 questgiver, uint32 
 {
     uint32 dialogStatus = DIALOG_STATUS_NONE;
 
-    QuestRelationBounds rbounds;   // QuestRelations (quest-giver)
-    QuestRelationBounds irbounds;  // InvolvedRelations (quest-finisher)
+    QuestRelationsMapBounds rbounds;   // QuestRelations (quest-giver)
+    QuestRelationsMapBounds irbounds;  // InvolvedRelations (quest-finisher)
 
     if (questgiver > 0)
     {
-        rbounds = sObjectMgr->GetCreatureQuestRelationBounds(questgiver);
-        irbounds = sObjectMgr->GetCreatureQuestInvolvedRelationBounds(questgiver);
+        rbounds = sObjectMgr.GetCreatureQuestRelationsMapBounds(questgiver);
+        irbounds = sObjectMgr.GetCreatureQuestInvolvedRelationsMapBounds(questgiver);
     }
     else
     {
-        rbounds = sObjectMgr->GetGOQuestRelationBounds(questgiver * -1);
-        irbounds = sObjectMgr->GetGOQuestInvolvedRelationBounds(questgiver * -1);
+        rbounds = sObjectMgr.GetGOQuestRelationsMapBounds(questgiver * -1);
+        irbounds = sObjectMgr.GetGOQuestInvolvedRelationsMapBounds(questgiver * -1);
     }
 
     // Check markings for quest-finisher
-    for (QuestRelations::const_iterator itr = irbounds.first; itr != irbounds.second; ++itr)
+    for (QuestRelationsMap::const_iterator itr = irbounds.first; itr != irbounds.second; ++itr)
     {
         if (questId && itr->second != questId)
             continue;
 
-        Quest const* pQuest = sObjectMgr->GetQuestTemplate(itr->second);
+        Quest const* pQuest = sObjectMgr.GetQuestTemplate(itr->second);
         if (!pQuest)
         {
             continue;
@@ -407,12 +408,12 @@ uint32 DialogStatusValue::getDialogStatus(Player* bot, int32 questgiver, uint32 
     }
 
     // check markings for quest-giver
-    for (QuestRelations::const_iterator itr = rbounds.first; itr != rbounds.second; ++itr)
+    for (QuestRelationsMap::const_iterator itr = rbounds.first; itr != rbounds.second; ++itr)
     {
         if (questId && itr->second != questId)
             continue;
 
-        Quest const* pQuest = sObjectMgr->GetQuestTemplate(itr->second);
+        Quest const* pQuest = sObjectMgr.GetQuestTemplate(itr->second);
         if (!pQuest)
         {
             continue;
@@ -429,10 +430,10 @@ uint32 DialogStatusValue::getDialogStatus(Player* bot, int32 questgiver, uint32 
             {
                 if (bot->SatisfyQuestLevel(pQuest, false))
                 {
-                    int32 lowLevelDiff = sWorld->getIntConfig(CONFIG_QUEST_LOW_LEVEL_HIDE_DIFF);
+                    int32 lowLevelDiff = sWorld.getConfig(CONFIG_INT32_QUEST_LOW_LEVEL_HIDE_DIFF);
                     if (pQuest->IsAutoComplete() ||
-                        (pQuest->IsRepeatable() &&
-                         bot->getQuestStatusMap()[itr->second].Status == QUEST_STATUS_REWARDED))
+                        (pQuest->IsRepeatable()/* &&
+                         bot->getQuestStatusMap()[itr->second].m_status == QUEST_STATUS_REWARDED*/))
                     {
                         dialogStatusNew = DIALOG_STATUS_REWARD_REP;
                     }
@@ -442,7 +443,8 @@ uint32 DialogStatusValue::getDialogStatus(Player* bot, int32 questgiver, uint32 
                     }
                     else
                     {
-                        dialogStatusNew = DIALOG_STATUS_LOW_LEVEL_AVAILABLE;
+                        // dialogStatusNew = DIALOG_STATUS_LOW_LEVEL_AVAILABLE;
+                        dialogStatusNew = DIALOG_STATUS_UNAVAILABLE;
                     }
                 }
                 else
@@ -476,12 +478,12 @@ bool CanAcceptQuestValue::Calculate()
 bool CanAcceptQuestLowLevelValue::Calculate()
 {
     uint32 dialogStatus = AI_VALUE2(uint32, "dialog status", getQualifier());
-    return dialogStatus == DIALOG_STATUS_LOW_LEVEL_AVAILABLE;
+    return dialogStatus == DIALOG_STATUS_UNAVAILABLE;
 };
 
 bool CanTurnInQuestValue::Calculate()
 {
     uint32 dialogStatus = AI_VALUE2(uint32, "dialog status", getQualifier());
-    return dialogStatus == DIALOG_STATUS_REWARD2 || dialogStatus == DIALOG_STATUS_REWARD ||
+    return dialogStatus == DIALOG_STATUS_REWARD2/* || dialogStatus == DIALOG_STATUS_REWARD*/ ||
            dialogStatus == DIALOG_STATUS_REWARD_REP;
 };

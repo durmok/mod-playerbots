@@ -9,7 +9,7 @@
  */
 
 #include "RandomBotLevelMgr.h"
-#include "ArenaTeamMgr.h"
+// #include "ArenaTeamMgr.h"
 #include "DatabaseEnv.h"
 #include "LFGMgr.h"
 #include "Log.h"
@@ -17,7 +17,7 @@
 #include "Player.h"
 #include "PlayerbotFactory.h"
 #include "Playerbots.h"
-#include "QueryResult.h"
+#include "QueryResult2.h"
 #include "Random.h"
 #include "RandomPlayerbotMgr.h"
 #include "ScriptMgr.h"
@@ -44,7 +44,7 @@ static bool BotInFriendList(Player* bot, std::vector<uint32> const& socialFriend
         bot->IsDuringRemoveFromWorld())
         return false;
 
-    return std::find(socialFriendsList.begin(), socialFriendsList.end(), bot->GetGUID().GetCounter()) !=
+    return std::find(socialFriendsList.begin(), socialFriendsList.end(), bot->GetObjectGuid().GetCounter()) !=
         socialFriendsList.end();
 }
 
@@ -56,6 +56,7 @@ static bool IsDisabledBracket(std::vector<LevelBracketConfig> const& configured,
 // Checks if the given bot is a member of any arena team.
 static bool BotInArenaTeam(Player* bot)
 {
+    /*
     if (!bot)
         return false;
     for (uint8 slot = ARENA_SLOT_2v2; slot <= ARENA_SLOT_5v5; ++slot)
@@ -63,6 +64,7 @@ static bool BotInArenaTeam(Player* bot)
         if (sArenaTeamMgr->GetArenaTeamById(bot->GetArenaTeamId(slot)))
             return true;
     }
+    */
     return false;
 }
 
@@ -82,17 +84,19 @@ static bool IsBotSafeForLevelReset(Player* bot)
     if (bot->IsInCombat())
         return false;
 
-    if (bot->InBattleground() || bot->InArena() || bot->inRandomLfgDungeon() || bot->InBattlegroundQueue())
+    if (bot->InBattleground() || bot->InArena() || bot->InBattlegroundQueue())
         return false;
 
-    if (sLFGMgr->GetState(bot->GetGUID()) != lfg::LFG_STATE_NONE)
+    /*
+    if (sLFGMgr->GetState(bot->GetObjectGuid()) != lfg::LFG_STATE_NONE)
         return false;
 
     if (Group* group = bot->GetGroup())
     {
-        if (sLFGMgr->GetState(group->GetGUID()) != lfg::LFG_STATE_NONE)
+        if (sLFGMgr->GetState(group->GetObjectGuid()) != lfg::LFG_STATE_NONE)
             return false;
     }
+    */
 
     if (bot->IsInFlight())
         return false;
@@ -154,6 +158,9 @@ void RandomBotLevelMgr::LogStartupSummary() const
         LOG_INFO("playerbots", "[RandomBotLevelMgr] Level reset sub-feature disabled via configuration.");
     else
     {
+        auto excludeNames = sPlayerbotAIConfig.ResetBotLevelExcludeNames.empty()
+                ? "None"
+                : std::to_string(sPlayerbotAIConfig.ResetBotLevelExcludeNames.size()) + " names";
         LOG_INFO("playerbots",
             "[RandomBotLevelMgr] Level reset loaded. MaxLevel = {} ({}), ResetToLevel = {}, SkipFromLevel = {} ({}), "
             "SkipToLevel = {}, ResetChance = {}%, ScaledChance = {}, RestrictTimePlayed = {}, "
@@ -168,9 +175,7 @@ void RandomBotLevelMgr::LogStartupSummary() const
             sPlayerbotAIConfig.ResetBotLevelScaledChance ? "Enabled" : "Disabled",
             sPlayerbotAIConfig.ResetBotLevelRestrictTimePlayed ? "Enabled" : "Disabled",
             sPlayerbotAIConfig.ResetBotLevelIgnoreGuildWithRealPlayers ? "Enabled" : "Disabled",
-            sPlayerbotAIConfig.ResetBotLevelExcludeNames.empty()
-                ? "None"
-                : std::to_string(sPlayerbotAIConfig.ResetBotLevelExcludeNames.size()) + " names");
+            excludeNames.c_str());
     }
 }
 
@@ -310,10 +315,11 @@ void RandomBotLevelMgr::AdjustBotToRange(Player* bot, int targetRangeIndex, Team
     uint8 botOriginalLevel = bot->GetLevel();
     uint8 newLevel = 0;
 
-    uint8 dkMinLevel = static_cast<uint8>(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
+    // uint8 dkMinLevel = static_cast<uint8>(sWorld.getConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
 
     if (bot->getClass() == CLASS_DEATH_KNIGHT)
     {
+        /*
         uint8 lowerBound = factionRanges[targetRangeIndex].Lower;
         uint8 upperBound = factionRanges[targetRangeIndex].Upper;
         if (upperBound < dkMinLevel)
@@ -330,6 +336,7 @@ void RandomBotLevelMgr::AdjustBotToRange(Player* bot, int targetRangeIndex, Team
         if (lowerBound > upperBound)
             return;
         newLevel = urand(lowerBound, upperBound);
+        */
     }
     else
     {
@@ -356,10 +363,11 @@ void RandomBotLevelMgr::AdjustBotToRange(Player* bot, int targetRangeIndex, Team
     }
 
     PlayerbotAI* botAI = GET_PLAYERBOT_AI(bot);
+    auto cls = botAI ? botAI->GetChatHelper()->FormatClass(bot->getClass()) : "Unknown";
     LOG_TRACE("playerbots",
         "[RandomBotLevelMgr] AdjustBotToRange: {} Bot '{}' - {} ({}) adjusted to level {} (target range {}-{}).",
         (team == TEAM_ALLIANCE) ? "Alliance" : "Horde", bot->GetName(),
-        botAI ? botAI->GetChatHelper()->FormatClass(bot->getClass()) : "Unknown", botOriginalLevel, newLevel,
+        cls.c_str(), botOriginalLevel, newLevel,
         factionRanges[targetRangeIndex].Lower, factionRanges[targetRangeIndex].Upper);
 }
 
@@ -367,7 +375,7 @@ void RandomBotLevelMgr::AdjustBotToRange(Player* bot, int targetRangeIndex, Team
 void RandomBotLevelMgr::LoadSocialFriendList()
 {
     _socialFriendsList.clear();
-    QueryResult result = CharacterDatabase.Query("SELECT friend FROM character_social WHERE flags = 1");
+    QueryResult2 result = CharacterDatabase2.Query("SELECT friend FROM character_social WHERE flags = 1");
 
     if (!result || result->GetRowCount() == 0)
         return;
@@ -431,7 +439,6 @@ int RandomBotLevelMgr::GetOrFlagPlayerBracket(Player* player)
 
     int targetRange = -1;
     int smallestDiff = std::numeric_limits<int>::max();
-    uint8 dkMinLevel = static_cast<uint8>(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
     for (int i = 0; i < _numRanges; ++i)
     {
         if (factionRanges[i].Lower > factionRanges[i].Upper)
@@ -440,9 +447,9 @@ int RandomBotLevelMgr::GetOrFlagPlayerBracket(Player* player)
         if (factionRanges[i].Pct == 0)
             continue;
 
-        // Skip brackets that Death Knights cannot be assigned to.
-        if (player->getClass() == CLASS_DEATH_KNIGHT && factionRanges[i].Upper < dkMinLevel)
-            continue;
+        // // Skip brackets that Death Knights cannot be assigned to.
+        // if (player->getClass() == CLASS_DEATH_KNIGHT && factionRanges[i].Upper < dkMinLevel)
+        //     continue;
 
         int diff = 0;
         if (player->GetLevel() < factionRanges[i].Lower)
@@ -459,7 +466,7 @@ int RandomBotLevelMgr::GetOrFlagPlayerBracket(Player* player)
     if (targetRange >= 0)
     {
         bool alreadyFlagged = false;
-        ObjectGuid guid = player->GetGUID();
+        ObjectGuid guid = player->GetObjectGuid();
         for (auto const& entry : _pendingLevelResets)
         {
             if (entry.botGuid == guid)
@@ -493,7 +500,7 @@ void RandomBotLevelMgr::RedistributeSurplusBots(std::vector<Player*>& sourceBots
             continue;
         }
 
-        ObjectGuid botGuid = bot->GetGUID();
+        ObjectGuid botGuid = bot->GetObjectGuid();
         bool alreadyFlagged = false;
         for (auto const& entry : _pendingLevelResets)
         {
@@ -562,7 +569,7 @@ void RandomBotLevelMgr::ProcessFactionDistribution(TeamId team, uint32 totalBots
 // for a pending reset into under-populated ones (per faction, via ProcessFactionDistribution).
 void RandomBotLevelMgr::RunLevelBracketsDistribution()
 {
-    auto const& allPlayers = ObjectAccessor::GetPlayers();
+    auto const& allPlayers = ObjectAccessor::Instance().GetPlayers();
 
     LoadSocialFriendList();
 
@@ -830,9 +837,11 @@ void RandomBotLevelMgr::ResetBot(Player* player, uint8 currentLevel)
 {
     uint8 levelToResetTo = sPlayerbotAIConfig.ResetBotLevelResetTo;
 
-    uint8 dkMinLevel = static_cast<uint8>(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
+    /*
+    uint8 dkMinLevel = static_cast<uint8>(sWorld.getConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
     if (player->getClass() == CLASS_DEATH_KNIGHT && levelToResetTo < dkMinLevel)
         levelToResetTo = dkMinLevel;
+    */
 
     // Dismount before randomization to prevent a wrong mount at the new level.
     if (player->IsMounted())
@@ -842,8 +851,9 @@ void RandomBotLevelMgr::ResetBot(Player* player, uint8 currentLevel)
     newFactory.Randomize(false);
 
     PlayerbotAI* botAI = GET_PLAYERBOT_AI(player);
+    auto cls = botAI ? botAI->GetChatHelper()->FormatClass(player->getClass()) : "Unknown";
     LOG_DEBUG("playerbots", "[RandomBotLevelMgr] ResetBot: Bot '{}' - {} at level {} was reset to level {}.",
-        player->GetName(), botAI ? botAI->GetChatHelper()->FormatClass(player->getClass()) : "Unknown", currentLevel,
+        player->GetName(), cls.c_str(), currentLevel,
         levelToResetTo);
 }
 
@@ -853,9 +863,11 @@ void RandomBotLevelMgr::SkipBotLevel(Player* player, uint8 currentLevel)
 {
     uint8 levelToSkipTo = sPlayerbotAIConfig.ResetBotLevelSkipTo;
 
-    uint8 dkMinLevel = static_cast<uint8>(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
+    /*
+    uint8 dkMinLevel = static_cast<uint8>(sWorld.getConfig(CONFIG_START_HEROIC_PLAYER_LEVEL));
     if (player->getClass() == CLASS_DEATH_KNIGHT && levelToSkipTo < dkMinLevel)
         levelToSkipTo = dkMinLevel;
+    */
 
     // Dismount before randomization to prevent a wrong mount at the new level.
     if (player->IsMounted())
@@ -865,8 +877,9 @@ void RandomBotLevelMgr::SkipBotLevel(Player* player, uint8 currentLevel)
     newFactory.Randomize(false);
 
     PlayerbotAI* botAI = GET_PLAYERBOT_AI(player);
+    auto cls = botAI ? botAI->GetChatHelper()->FormatClass(player->getClass()) : "Unknown";
     LOG_DEBUG("playerbots", "[RandomBotLevelMgr] SkipBotLevel: Bot '{}' - {} at level {} was skipped to level {}.",
-        player->GetName(), botAI ? botAI->GetChatHelper()->FormatClass(player->getClass()) : "Unknown", currentLevel,
+        player->GetName(), cls.c_str(), currentLevel,
         levelToSkipTo);
 }
 
@@ -876,7 +889,7 @@ void RandomBotLevelMgr::RunResetPlayedTimeCheck()
 {
     LOG_DEBUG("playerbots", "[RandomBotLevelMgr] OnUpdate: Starting time-based reset check...");
 
-    auto const& allPlayers = ObjectAccessor::GetPlayers();
+    auto const& allPlayers = ObjectAccessor::Instance().GetPlayers();
     for (auto const& itr : allPlayers)
     {
         Player* candidate = itr.second;
@@ -1032,9 +1045,11 @@ void RandomBotLevelMgr::OnBotLevelChanged(Player* player, uint8 oldLevel)
     if (newLevel == 1)
         return;
 
+    /*
     if (player->getClass() == CLASS_DEATH_KNIGHT &&
-        newLevel == static_cast<uint8>(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL)))
+        newLevel == static_cast<uint8>(sWorld.getConfig(CONFIG_START_HEROIC_PLAYER_LEVEL)))
         return;
+    */
 
     // SkipFromLevel takes priority and is not affected by ScaledChance or RestrictTimePlayed.
     if (sPlayerbotAIConfig.ResetBotLevelSkipFrom > 0 && newLevel == sPlayerbotAIConfig.ResetBotLevelSkipFrom)
@@ -1084,7 +1099,7 @@ void RandomBotLevelMgr::OnPlayerLogout(Player* player)
 {
     // Level brackets: drop the bot from the pending-reset queue. Safe to run even when the
     // brackets sub-feature is disabled, since the queue is then always empty.
-    ObjectGuid guid = player->GetGUID();
+    ObjectGuid guid = player->GetObjectGuid();
     _pendingLevelResets.erase(
         std::remove_if(_pendingLevelResets.begin(), _pendingLevelResets.end(),
             [guid](PendingResetEntry const& entry) { return entry.botGuid == guid; }),

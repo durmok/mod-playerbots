@@ -7,8 +7,9 @@
 #ifndef PLAYERBOTS_STATSCOLLECTOR_H
 #define PLAYERBOTS_STATSCOLLECTOR_H
 
-#include "ItemTemplate.h"
-#include "SpellInfo.h"
+#include "ItemPrototype.h"
+#include "SpellEntry.h"
+#include "Vmangos.h"
 
 struct ScalingStatDistributionEntry;
 struct ScalingStatValuesEntry;
@@ -72,15 +73,14 @@ public:
     void CollectSpellStats(uint32 spellId, float multiplier = 1.0f, Milliseconds spellCooldown = -1ms);
     void CollectEnchantStats(SpellItemEnchantmentEntry const* enchant, uint32 default_enchant_amount = 0);
     bool CanBeTriggeredByType(SpellInfo const* spellInfo, uint32 procFlags, bool strict = true);
-    bool CheckSpellValidation(uint32 spellFamilyName, flag96 spelFalimyFlags, bool strict = true);
+    bool CheckSpellValidation(SpellInfo const* spellInfo, bool strict = true);
 
 public:
     float stats[STATS_TYPE_MAX];
 
 private:
-    void CollectWeaponDamageStats(ItemTemplate const* proto, ScalingStatValuesEntry const* ssv);
-    void CollectItemStatValues(ItemTemplate const* proto, ScalingStatDistributionEntry const* ssd,
-                               ScalingStatValuesEntry const* ssv);
+    void CollectWeaponDamageStats(ItemTemplate const* proto);
+    void CollectItemStatValues(ItemTemplate const* proto);
     void CollectByItemStatType(uint32 itemStatType, int32 val);
     bool SpecialSpellFilter(uint32 spellId);
     bool SpecialEnchantFilter(uint32 enchantSpellId);

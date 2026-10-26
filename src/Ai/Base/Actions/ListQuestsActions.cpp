@@ -75,7 +75,7 @@ uint32 ListQuestsAction::ListQuests(bool completed, bool silent, QuestTravelDeta
         if (!questId)
             continue;
 
-        Quest const* pQuest = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* pQuest = sObjectMgr.GetQuestTemplate(questId);
         bool isCompletedQuest = bot->GetQuestStatus(questId) == QUEST_STATUS_COMPLETE;
         if (completed != isCompletedQuest)
             continue;

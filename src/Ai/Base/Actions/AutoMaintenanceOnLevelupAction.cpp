@@ -14,6 +14,9 @@
 
 bool AutoMaintenanceOnLevelupAction::Execute(Event /*event*/)
 {
+    if (!sRandomPlayerbotMgr.IsRandomBot(bot))
+        return false;
+
     AutoPickTalents();
     AutoLearnSpell();
     AutoTeleportForLevel();
@@ -44,7 +47,7 @@ void AutoMaintenanceOnLevelupAction::AutoPickTalents()
 
     PlayerbotFactory factory(bot, bot->GetLevel());
     factory.InitTalentsTree(true, true, true);
-    factory.InitPetTalents();
+    // factory.InitPetTalents();
 }
 
 void AutoMaintenanceOnLevelupAction::AutoLearnSpell()
@@ -86,10 +89,10 @@ void AutoMaintenanceOnLevelupAction::LearnTrainerSpells(std::ostringstream* /*ou
 
 void AutoMaintenanceOnLevelupAction::LearnQuestSpells(std::ostringstream* out)
 {
-    ObjectMgr::QuestMap const& questTemplates = sObjectMgr->GetQuestTemplates();
+    ObjectMgr::QuestMap const& questTemplates = sObjectMgr.GetQuestTemplates();
     for (ObjectMgr::QuestMap::const_iterator i = questTemplates.begin(); i != questTemplates.end(); ++i)
     {
-        Quest const* quest = i->second;
+        Quest const* quest = &*i->second;
 
         if (!quest->GetRequiredClasses() || quest->IsRepeatable() || quest->GetMinLevel() < 10 ||
             quest->GetMinLevel() > bot->GetLevel())
@@ -107,18 +110,18 @@ void AutoMaintenanceOnLevelupAction::LearnQuestSpells(std::ostringstream* out)
         if (!spellId)
             continue;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (!spellInfo)
             continue;
 
         bool found = false;
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
-            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_LEARN_SPELL && spellInfo->Effects[i].TriggerSpell &&
-                !bot->HasSpell(spellInfo->Effects[i].TriggerSpell))
+            if (spellInfo->Effect[i] == SPELL_EFFECT_LEARN_SPELL && spellInfo->EffectTriggerSpell[i] &&
+                !bot->HasSpell(spellInfo->EffectTriggerSpell[i]))
             {
-                if (SpellInfo const* triggeredInfo = sSpellMgr->GetSpellInfo(spellInfo->Effects[i].TriggerSpell))
-                    if (triggeredInfo->Effects[0].Effect == SPELL_EFFECT_TRADE_SKILL)
+                if (SpellInfo const* triggeredInfo = sSpellMgr.GetSpellInfo(spellInfo->EffectTriggerSpell[i]))
+                    if (triggeredInfo->Effect[0] == SPELL_EFFECT_TRADE_SKILL)
                         break;
 
                 found = true;
@@ -134,7 +137,7 @@ void AutoMaintenanceOnLevelupAction::LearnQuestSpells(std::ostringstream* out)
         uint32 rewSpellId = quest->GetRewSpell();
         if (rewSpellId)
         {
-            if (SpellInfo const* rewSpellInfo = sSpellMgr->GetSpellInfo(rewSpellId))
+            if (SpellInfo const* rewSpellInfo = sSpellMgr.GetSpellInfo(rewSpellId))
             {
                 *out << FormatSpell(rewSpellInfo) << ", ";
                 continue;

@@ -17,6 +17,7 @@
 #include "BroadcastHelper.h"
 #include "Event.h"
 #include "GuildMgr.h"
+#include "Guild.h"
 #include "PlayerbotOperations.h"
 #include "PlayerbotWorldThreadProcessor.h"
 #include "Playerbots.h"
@@ -38,15 +39,19 @@ bool InviteToGroupAction::Invite(Player* inviter, Player* player)
         if (GET_PLAYERBOT_AI(player) && !IsSelfBot(player))
             if (!group->isRaidGroup() && group->GetMembersCount() > 4)
             {
-                auto convertOp = std::make_unique<GroupConvertToRaidOperation>(inviter->GetGUID());
+                auto convertOp = std::make_unique<GroupConvertToRaidOperation>(inviter->GetObjectGuid());
                 PlayerbotWorldThreadProcessor::instance().QueueOperation(std::move(convertOp));
             }
     }
 
+    /*
     WorldPacket p;
     uint32 roles_mask = 0;
     p << player->GetName();
     p << roles_mask;
+    */
+    WorldPackets::Group::GroupInvite p;
+    p.memberName = player->GetName();
     inviter->GetSession()->HandleGroupInviteOpcode(p);
 
     return true;
@@ -75,7 +80,7 @@ bool InviteNearbyToGroupAction::Execute(Event /*event*/)
 
         Group* group = bot->GetGroup();
 
-        if (player->isDND())
+        if (player->IsDND())
             continue;
 
         if (player->IsBeingTeleported())
@@ -103,7 +108,7 @@ bool InviteNearbyToGroupAction::Execute(Event /*event*/)
         if (group && botAI->GetGrouperType() > GrouperType::LEADER_5 && !group->isRaidGroup() &&
             bot->GetGroup()->GetMembersCount() > 3)
         {
-            auto convertOp = std::make_unique<GroupConvertToRaidOperation>(bot->GetGUID());
+            auto convertOp = std::make_unique<GroupConvertToRaidOperation>(bot->GetObjectGuid());
             PlayerbotWorldThreadProcessor::instance().QueueOperation(std::move(convertOp));
         }
 
@@ -166,7 +171,7 @@ bool InviteNearbyToGroupAction::isUseful()
 
 std::vector<Player*> InviteGuildToGroupAction::getGuildMembers()
 {
-    Guild* guild = sGuildMgr->GetGuildById(bot->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(bot->GetGuildId());
 
     FindGuildMembers worker;
     guild->BroadcastWorker(worker);
@@ -189,7 +194,7 @@ bool InviteGuildToGroupAction::Execute(Event /*event*/)
         if (player->GetGroup())
             continue;
 
-        if (player->isDND())
+        if (player->IsDND())
             continue;
 
         if (!PlayerbotAIConfig::Instance().RandomBotInvitePlayer && IsSelfBot(player))
@@ -235,7 +240,7 @@ bool InviteGuildToGroupAction::Execute(Event /*event*/)
         if (group && botAI->GetGrouperType() > GrouperType::LEADER_5 && !group->isRaidGroup() &&
             bot->GetGroup()->GetMembersCount() > 3)
         {
-            auto convertOp = std::make_unique<GroupConvertToRaidOperation>(bot->GetGUID());
+            auto convertOp = std::make_unique<GroupConvertToRaidOperation>(bot->GetObjectGuid());
             PlayerbotWorldThreadProcessor::instance().QueueOperation(std::move(convertOp));
         }
 
@@ -378,7 +383,7 @@ bool LfgAction::Execute(Event event)
                 return false;  // Group or raid is full so stop trying.
             else
             {
-                auto convertOp = std::make_unique<GroupConvertToRaidOperation>(requester->GetGUID());
+                auto convertOp = std::make_unique<GroupConvertToRaidOperation>(requester->GetObjectGuid());
                 PlayerbotWorldThreadProcessor::instance().QueueOperation(std::move(convertOp));
             }
         }
@@ -435,7 +440,7 @@ bool LfgAction::Execute(Event event)
 
     if (invite)
     {
-        Event acceptEvent("accept invitation", requester ? requester->GetGUID() : ObjectGuid::Empty);
+        Event acceptEvent("accept invitation", requester ? requester->GetObjectGuid() : ObjectGuid::Empty);
         if (!botAI->DoSpecificAction("accept invitation", acceptEvent, true))
             return false;
 

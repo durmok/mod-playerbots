@@ -9,7 +9,7 @@
 #include "Map.h"
 #include "PlayerbotAI.h"
 #include "RandomPlayerbotMgr.h"
-#include "Spell.h"
+#include "Spells/Spell.h"
 
 bool CanFishValue::Calculate()
 {
@@ -36,7 +36,7 @@ bool CanUseFishingBobberValue::Calculate()
         {
             if (go->GetEntry() != FISHING_BOBBER)
                 continue;
-            if (go->GetOwnerGUID() != bot->GetGUID())
+            if (go->GetOwnerGuid() != bot->GetObjectGuid())
                 continue;
 
             if (go->getLootState() == GO_READY)

@@ -8,7 +8,7 @@
 #define PLAYERBOTS_NAXXBOSSHELPER_H
 
 #include "AiObject.h"
-#include "EventMap.h"
+#include "Utilities/EventMap.h"
 #include "Log.h"
 #include "NamedObjectContext.h"
 #include "NaxxSpellIds.h"
@@ -16,9 +16,9 @@
 #include "Player.h"
 #include "PlayerbotAI.h"
 #include "Playerbots.h"
-#include "ScriptedCreature.h"
+// #include "ScriptedCreature.h"
 #include "SharedDefines.h"
-#include "Spell.h"
+#include "Spells/Spell.h"
 #include "Timer.h"
 #include <array>
 #include <string>
@@ -27,6 +27,7 @@ class Aura;
 
 const uint32 NAXX_MAP_ID = 533;
 
+/*
 template <class BossAiType>
 class GenericBossHelper : public AiObject
 {
@@ -81,6 +82,7 @@ protected:
     EventMap* _event_map = nullptr;
     uint32 _timer = 0;
 };
+*/
 
 // Heigan the Unclean ("safety dance").
 //
@@ -298,7 +300,7 @@ public:
     }
     bool FindPosToAvoidChill(std::vector<float>& dest)
     {
-        Aura* aura = NaxxSpellIds::GetAnyAura(bot, {NaxxSpellIds::Chill10, NaxxSpellIds::Chill25});
+        Aura const* aura = NaxxSpellIds::GetAnyAura(bot, {NaxxSpellIds::Chill10, NaxxSpellIds::Chill25});
         if (!aura)
         {
             // Fallback to name for custom spell data.
@@ -307,7 +309,11 @@ public:
         if (!aura)
             return false;
 
-        DynamicObject* dyn_obj = aura->GetDynobjOwner();
+        Unit *caster = aura->GetCaster();
+        if (!caster)
+            return false;
+
+        DynamicObject* dyn_obj = caster->GetDynObject(aura->GetSpellInfo()->Id);
         if (!dyn_obj)
             return false;
 
@@ -318,7 +324,7 @@ public:
         {
             if (PlayerbotAI::IsRanged(bot))
             {
-                if (bot->GetExactDist2d(currentTarget) <= 45.0f)
+                if (bot->GetPosition().GetExactDist2d(currentTarget->GetPosition()) <= 45.0f)
                     angle = bot->GetAngle(dyn_obj) - M_PI + (rand_norm() - 0.5) * M_PI / 2;
                 else
                 {
@@ -398,7 +404,8 @@ public:
     }
     bool BeforeDecimate()
     {
-        if (!_unit || !_unit->HasUnitState(UNIT_STATE_CASTING))
+        // if (!_unit || !_unit->HasUnitState(UNIT_STATE_CASTING))
+        if (!_unit || !_unit->IsNonMeleeSpellCasted())
             return false;
 
         Spell* spell = _unit->GetCurrentSpell(CURRENT_GENERIC_SPELL);
@@ -417,7 +424,7 @@ public:
             return true;
 
         // Fallback to name for custom spell data.
-        return info->SpellName[LOCALE_enUS] && botAI->EqualLowercaseName(info->SpellName[LOCALE_enUS], "decimate");
+        return !info->SpellName[LOCALE_enUS].empty() && botAI->EqualLowercaseName(info->SpellName[LOCALE_enUS], "decimate");
     }
     bool JustStartCombat() const { return _combat_start_ms != 0 && getMSTime() - _combat_start_ms < 10000; }
     bool IsZombieChow(Unit* unit) const { return unit && botAI->EqualLowercaseName(unit->GetName(), "zombie chow"); }
@@ -495,7 +502,8 @@ public:
     }
     bool IsAttracter(Player* bot)
     {
-        Difficulty diff = bot->GetRaidDifficulty();
+        // Difficulty diff = bot->GetRaidDifficulty();
+        Difficulty diff = RAID_DIFFICULTY_25MAN_NORMAL;
         if (diff == RAID_DIFFICULTY_25MAN_NORMAL)
         {
             return PlayerbotAI::IsAssistRangedDpsOfIndex(bot, 0) || PlayerbotAI::IsAssistHealOfIndex(bot, 0) ||
@@ -505,7 +513,8 @@ public:
     }
     void CalculatePosToGo(Player* bot)
     {
-        bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
+        // bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
+        bool raid25 = true;
         Unit* lady = _lady;
         if (!lady)
             posToGo = 0;
@@ -520,7 +529,8 @@ public:
     }
     std::pair<float, float> CurrentAttractPos()
     {
-        bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
+        // bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
+        bool raid25 = true;
         float posX = attractPos[posToGo].first, posY = attractPos[posToGo].second;
         if (posToGo == 1)
         {

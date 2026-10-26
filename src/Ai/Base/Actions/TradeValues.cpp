@@ -32,7 +32,7 @@ std::vector<Item*> ItemsUsefulToGiveValue::Calculate()
             if (!item->CanBeTraded())
                 continue;
 
-            if (bot->GetTradeData() && bot->GetTradeData()->HasItem(item->GetGUID()))
+            if (bot->GetTradeData() && bot->GetTradeData()->HasItem(item->GetObjectGuid()))
                 continue;
 
             ItemUsage otherUsage = PAI_VALUE2(ItemUsage, "item usage", item->GetEntry());

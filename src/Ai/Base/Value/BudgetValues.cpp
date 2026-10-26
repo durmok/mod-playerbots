@@ -98,15 +98,16 @@ uint32 TrainCostValue::Calculate()
 {
     uint32 totalCost = 0;
 
+    /*
     std::unordered_set<uint32> spells;
 
-    CreatureTemplateContainer const* ctc = sObjectMgr->GetCreatureTemplates();
-    for (CreatureTemplateContainer::const_iterator itr = ctc->begin(); itr != ctc->end(); ++itr)
+    CreatureInfoMap const& ctc = sObjectMgr.GetCreatureTemplates();
+    for (CreatureInfoMap::const_iterator itr = ctc.begin(); itr != ctc.end(); ++itr)
     {
-        if (!(itr->second.npcflag & UNIT_NPC_FLAG_TRAINER))
+        if (!(itr->second->npc_flags & UNIT_NPC_FLAG_TRAINER))
             continue;
 
-        Trainer::Trainer* trainer = sObjectMgr->GetTrainer(itr->first);
+        Trainer::Trainer* trainer = sObjectMgr.GetTrainer(itr->first);
         if (!trainer)
             continue;
 
@@ -129,6 +130,7 @@ uint32 TrainCostValue::Calculate()
             spells.insert(trainerSpell->SpellId);
         }
     }
+    */
 
     return totalCost;
 }

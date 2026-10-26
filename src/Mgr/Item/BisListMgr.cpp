@@ -7,9 +7,9 @@
 #include "BisListMgr.h"
 #include "PlayerbotsDatabase.h"
 #include "DatabaseEnv.h"
-#include "Field.h"
+#include "Field2.h"
 #include "Log.h"
-#include "QueryResult.h"
+#include "QueryResult2.h"
 
 void BisListMgr::LoadAll()
 {
@@ -26,7 +26,7 @@ void BisListMgr::LoadAll()
     uint32 count = 0;
     do
     {
-        Field* fields = result->Fetch();
+        Field2* fields = result->Fetch();
         uint8  cls       = fields[0].Get<uint8>();
         uint8  tab       = fields[1].Get<uint8>();
         uint8  slot      = fields[2].Get<uint8>();

@@ -31,4 +31,14 @@ public:
     bool isPossible() override;
 };
 
+class EatDrinkAction : public Action
+{
+public:
+    EatDrinkAction(PlayerbotAI* botAI) : Action(botAI, "eat drink") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+    bool isPossible() override;
+};
+
 #endif

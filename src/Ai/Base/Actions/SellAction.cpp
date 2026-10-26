@@ -7,7 +7,7 @@
 #include "SellAction.h"
 #include "ChatHelper.h"
 #include "Event.h"
-#include "ItemPackets.h"
+// #include "ItemPackets.h"
 #include "ItemUsageValue.h"
 #include "ItemVisitors.h"
 #include "Playerbots.h"
@@ -64,7 +64,8 @@ private:
         if (proto->SubClass == ITEM_SUBCLASS_WEAPON_MISC || proto->SubClass == ITEM_SUBCLASS_WEAPON_FISHING_POLE)
             return true;
 
-        return proto->TotemCategory != 0;
+        // return proto->TotemCategory != 0;
+        return proto->Flags & ITEM_FLAG_INDESTRUCTIBLE;
     }
 
     uint32 maxQuality;
@@ -159,17 +160,19 @@ void SellAction::Sell(Item* item)
         if (!pCreature)
             continue;
 
-        ObjectGuid itemguid = item->GetGUID();
+        ObjectGuid itemguid = item->GetObjectGuid();
         uint32 count = item->GetCount();
 
         uint32 botMoney = bot->GetMoney();
 
-        WorldPacket p(CMSG_SELL_ITEM);
-        p << vendorguid << itemguid << count;
+        // WorldPacket p(CMSG_SELL_ITEM);
+        // p << vendorguid << itemguid << count;
+        WorldPackets::Item::SellItem p;
+        p.vendorGuid = vendorguid;
+        p.itemGuid = itemguid;
+        p.count = count;
 
-        WorldPackets::Item::SellItem nicePacket(std::move(p));
-        nicePacket.Read();
-        bot->GetSession()->HandleSellItemOpcode(nicePacket);
+        bot->GetSession()->HandleSellItemOpcode(p);
 
         if (botAI->HasCheat(BotCheatMask::gold))
         {

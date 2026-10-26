@@ -78,11 +78,11 @@ bool TellReputationAction::Execute(Event event)
             if (!(faction.Flags & FACTION_FLAG_VISIBLE))
                 continue;
 
-            if (faction.Flags & (FACTION_FLAG_HIDDEN | FACTION_FLAG_INVISIBLE_FORCED) &&
-                !(faction.Flags & FACTION_FLAG_SPECIAL))
+            if (faction.Flags & (FACTION_FLAG_HIDDEN | FACTION_FLAG_INVISIBLE_FORCED)/* &&
+                !(faction.Flags & FACTION_FLAG_SPECIAL)*/)
                 continue;
 
-            FactionEntry const* entry = sFactionStore.LookupEntry(faction.ID);
+            FactionEntry const* entry = sObjectMgr.GetFactionEntry(faction.ID);
             if (!entry)
                 continue;
 
@@ -112,7 +112,7 @@ bool TellReputationAction::Execute(Event event)
 
     FactionTemplateEntry const* factionTemplate = unit->GetFactionTemplateEntry();
 
-    FactionEntry const* entry = sFactionStore.LookupEntry(factionTemplate->faction);
+    FactionEntry const* entry = sObjectMgr.GetFactionEntry(factionTemplate->faction);
     if (!entry)
         return false;
 

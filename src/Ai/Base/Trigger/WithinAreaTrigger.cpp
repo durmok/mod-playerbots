@@ -14,21 +14,21 @@ bool WithinAreaTrigger::IsActive()
     if (!movement.lastAreaTrigger)
         return false;
 
-    AreaTrigger const* at = sObjectMgr->GetAreaTrigger(movement.lastAreaTrigger);
+    AreaTriggerEntry const* at = sObjectMgr.GetAreaTrigger(movement.lastAreaTrigger);
     if (!at)
         return false;
 
-    if (!sObjectMgr->GetAreaTriggerTeleport(movement.lastAreaTrigger))
+    if (!sObjectMgr.GetAreaTriggerTeleport(movement.lastAreaTrigger))
         return false;
 
     return IsPointInAreaTriggerZone(at, bot->GetMapId(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ(),
                                     0.5f);
 }
 
-bool WithinAreaTrigger::IsPointInAreaTriggerZone(AreaTrigger const* atEntry, uint32 mapid, float x, float y, float z,
+bool WithinAreaTrigger::IsPointInAreaTriggerZone(AreaTriggerEntry const* atEntry, uint32 mapid, float x, float y, float z,
                                                  float delta)
 {
-    if (mapid != atEntry->map)
+    if (mapid != atEntry->map_id)
         return false;
 
     if (atEntry->radius > 0)
@@ -47,7 +47,7 @@ bool WithinAreaTrigger::IsPointInAreaTriggerZone(AreaTrigger const* atEntry, uin
         // is-in-cube check and we have to calculate only one point instead of 4
 
         // 2PI = 360, keep in mind that ingame orientation is counter-clockwise
-        double rotation = 2 * M_PI - atEntry->orientation;
+        double rotation = 2 * M_PI - atEntry->box_orientation;
         double sinVal = sin(rotation);
         double cosVal = cos(rotation);
 
@@ -61,8 +61,8 @@ bool WithinAreaTrigger::IsPointInAreaTriggerZone(AreaTrigger const* atEntry, uin
         float dz = z - atEntry->z;
         float dx = rotPlayerX - atEntry->x;
         float dy = rotPlayerY - atEntry->y;
-        if ((fabs(dx) > atEntry->length / 2 + delta) || (fabs(dy) > atEntry->width / 2 + delta) ||
-            (fabs(dz) > atEntry->height / 2 + delta))
+        if ((fabs(dx) > atEntry->box_x / 2 + delta) || (fabs(dy) > atEntry->box_y / 2 + delta) ||
+            (fabs(dz) > atEntry->box_z / 2 + delta))
         {
             return false;
         }

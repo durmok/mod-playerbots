@@ -28,7 +28,7 @@
 #include "GuardStrategy.h"
 #include "GuildStrategy.h"
 #include "KiteStrategy.h"
-#include "LfgStrategy.h"
+// #include "LfgStrategy.h"
 #include "LootNonCombatStrategy.h"
 #include "MaintenanceStrategy.h"
 #include "MarkRtiStrategy.h"
@@ -86,7 +86,7 @@ public:
         creators["tell target"] = &StrategyContext::tell_target;
         creators["pvp"] = &StrategyContext::pvp;
         creators["return"] = &StrategyContext::_return;
-        creators["lfg"] = &StrategyContext::lfg;
+        // creators["lfg"] = &StrategyContext::lfg;
         creators["custom"] = &StrategyContext::custom;
         creators["reveal"] = &StrategyContext::reveal;
         creators["collision"] = &StrategyContext::collision;
@@ -165,7 +165,7 @@ private:
     static Strategy* force_rebuff(PlayerbotAI* botAI) { return new ForceRebuffStrategy(botAI); }
     static Strategy* pvp(PlayerbotAI* botAI) { return new AttackEnemyPlayersStrategy(botAI); }
     static Strategy* _return(PlayerbotAI* botAI) { return new ReturnStrategy(botAI); }
-    static Strategy* lfg(PlayerbotAI* botAI) { return new LfgStrategy(botAI); }
+    // static Strategy* lfg(PlayerbotAI* botAI) { return new LfgStrategy(botAI); }
     static Strategy* custom(PlayerbotAI* botAI) { return new CustomStrategy(botAI); }
     static Strategy* reveal(PlayerbotAI* botAI) { return new RevealStrategy(botAI); }
     static Strategy* collision(PlayerbotAI* botAI) { return new CollisionStrategy(botAI); }

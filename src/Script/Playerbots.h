@@ -15,7 +15,7 @@
 #include "PlayerbotMgr.h"
 #include "RandomPlayerbotMgr.h"
 #include "SharedValueContext.h"
-#include "Spell.h"
+#include "Spells/Spell.h"
 #include "SpellMgr.h"
 #include "TravelNode.h"
 
@@ -49,5 +49,9 @@ int strcmpi(char const* s1, char const* s2);
     sPlayerbotsMgr.GetPlayerbotAI(player)->GetAiObjectContext()->GetValue<type>(name, param)->Get()
 #define GAI_VALUE(type, name) sSharedValueContext.getGlobalValue<type>(name)->Get()
 #define GAI_VALUE2(type, name, param) sSharedValueContext.getGlobalValue<type>(name, param)->Get()
+
+extern std::recursive_mutex PLAYERBOTS_LOCK; 
+std::lock_guard<std::recursive_mutex> LockPlayerbots();
+std::optional<std::unique_lock<std::recursive_mutex>> TryLockPlayerbots();
 
 #endif

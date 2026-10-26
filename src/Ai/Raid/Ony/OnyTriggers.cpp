@@ -16,7 +16,8 @@ OnyxiaDeepBreathTrigger::OnyxiaDeepBreathTrigger(PlayerbotAI* botAI) : Trigger(b
 bool OnyxiaDeepBreathTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "onyxia");
-    if (!boss || !boss->HasUnitState(UNIT_STATE_CASTING))
+    // if (!boss || !boss->HasUnitState(UNIT_STATE_CASTING))
+    if (!boss || !boss->IsNonMeleeSpellCasted())
         return false;
 
     // Check if Onyxia is casting
@@ -65,7 +66,8 @@ RaidOnyxiaFireballSplashTrigger::RaidOnyxiaFireballSplashTrigger(PlayerbotAI* bo
 bool RaidOnyxiaFireballSplashTrigger::IsActive()
 {
     Unit* boss = AI_VALUE2(Unit*, "find target", "onyxia");
-    if (!boss || !boss->HasUnitState(UNIT_STATE_CASTING))
+    // if (!boss || !boss->HasUnitState(UNIT_STATE_CASTING))
+    if (!boss || !boss->IsNonMeleeSpellCasted())
         return false;
 
     // Check if Onyxia is casting Fireball

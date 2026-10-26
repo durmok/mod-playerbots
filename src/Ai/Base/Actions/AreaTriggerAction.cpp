@@ -21,21 +21,20 @@ bool ReachAreaTriggerAction::Execute(Event event)
     p.rpos(0);
     p >> triggerId;
 
-    AreaTrigger const* at = sObjectMgr->GetAreaTrigger(triggerId);
+    AreaTriggerEntry const* at = sObjectMgr.GetAreaTrigger(triggerId);
     if (!at)
         return false;
 
-    if (!sObjectMgr->GetAreaTriggerTeleport(triggerId))
+    if (!sObjectMgr.GetAreaTriggerTeleport(triggerId))
     {
-        WorldPacket p1(CMSG_AREATRIGGER);
-        p1 << triggerId;
-        p1.rpos(0);
-        bot->GetSession()->HandleAreaTriggerOpcode(p1);
+        WorldPackets::Misc::AreaTrigger packet;
+        packet.triggerId = triggerId;
+        bot->GetSession()->HandleAreaTriggerOpcode(packet);
 
         return true;
     }
 
-    if (bot->GetMapId() != at->map)
+    if (bot->GetMapId() != at->map_id)
     {
         botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
             "area_trigger_follow_too_far_error", "I won't follow: too far away", {}));
@@ -43,13 +42,11 @@ bool ReachAreaTriggerAction::Execute(Event event)
     }
 
     bot->GetMotionMaster()->MovePoint(
-        /*id*/ at->map,
+        /*id*/ at->map_id,
         /*coords*/ at->x, at->y, at->z,
-        /*forcedMovement*/ FORCED_MOVEMENT_NONE,
+        /*forcedMovement*/ MOVE_RUN_MODE | MOVE_PATHFINDING,
         /*speed*/ 0.0f,             // default speed (not handled here)
-        /*orientation*/ 0.0f,       // keep current orientation of bot
-        /*generatePath*/ true,      // true => terrain path (2d mmap); false => straight spline (3d vmap)
-        /*forceDestination*/ false);
+        /*orientation*/ 0.0f);       // keep current orientation of bot
 
     float distance = bot->GetDistance(at->x, at->y, at->z);
     float delay = IN_MILLISECONDS * distance / bot->GetSpeed(MOVE_RUN) + sPlayerbotAIConfig.ReactDelay;
@@ -68,15 +65,14 @@ bool AreaTriggerAction::Execute(Event /*event*/)
     uint32 triggerId = movement.lastAreaTrigger;
     movement.lastAreaTrigger = 0;
 
-    if (!sObjectMgr->GetAreaTrigger(triggerId))
+    if (!sObjectMgr.GetAreaTrigger(triggerId))
         return false;
 
-    if (!sObjectMgr->GetAreaTriggerTeleport(triggerId))
+    if (!sObjectMgr.GetAreaTriggerTeleport(triggerId))
         return true;
 
-    WorldPacket p(CMSG_AREATRIGGER);
-    p << triggerId;
-    p.rpos(0);
+    WorldPackets::Misc::AreaTrigger p;
+    p.triggerId = triggerId;
     bot->GetSession()->HandleAreaTriggerOpcode(p);
 
     botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault("hello", "Hello", {}));

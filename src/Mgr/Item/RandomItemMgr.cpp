@@ -7,7 +7,7 @@
 #include "RandomItemMgr.h"
 #include "PlayerbotsDatabase.h"
 #include "DBCStores.h"
-#include "ItemTemplate.h"
+#include "ItemPrototype.h"
 #include "Playerbots.h"
 
 std::unordered_set<uint32> RandomItemMgr::itemCache;
@@ -153,7 +153,7 @@ RandomItemList RandomItemMgr::Query(uint32 level, RandomItemType type, RandomIte
     RandomItemList result;
     for (uint32 const itemId : typeItr->second)
     {
-        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+        ItemTemplate const* proto = sObjectMgr.GetItemPrototype(itemId);
         if (!proto)
             continue;
 
@@ -430,7 +430,7 @@ uint32 RandomItemMgr::CalculateStatWeight(ItemTemplate const* proto, uint8 playe
                      (Classes)playerclass == CLASS_DEATH_KNIGHT);
 
     if (proto->SubClass == ITEM_SUBCLASS_ARMOR_LIBRAM || proto->SubClass == ITEM_SUBCLASS_ARMOR_IDOL ||
-        proto->SubClass == ITEM_SUBCLASS_ARMOR_TOTEM || proto->SubClass == ITEM_SUBCLASS_ARMOR_SIGIL)
+        proto->SubClass == ITEM_SUBCLASS_ARMOR_TOTEM)
         return (uint32)(proto->Quality + proto->ItemLevel);
 
     // check basic item stats
@@ -492,6 +492,7 @@ uint32 RandomItemMgr::CalculateStatWeight(ItemTemplate const* proto, uint8 playe
     statWeight += CalculateSingleStatWeight(playerclass, spec, "armor", proto->Armor);
     statWeight += CalculateSingleStatWeight(playerclass, spec, "block", proto->Block);
 
+    /*
     // check weapon dps
     if (proto->IsWeaponVellum())
     {
@@ -513,6 +514,7 @@ uint32 RandomItemMgr::CalculateStatWeight(ItemTemplate const* proto, uint8 playe
             }
         }
     }
+    */
 
     // check item spells
     for (auto const& spellData : proto->Spells)
@@ -526,7 +528,7 @@ uint32 RandomItemMgr::CalculateStatWeight(ItemTemplate const* proto, uint8 playe
             continue;
 
         // check if it is valid spell
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellData.SpellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellData.SpellId);
         if (!spellInfo)
             continue;
 
@@ -534,20 +536,20 @@ uint32 RandomItemMgr::CalculateStatWeight(ItemTemplate const* proto, uint8 playe
         uint32 spellHealing = 0;
         for (uint32 j = 0; j < MAX_SPELL_EFFECTS; j++)
         {
-            if (spellInfo->Effects[j].Effect == SPELL_EFFECT_APPLY_AURA && spellInfo->Effects[j].BasePoints)
+            if (spellInfo->Effect[j] == SPELL_EFFECT_APPLY_AURA && spellInfo->EffectBasePoints[j])
             {
                 // spell damage
                 // SPELL_AURA_MOD_DAMAGE_DONE
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_DAMAGE_DONE)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_DAMAGE_DONE)
                 {
-                    spellDamage = spellInfo->Effects[j].BasePoints + 1;
+                    spellDamage = spellInfo->EffectBasePoints[j] + 1;
                 }
 
                 // spell healing
                 // SPELL_AURA_MOD_HEALING_DONE
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_HEALING_DONE)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_HEALING_DONE)
                 {
-                    spellHealing = spellInfo->Effects[j].BasePoints + 1;
+                    spellHealing = spellInfo->EffectBasePoints[j] + 1;
                 }
 
                 // check spell power
@@ -559,80 +561,81 @@ uint32 RandomItemMgr::CalculateStatWeight(ItemTemplate const* proto, uint8 playe
 
                 // spell hit rating (pre tbc)
                 // SPELL_AURA_MOD_SPELL_HIT_CHANCE
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_SPELL_HIT_CHANCE)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_SPELL_HIT_CHANCE)
                 {
                     statWeight += CalculateSingleStatWeight(playerclass, spec, "spellhitrtng",
-                                                            spellInfo->Effects[j].BasePoints + 1);
+                                                            spellInfo->EffectBasePoints[j] + 1);
                 }
 
                 // spell crit rating (pre tbc)
                 // SPELL_AURA_MOD_SPELL_CRIT_CHANCE
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_SPELL_CRIT_CHANCE)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_SPELL_CRIT_CHANCE)
                 {
                     statWeight += CalculateSingleStatWeight(playerclass, spec, "spellcritstrkrtng",
-                                                            spellInfo->Effects[j].BasePoints + 1);
+                                                            spellInfo->EffectBasePoints[j] + 1);
                 }
 
                 // spell penetration
                 // SPELL_AURA_MOD_TARGET_RESISTANCE
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_TARGET_RESISTANCE)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_TARGET_RESISTANCE)
                 {
                     // check if magic type
-                    if (spellInfo->Effects[j].MiscValue == SPELL_SCHOOL_MASK_SPELL)
+                    if (spellInfo->EffectMiscValue[j] == SPELL_SCHOOL_MASK_SPELL)
                         statWeight += CalculateSingleStatWeight(playerclass, spec, "spellpenrtng",
-                                                                abs(spellInfo->Effects[j].BasePoints + 1));
+                                                                abs(spellInfo->EffectBasePoints[j] + 1));
                 }
 
                 // check attack power
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_ATTACK_POWER)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_ATTACK_POWER)
                 {
                     isAttackItem = true;
                     attackPower +=
-                        CalculateSingleStatWeight(playerclass, spec, "atkpwr", spellInfo->Effects[j].BasePoints + 1);
+                        CalculateSingleStatWeight(playerclass, spec, "atkpwr", spellInfo->EffectBasePoints[j] + 1);
                 }
 
                 // check ranged ap
                 // SPELL_AURA_MOD_RANGED_ATTACK_POWER
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_RANGED_ATTACK_POWER)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_RANGED_ATTACK_POWER)
                 {
                     isAttackItem = true;
                     attackPower +=
-                        CalculateSingleStatWeight(playerclass, spec, "atkpwr", spellInfo->Effects[j].BasePoints + 1);
+                        CalculateSingleStatWeight(playerclass, spec, "atkpwr", spellInfo->EffectBasePoints[j] + 1);
                 }
 
                 // check block
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_SHIELD_BLOCKVALUE)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_SHIELD_BLOCKVALUE)
                 {
                     statWeight +=
-                        CalculateSingleStatWeight(playerclass, spec, "block", spellInfo->Effects[j].BasePoints + 1);
+                        CalculateSingleStatWeight(playerclass, spec, "block", spellInfo->EffectBasePoints[j] + 1);
                 }
 
                 // block chance
                 // SPELL_AURA_MOD_BLOCK_PERCENT
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_BLOCK_PERCENT)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_BLOCK_PERCENT)
                 {
                     statWeight +=
-                        CalculateSingleStatWeight(playerclass, spec, "blockrtng", spellInfo->Effects[j].BasePoints + 1);
+                        CalculateSingleStatWeight(playerclass, spec, "blockrtng", spellInfo->EffectBasePoints[j] + 1);
                 }
 
                 // armor penetration
                 // SPELL_AURA_MOD_TARGET_RESISTANCE
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_TARGET_RESISTANCE)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_TARGET_RESISTANCE)
                 {
                     // check if physical type
-                    if (spellInfo->Effects[j].MiscValue == SPELL_SCHOOL_MASK_NORMAL)
+                    if (spellInfo->EffectMiscValue[j] == SPELL_SCHOOL_MASK_NORMAL)
                         statWeight += CalculateSingleStatWeight(playerclass, spec, "armorpenrtng",
-                                                                abs(spellInfo->Effects[j].BasePoints + 1));
+                                                                abs(spellInfo->EffectBasePoints[j] + 1));
                 }
 
                 // hit rating (pre tbc)
                 // SPELL_AURA_MOD_HIT_CHANCE
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_HIT_CHANCE)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_HIT_CHANCE)
                 {
                     statWeight +=
-                        CalculateSingleStatWeight(playerclass, spec, "hitrtng", spellInfo->Effects[j].BasePoints + 1);
+                        CalculateSingleStatWeight(playerclass, spec, "hitrtng", spellInfo->EffectBasePoints[j] + 1);
                 }
 
+                /*
                 // crit rating (pre tbc)
                 // SPELL_AURA_MOD_HIT_CHANCE
                 if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_CRIT_PCT)
@@ -640,6 +643,7 @@ uint32 RandomItemMgr::CalculateStatWeight(ItemTemplate const* proto, uint8 playe
                     statWeight += CalculateSingleStatWeight(playerclass, spec, "critstrkrtng",
                                                             spellInfo->Effects[j].BasePoints + 1);
                 }
+                */
 
                 // check defense SPELL_AURA_MOD_SKILL
                 // check block
@@ -649,6 +653,7 @@ uint32 RandomItemMgr::CalculateStatWeight(ItemTemplate const* proto, uint8 playe
                 //    spellInfo->Effects[j].BasePoints + 1);
                 //}
 
+                /*
                 // ratings
                 // enum CombatRating
                 if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_RATING)
@@ -678,13 +683,14 @@ uint32 RandomItemMgr::CalculateStatWeight(ItemTemplate const* proto, uint8 playe
                         }
                     }
                 }
+                */
 
                 // mana regen
                 // SPELL_AURA_MOD_POWER_REGEN
-                if (spellInfo->Effects[j].ApplyAuraName == SPELL_AURA_MOD_POWER_REGEN)
+                if (spellInfo->EffectApplyAuraName[j] == SPELL_AURA_MOD_POWER_REGEN)
                 {
                     statWeight +=
-                        CalculateSingleStatWeight(playerclass, spec, "manargn", spellInfo->Effects[j].BasePoints + 1);
+                        CalculateSingleStatWeight(playerclass, spec, "manargn", spellInfo->EffectBasePoints[j] + 1);
                 }
             }
         }
@@ -871,7 +877,7 @@ uint32 RandomItemMgr::GetLiveStatWeight(Player* player, uint32 itemId)
     // skip pvp items
     if (itr->second.source == ITEM_SOURCE_PVP)
     {
-        if (!player->GetHonorPoints() && !player->GetArenaPoints())
+        if (!player->GetHonorPoints())
             return 0;
     }
 
@@ -952,7 +958,7 @@ uint32 RandomItemMgr::GetRandomItem(uint32 level, RandomItemType type, RandomIte
     if (list.empty())
         return 0;
 
-    return Acore::Containers::SelectRandomContainerElement(list);
+    return MaNGOS::Containers::SelectRandomContainerElement(list);
 }
 
 uint32 RandomItemMgr::GetAmmo(uint32 level, uint32 subClass) const
@@ -998,7 +1004,7 @@ uint32 RandomItemMgr::GetRandomPotion(uint32 level, uint32 effect) const
     if (effectItr == levelItr->second.end() || effectItr->second.empty())
         return 0;
 
-    return Acore::Containers::SelectRandomContainerElement(effectItr->second);
+    return MaNGOS::Containers::SelectRandomContainerElement(effectItr->second);
 }
 
 uint32 RandomItemMgr::GetRandomFood(uint32 level, uint32 category) const
@@ -1015,7 +1021,7 @@ uint32 RandomItemMgr::GetRandomFood(uint32 level, uint32 category) const
     if (catItr == levelItr->second.end() || catItr->second.empty())
         return 0;
 
-    return Acore::Containers::SelectRandomContainerElement(catItr->second);
+    return MaNGOS::Containers::SelectRandomContainerElement(catItr->second);
 }
 
 uint32 RandomItemMgr::GetRandomTrade(uint32 level) const
@@ -1027,7 +1033,7 @@ uint32 RandomItemMgr::GetRandomTrade(uint32 level) const
     if (itr == tradeCache.end() || itr->second.empty())
         return 0;
 
-    return Acore::Containers::SelectRandomContainerElement(itr->second);
+    return MaNGOS::Containers::SelectRandomContainerElement(itr->second);
 }
 
 float RandomItemMgr::GetItemRarity(uint32 itemId) const
@@ -1144,7 +1150,7 @@ bool RandomItemMgr::ShouldEquipArmorForSpec(ItemTemplate const* proto, uint8 cla
         case CLASS_DEATH_KNIGHT:
             if (isHoldable)
                 return false;
-            return subClass == ITEM_SUBCLASS_ARMOR_SIGIL || subClass == ITEM_SUBCLASS_ARMOR_PLATE;
+            return subClass == subClass == ITEM_SUBCLASS_ARMOR_PLATE;
 
         case CLASS_WARRIOR:
             if (isHoldable)
@@ -1239,8 +1245,7 @@ bool RandomItemMgr::ShouldEquipWeaponForSpec(ItemTemplate const* proto, uint8 cl
     {
         case CLASS_DEATH_KNIGHT:
             return inSlot(hasMH, {ITEM_SUBCLASS_WEAPON_SWORD2, ITEM_SUBCLASS_WEAPON_AXE2, ITEM_SUBCLASS_WEAPON_MACE2,
-                                  ITEM_SUBCLASS_WEAPON_POLEARM}) ||
-                   inSlot(hasRH, {ITEM_SUBCLASS_ARMOR_SIGIL});
+                                  ITEM_SUBCLASS_WEAPON_POLEARM});
 
         case CLASS_WARRIOR:
             if (specName == "prot")
@@ -1319,17 +1324,17 @@ bool RandomItemMgr::ShouldEquipWeaponForSpec(ItemTemplate const* proto, uint8 cl
 
 uint32 RandomItemMgr::GetQuestIdForItem(uint32 itemId) const
 {
-    for (auto const& [id, quest] : sObjectMgr->GetQuestTemplates())
+    for (auto const& [id, quest] : sObjectMgr.GetQuestTemplates())
     {
         for (uint32 i = 0; i < quest->GetRewItemsCount(); ++i)
         {
-            if (quest->RewardItemId[i] == itemId)
+            if (quest->RewItemId[i] == itemId)
                 return quest->GetQuestId();
         }
 
         for (uint32 i = 0; i < quest->GetRewChoiceItemsCount(); ++i)
         {
-            if (quest->RewardChoiceItemId[i] == itemId)
+            if (quest->RewChoiceItemId[i] == itemId)
                 return quest->GetQuestId();
         }
     }
@@ -1341,11 +1346,11 @@ std::vector<uint32> RandomItemMgr::GetQuestIdsForItem(uint32 itemId) const
 {
     std::vector<uint32> questIds;
 
-    for (auto const& [id, quest] : sObjectMgr->GetQuestTemplates())
+    for (auto const& [id, quest] : sObjectMgr.GetQuestTemplates())
     {
         for (uint32 i = 0; i < quest->GetRewItemsCount(); ++i)
         {
-            if (quest->RewardItemId[i] == itemId)
+            if (quest->RewItemId[i] == itemId)
             {
                 questIds.push_back(quest->GetQuestId());
                 break;
@@ -1354,7 +1359,7 @@ std::vector<uint32> RandomItemMgr::GetQuestIdsForItem(uint32 itemId) const
 
         for (uint32 i = 0; i < quest->GetRewChoiceItemsCount(); ++i)
         {
-            if (quest->RewardChoiceItemId[i] == itemId)
+            if (quest->RewChoiceItemId[i] == itemId)
             {
                 questIds.push_back(quest->GetQuestId());
                 break;
@@ -1373,7 +1378,7 @@ bool RandomItemMgr::IsInternalItem(ItemTemplate const* proto)
     if (proto->HasFlag(ITEM_FLAG_DEPRECATED))
         return true;
 
-    char const* name = proto->Name1.c_str();
+    char const* name = proto->Name1;
     return strstr(name, "NPC ")        ||  // 4859
            strstr(name, "Monster ")    ||  // 574
            strstr(name, "Test")        ||  // 427 -- "(Test)", "Test ", " Test"
@@ -1413,18 +1418,6 @@ bool RandomItemMgr::IsValidItem(ItemTemplate const* proto)
     if ((proto->AllowableClass & CLASSMASK_ALL_PLAYABLE) == 0)
         return false;
 
-    constexpr uint32 RACEMASK_ALL_PLAYABLE =
-        (1 << (RACE_HUMAN - 1))         |
-        (1 << (RACE_ORC - 1))           |
-        (1 << (RACE_DWARF - 1))         |
-        (1 << (RACE_NIGHTELF - 1))      |
-        (1 << (RACE_UNDEAD_PLAYER - 1)) |
-        (1 << (RACE_TAUREN - 1))        |
-        (1 << (RACE_GNOME - 1))         |
-        (1 << (RACE_TROLL - 1))         |
-        (1 << (RACE_BLOODELF - 1))      |
-        (1 << (RACE_DRAENEI - 1));
-
     // check race-restricted items
     if ((proto->AllowableRace & RACEMASK_ALL_PLAYABLE) == 0)
         return false;
@@ -1453,8 +1446,8 @@ static bool IsCraftedBySpellInfo(uint32 itemId, SpellInfo const* spellInfo)
 
     for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
-        if (spellInfo->Effects[i].Effect == SPELL_EFFECT_CREATE_ITEM &&
-            spellInfo->Effects[i].ItemType == itemId)
+        if (spellInfo->Effect[i] == SPELL_EFFECT_CREATE_ITEM &&
+            spellInfo->EffectItemType[i] == itemId)
             return true;
     }
 
@@ -1463,7 +1456,7 @@ static bool IsCraftedBySpellInfo(uint32 itemId, SpellInfo const* spellInfo)
 
 static bool IsCraftedBySpell(uint32 itemId, uint32 spellId)
 {
-    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
     if (!spellInfo)
         return false;
 
@@ -1472,7 +1465,7 @@ static bool IsCraftedBySpell(uint32 itemId, uint32 spellId)
 
     for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
-        SpellInfo const* triggerSpellInfo = sSpellMgr->GetSpellInfo(spellInfo->Effects[i].TriggerSpell);
+        SpellInfo const* triggerSpellInfo = sSpellMgr.GetSpellInfo(spellInfo->EffectTriggerSpell[i]);
         if (!triggerSpellInfo)
             continue;
 
@@ -1485,20 +1478,30 @@ static bool IsCraftedBySpell(uint32 itemId, uint32 spellId)
 
 static bool IsCraftedBySkill(uint32 itemId, uint32 skillId)
 {
-    for (SkillLineAbilityEntry const* skillLine : GetSkillLineAbilitiesBySkillLine(skillId))
+    for (uint32 j = 0; j < sObjectMgr.GetMaxSkillLineAbilityId(); ++j)
     {
-        if (IsCraftedBySpell(itemId, skillLine->Spell))
+        SkillLineAbilityEntry const* skillLine = sObjectMgr.GetSkillLineAbility(j);
+        if (!skillLine)
+            continue;
+
+        // wrong skill
+        if (skillLine->skillId != skillId)
+            continue;
+
+        if (IsCraftedBySpell(itemId, skillLine->spellId))
             return true;
     }
 
-    std::vector<ItemTemplate*> const* itemTemplates = sObjectMgr->GetItemTemplateStoreFast();
-    for (ItemTemplate const* recipe : *itemTemplates)
+    // std::vector<ItemTemplate*> const* itemTemplates = sObjectMgr.GetItemTemplateStoreFast();
+    auto itemTemplates = sObjectMgr.GetItemPrototypeMap();
+    for (auto const& item: itemTemplates)
     {
-        if (!recipe || recipe->Class != ITEM_CLASS_RECIPE)
+        const ItemTemplate& recipe = item.second;
+        if (recipe.Class != ITEM_CLASS_RECIPE)
             continue;
 
         uint32 skillType = 0;
-        switch (recipe->SubClass)
+        switch (recipe.SubClass)
         {
             case ITEM_SUBCLASS_LEATHERWORKING_PATTERN: skillType = SKILL_LEATHERWORKING; break;
             case ITEM_SUBCLASS_TAILORING_PATTERN:      skillType = SKILL_TAILORING; break;
@@ -1508,7 +1511,7 @@ static bool IsCraftedBySkill(uint32 itemId, uint32 skillId)
             case ITEM_SUBCLASS_ALCHEMY_RECIPE:         skillType = SKILL_ALCHEMY; break;
             case ITEM_SUBCLASS_FIRST_AID_MANUAL:       skillType = SKILL_FIRST_AID; break;
             case ITEM_SUBCLASS_ENCHANTING_FORMULA:     skillType = SKILL_ENCHANTING; break;
-            case ITEM_SUBCLASS_JEWELCRAFTING_RECIPE:   skillType = SKILL_JEWELCRAFTING; break;
+            // case ITEM_SUBCLASS_JEWELCRAFTING_RECIPE:   skillType = SKILL_JEWELCRAFTING; break;
             case ITEM_SUBCLASS_FISHING_MANUAL:         skillType = SKILL_FISHING; break;
             default: break;
         }
@@ -1518,7 +1521,7 @@ static bool IsCraftedBySkill(uint32 itemId, uint32 skillId)
 
         for (uint32 i = 0; i < MAX_ITEM_PROTO_SPELLS; ++i)
         {
-            if (IsCraftedBySpell(itemId, recipe->Spells[i].SpellId))
+            if (IsCraftedBySpell(itemId, recipe.Spells[i].SpellId))
                 return true;
         }
     }
@@ -1537,7 +1540,7 @@ bool RandomItemMgr::IsUsedBySkill(ItemTemplate const* proto, uint32 skillId)
     switch (proto->Class)
     {
         case ITEM_CLASS_TRADE_GOODS:
-        case ITEM_CLASS_MISC:
+        case ITEM_CLASS_JUNK:
         case ITEM_CLASS_REAGENT:
         case ITEM_CLASS_GEM:
             if (IsCraftedBySkill(proto->ItemId, skillId))
@@ -1660,6 +1663,7 @@ void RandomItemMgr::InitWeightLinks()
     weightStatLink["int"] = ITEM_MOD_INTELLECT;
     weightStatLink["spi"] = ITEM_MOD_SPIRIT;
 
+    /*
     // offensive stats
     weightStatLink["splpwr"] = ITEM_MOD_SPELL_POWER;
     weightStatLink["atkpwr"] = ITEM_MOD_ATTACK_POWER;
@@ -1689,6 +1693,7 @@ void RandomItemMgr::InitWeightLinks()
     weightRatingLink["dodgertng"] = CR_DODGE;
     weightRatingLink["blockrtng"] = CR_BLOCK;
     weightRatingLink["parryrtng"] = CR_PARRY;
+    */
 }
 
 bool RandomItemMgr::LoadCacheEquip()
@@ -1710,7 +1715,7 @@ bool RandomItemMgr::LoadCacheEquip()
     uint32 count = 0;
     do
     {
-        Field* fields  = result->Fetch();
+        Field2* fields  = result->Fetch();
         uint8  clazz   = fields[0].Get<uint8>();
         uint32 level   = fields[1].Get<uint32>();
         uint8  slot    = fields[2].Get<uint8>();
@@ -1748,7 +1753,7 @@ bool RandomItemMgr::LoadCacheRandomItem()
     uint32 count = 0;
     do
     {
-        Field* fields = result->Fetch();
+        Field2* fields = result->Fetch();
         uint32 bucket = fields[0].Get<uint32>();
         uint32 type   = fields[1].Get<uint32>();
         uint32 itemId = fields[2].Get<uint32>();
@@ -1784,7 +1789,7 @@ bool RandomItemMgr::LoadCacheRarity()
 
     do
     {
-        Field* fields = result->Fetch();
+        Field2* fields = result->Fetch();
         uint32 itemId = fields[0].Get<uint32>();
         float rarity  = fields[1].Get<float>();
 
@@ -1802,7 +1807,7 @@ void RandomItemMgr::LoadEnchantmentPool()
 {
     enchPoolCache.clear();
 
-    QueryResult result = WorldDatabase.Query("SELECT entry, ench FROM item_enchantment_template");
+    QueryResult2 result = WorldDatabase2.Query("SELECT entry, ench FROM item_enchantment_template");
     if (!result)
     {
         LOG_WARN("playerbots", "item_enchantment_template empty; bot autogear cannot evaluate random suffixes");
@@ -1812,7 +1817,7 @@ void RandomItemMgr::LoadEnchantmentPool()
     uint32 count = 0;
     do
     {
-        Field* fields = result->Fetch();
+        Field2* fields = result->Fetch();
         uint32 entry = fields[0].Get<uint32>();
         uint32 ench = fields[1].Get<uint32>();
         enchPoolCache[entry].push_back(ench);
@@ -1826,13 +1831,13 @@ void RandomItemMgr::BuildCacheRandomItem()
 {
     uint32 const oldMSTime = getMSTime();
 
-    ItemTemplateContainer const* itemTemplates = sObjectMgr->GetItemTemplateStore();
-    LOG_INFO("server.loading", "Building random item cache from {} items", itemTemplates->size());
+    ItemPrototypeMap const& itemTemplates = sObjectMgr.GetItemPrototypeMap();
+    LOG_INFO("server.loading", "Building random item cache from {} items", itemTemplates.size());
 
     PlayerbotsDatabaseTransaction trans = PlayerbotsDatabase.BeginTransaction();
 
     uint32 count = 0;
-    for (auto const& itr : *itemTemplates)
+    for (auto const& itr : itemTemplates)
     {
         ItemTemplate const* proto = &itr.second;
 
@@ -1877,7 +1882,7 @@ void RandomItemMgr::BuildCacheEquip()
 
     LOG_INFO("server.loading", "Building equipment cache for {} levels...", DEFAULT_MAX_LEVEL);
 
-    ItemTemplateContainer const* itemTemplates = sObjectMgr->GetItemTemplateStore();
+    ItemPrototypeMap const& itemTemplates = sObjectMgr.GetItemPrototypeMap();
 
     PlayerbotsDatabaseTransaction trans = PlayerbotsDatabase.BeginTransaction();
 
@@ -1886,7 +1891,7 @@ void RandomItemMgr::BuildCacheEquip()
     bool armorOKAbove40Lvl = false;
 
     uint32 count = 0;
-    for (auto const& itr : *itemTemplates)
+    for (auto const& itr : itemTemplates)
     {
         ItemTemplate const* proto = &itr.second;
 
@@ -1980,7 +1985,7 @@ void RandomItemMgr::BuildCacheEquipNew()
         if (!itemId || questItemIds.contains(itemId))
             return;
 
-        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+        ItemTemplate const* proto = sObjectMgr.GetItemPrototype(itemId);
         if (!proto)
             return;
 
@@ -2009,7 +2014,7 @@ void RandomItemMgr::BuildCacheEquipNew()
         ++count;
     };
 
-    for (auto const& [_, quest] : sObjectMgr->GetQuestTemplates())
+    for (auto const& [_, quest] : sObjectMgr.GetQuestTemplates())
     {
         // skip repeatable quests
         if (quest->IsRepeatable())
@@ -2025,14 +2030,14 @@ void RandomItemMgr::BuildCacheEquipNew()
             continue;
 
         for (uint32 i = 0; i < quest->GetRewItemsCount(); ++i)
-            processQuestItem(quest->RewardItemId[i], questLevel);
+            processQuestItem(quest->RewItemId[i], questLevel);
 
         for (uint32 i = 0; i < quest->GetRewChoiceItemsCount(); ++i)
-            processQuestItem(quest->RewardChoiceItemId[i], questLevel);
+            processQuestItem(quest->RewChoiceItemId[i], questLevel);
     }
 
-    ItemTemplateContainer const* itemTemplates = sObjectMgr->GetItemTemplateStore();
-    for (auto const& itr : *itemTemplates)
+    ItemPrototypeMap const& itemTemplates = sObjectMgr.GetItemPrototypeMap();
+    for (auto const& itr : itemTemplates)
     {
         ItemTemplate const* proto = &itr.second;
 
@@ -2080,7 +2085,7 @@ void RandomItemMgr::BuildCacheItemInfo()
     {
         do
         {
-            Field* fields = result->Fetch();
+            Field2* fields = result->Fetch();
             uint32 id = fields[0].Get<uint32>();
             std::string name = fields[1].Get<std::string>();
             uint8 clazz = fields[2].Get<uint8>();
@@ -2108,7 +2113,7 @@ void RandomItemMgr::BuildCacheItemInfo()
     {
         do
         {
-            Field* fields = result->Fetch();
+            Field2* fields = result->Fetch();
             uint32 id = fields[0].Get<uint32>();
             std::string field = fields[1].Get<std::string>();
             uint32 weight = fields[2].Get<uint32>();
@@ -2167,7 +2172,7 @@ void RandomItemMgr::BuildCacheItemInfo()
     // LOG_INFO("playerbots", "Loading loot templates...");
     // DropMap* dropMap = new DropMap;
 
-    // if (CreatureTemplateContainer const* creatures = sObjectMgr->GetCreatureTemplates())
+    // if (CreatureTemplateContainer const* creatures = sObjectMgr.GetCreatureTemplates())
     // {
     //     for (CreatureTemplateContainer::const_iterator itr = creatures->begin(); itr != creatures->end(); ++itr)
     //     {
@@ -2179,7 +2184,7 @@ void RandomItemMgr::BuildCacheItemInfo()
     //     }
     // }
 
-    // if (GameObjectTemplateContainer const* gameobjects = sObjectMgr->GetGameObjectTemplates())
+    // if (GameObjectTemplateContainer const* gameobjects = sObjectMgr.GetGameObjectTemplates())
     // {
     //     for (auto const& itr : *gameobjects)
     //     {
@@ -2193,7 +2198,7 @@ void RandomItemMgr::BuildCacheItemInfo()
 
     // LOG_INFO("playerbots", "Loaded {} loot templates...", dropMap->size());
 
-    // ItemTemplateContainer const* itemTemplate = sObjectMgr->GetItemTemplateStore();
+    // ItemTemplateContainer const* itemTemplate = sObjectMgr.GetItemTemplateStore();
     // LOG_INFO("playerbots", "Calculating stat weights for {} items...", itemTemplate->size());
 
     /*PlayerbotsDatabaseTransaction trans = PlayerbotsDatabase.BeginTransaction();
@@ -2330,7 +2335,7 @@ void RandomItemMgr::BuildCacheItemInfo()
         //         bool isHorde = false;
         //         for (std::vector<uint32>::iterator i = questIds.begin(); i != questIds.end(); ++i)
         //         {
-        //             Quest const* quest = sObjectMgr->GetQuestTemplate(*i);
+        //             Quest const* quest = sObjectMgr.GetQuestTemplate(*i);
         //             if (quest)
         //             {
         //                 cacheInfo.source = ITEM_SOURCE_QUEST;
@@ -2499,8 +2504,8 @@ void RandomItemMgr::BuildCacheAmmo()
 
     std::vector<AmmoEntry> ammoItems;
 
-    ItemTemplateContainer const* itemTemplates = sObjectMgr->GetItemTemplateStore();
-    for (auto const& itr : *itemTemplates)
+    ItemPrototypeMap const& itemTemplates = sObjectMgr.GetItemPrototypeMap();
+    for (auto const& itr : itemTemplates)
     {
         ItemTemplate const* proto = &itr.second;
 
@@ -2567,8 +2572,8 @@ void RandomItemMgr::BuildCacheFood()
     constexpr uint32 MAX_FOOD_LEVEL_DELTA = 10;
 
     uint32 count = 0;
-    ItemTemplateContainer const* itemTemplates = sObjectMgr->GetItemTemplateStore();
-    for (auto const& itr : *itemTemplates)
+    ItemPrototypeMap const& itemTemplates = sObjectMgr.GetItemPrototypeMap();
+    for (auto const& itr : itemTemplates)
     {
         ItemTemplate const* proto = &itr.second;
 
@@ -2577,7 +2582,8 @@ void RandomItemMgr::BuildCacheFood()
             continue;
 
         // skip non-food and non-consumable subclasses
-        if (proto->SubClass != ITEM_SUBCLASS_CONSUMABLE && proto->SubClass != ITEM_SUBCLASS_FOOD)
+        // if (proto->SubClass != ITEM_SUBCLASS_CONSUMABLE && proto->SubClass != ITEM_SUBCLASS_FOOD)
+        if (proto->SubClass != ITEM_SUBCLASS_CONSUMABLE)
             continue;
 
         // skip bound items
@@ -2586,6 +2592,10 @@ void RandomItemMgr::BuildCacheFood()
 
         // skip items that fail basic validatoin (level, duration, flags, etc.)
         if (!IsValidItem(proto))
+            continue;
+
+        // skip unstackable items
+        if (!proto->Stackable)
             continue;
 
         // skip items requiring a profession skill
@@ -2597,7 +2607,7 @@ void RandomItemMgr::BuildCacheFood()
             proto->Spells[0].SpellCategory != SPELL_CATEGORY_DRINK)
             continue;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(proto->Spells[0].SpellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(proto->Spells[0].SpellId);
         if (!spellInfo)
             continue;
 
@@ -2638,8 +2648,8 @@ void RandomItemMgr::BuildCachePotion()
     constexpr uint32 MAX_POTION_LEVEL_DELTA = 13;
 
     uint32 count = 0;
-    ItemTemplateContainer const* itemTemplates = sObjectMgr->GetItemTemplateStore();
-    for (auto const& itr : *itemTemplates)
+    ItemPrototypeMap const& itemTemplates = sObjectMgr.GetItemPrototypeMap();
+    for (auto const& itr : itemTemplates)
     {
         ItemTemplate const* proto = &itr.second;
 
@@ -2647,9 +2657,11 @@ void RandomItemMgr::BuildCachePotion()
         if (proto->Class != ITEM_CLASS_CONSUMABLE)
             continue;
 
+        /*
         // skip non-potion and non-flask subclasses
         if (proto->SubClass != ITEM_SUBCLASS_POTION && proto->SubClass != ITEM_SUBCLASS_FLASK)
             continue;
+        */
 
         // skip bound items
         if (proto->Bonding != NO_BIND)
@@ -2659,17 +2671,21 @@ void RandomItemMgr::BuildCachePotion()
         if (!IsValidItem(proto))
             continue;
 
+        // skip unstackable items like healthstone
+        if (!proto->Stackable)
+            continue;
+
         // skip items requiring a profession skill
         if (proto->RequiredSkill)
             continue;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(proto->Spells[0].SpellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(proto->Spells[0].SpellId);
         if (!spellInfo)
             continue;
 
         // skip potions whose primary effect is not heal or energize
-        if (spellInfo->Effects[EFFECT_0].Effect != SPELL_EFFECT_HEAL &&
-            spellInfo->Effects[EFFECT_0].Effect != SPELL_EFFECT_ENERGIZE)
+        if (spellInfo->Effect[EFFECT_0] != SPELL_EFFECT_HEAL &&
+            spellInfo->Effect[EFFECT_0] != SPELL_EFFECT_ENERGIZE)
             continue;
 
         // do not accept potions/flasks with more than one spell effects, only
@@ -2677,7 +2693,7 @@ void RandomItemMgr::BuildCachePotion()
         bool hasOtherEffects = false;
         for (uint8 i = EFFECT_1; i < MAX_SPELL_EFFECTS; ++i)
         {
-            if (spellInfo->Effects[i].Effect != 0)
+            if (spellInfo->Effect[i] != 0)
             {
                 hasOtherEffects = true;
                 break;
@@ -2689,7 +2705,7 @@ void RandomItemMgr::BuildCachePotion()
             continue;
 
         uint32 requiredLevel = proto->RequiredLevel;
-        uint32 effect = spellInfo->Effects[EFFECT_0].Effect;
+        uint32 effect = spellInfo->Effect[EFFECT_0];
         for (uint32 level = std::max(1u, requiredLevel); level <= DEFAULT_MAX_LEVEL; ++level)
         {
             // skip levels outside the potion relevance window
@@ -2714,8 +2730,8 @@ void RandomItemMgr::BuildCacheTrade()
     constexpr uint32 MAX_TRADE_LEVEL_DELTA = 10;
 
     uint32 count = 0;
-    ItemTemplateContainer const* itemTemplates = sObjectMgr->GetItemTemplateStore();
-    for (auto const& itr : *itemTemplates)
+    ItemPrototypeMap const& itemTemplates = sObjectMgr.GetItemPrototypeMap();
+    for (auto const& itr : itemTemplates)
     {
         ItemTemplate const* proto = &itr.second;
 
@@ -2764,11 +2780,12 @@ void RandomItemMgr::BuildCacheTrade()
 
 void RandomItemMgr::BuildCacheRarity()
 {
+    /*
     uint32 const oldMSTime = getMSTime();
 
     LOG_INFO("server.loading", "Building items rarity cache...");
 
-    QueryResult result = WorldDatabase.Query(
+    QueryResult2 result = WorldDatabase2.Query(
         "SELECT item, MAX(q.chance) AS max_chance FROM ( "
         // <-- creature
         "SELECT lt.item, "
@@ -2854,11 +2871,11 @@ void RandomItemMgr::BuildCacheRarity()
 
     do
     {
-        Field* fields = result->Fetch();
+        Field2* fields = result->Fetch();
         uint32 itemId = fields[0].Get<uint32>();
         float  rarity = fields[1].Get<float>();
 
-        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+        ItemTemplate const* proto = sObjectMgr.GetItemPrototype(itemId);
         if (!proto)
             continue;
 
@@ -2887,6 +2904,7 @@ void RandomItemMgr::BuildCacheRarity()
     LOG_INFO("server.loading", ">> Cached total {} rarity entries in {} ms", rarityCache.size(),
              GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
+    */
 }
 
 void RandomItemMgr::DebugCacheRandomItem()
@@ -2895,7 +2913,7 @@ void RandomItemMgr::DebugCacheRandomItem()
     //       amount of output to the file/console. It might be better to create
     //       separate command that shows the cache contents on demand.
 
-    if (!sLog->ShouldLog("playerbots", LogLevel::LOG_LEVEL_DEBUG))
+    if (!sLog.HasLogLevelOrHigher(LOG_LVL_DEBUG))
         return;
 
     uint32 const maxBucket = (DEFAULT_MAX_LEVEL - 1) / 10;
@@ -2916,11 +2934,11 @@ void RandomItemMgr::DebugCacheRandomItem()
 
             for (uint32 const itemId : items)
             {
-                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+                ItemTemplate const* proto = sObjectMgr.GetItemPrototype(itemId);
                 if (!proto)
                     continue;
 
-                LOG_DEBUG("playerbots", "        [{}] {}", itemId, proto->Name1.c_str());
+                LOG_DEBUG("playerbots", "        [{}] {}", itemId, proto->Name1);
             }
         }
     }

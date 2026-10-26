@@ -41,6 +41,19 @@ bool PullEndTrigger::IsActive()
     if (secondsSincePullStarted >= PullStrategy::GetMaxPullTime())
         return true;
 
+    // end pull if any member is already in combat
+    if (Group* group = bot->GetGroup())
+    {
+        for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
+        {
+            Player* player = itr->GetSource();
+            if (bot == player)
+                continue;
+            if (player->GetVictim() || player->IsInCombat())
+                return true;
+        }
+    }
+
     float distanceToPullTarget = bot->GetDistance(target);
     if (distanceToPullTarget > ATTACK_DISTANCE && !target->IsNonMeleeSpellCast(false, false, true) &&
         (!PlayerbotAI::IsRanged(bot) || distanceToPullTarget > botAI->GetRange("spell")))
@@ -52,6 +65,12 @@ bool PullEndTrigger::IsActive()
     PositionInfo pullPosition = AI_VALUE(PositionMap&, "position")["pull"];
     if (!pullPosition.isSet() || pullPosition.mapId != bot->GetMapId())
         return true;
+
+    // make pull ranged spell mobs with the help of out of LOS viable
+    if (distanceToPullTarget > ATTACK_DISTANCE && target->IsNonMeleeSpellCast(false, false, true) &&
+        (!PlayerbotAI::IsRanged(bot) || distanceToPullTarget > botAI->GetRange("spell")) &&
+        !target->IsWithinLOS(pullPosition.x, pullPosition.y, pullPosition.z))
+        return false;
 
     return bot->GetDistance(pullPosition.x, pullPosition.y, pullPosition.z) <= botAI->GetRange("follow");
 }

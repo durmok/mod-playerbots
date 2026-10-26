@@ -6,10 +6,10 @@
 
 #include "DebugAction.h"
 #include "ChooseTravelTargetAction.h"
-#include "MapMgr.h"
+#include "MapManager.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
-#include "Spell.h"
+#include "Spells/Spell.h"
 #include "SpellMgr.h"
 #include "TravelMgr.h"
 
@@ -28,12 +28,16 @@ bool DebugAction::Execute(Event event)
         uint32 i = 0;
         for (auto p : WorldPosition().getCreaturesNear())
         {
-            WorldPosition pos(p->mapid, p->posX, p->posY, p->posZ, p->orientation);
+            WorldPosition pos(p->position.mapId, p->position.x, p->position.y, p->position.z, p->position.o);
 
             uint32 areaId = 0;
             uint32 zoneId = 0;
-            sMapMgr->GetZoneAndAreaId(PHASEMASK_NORMAL, zoneId, areaId, pos.GetMapId(), pos.GetPositionX(), pos.GetPositionY(),
+            /*
+            sMapMgr.GetZoneAndAreaId(PHASEMASK_NORMAL, zoneId, areaId, pos.GetMapId(), pos.GetPositionX(), pos.GetPositionY(),
                                       pos.GetPositionZ());
+            */
+            if (Map* map = sMapMgr.FindMap(pos.GetMapId()))
+                map->GetTerrain()->GetZoneAndAreaId(zoneId, areaId, pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ());
 
             std::ostringstream out;
             out << zoneId << "," << areaId << "," << (pos.getAreaName().empty() ? "none" : pos.getAreaName()) << ",";
@@ -100,7 +104,7 @@ bool DebugAction::Execute(Event event)
     {
         uint32 questId = stoi(text.substr(6));
 
-        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
 
         if (!quest)
         {
@@ -170,7 +174,7 @@ bool DebugAction::Execute(Event event)
 
         for (auto q : TravelMgr::instance().quests)
         {
-            Quest const* quest = sObjectMgr->GetQuestTemplate(q.first);
+            Quest const* quest = sObjectMgr.GetQuestTemplate(q.first);
 
             if (!quest)
             {
@@ -304,7 +308,7 @@ bool DebugAction::Execute(Event event)
                     Creature* wpCreature =
                         bot->SummonCreature(1, p.GetPositionX(), p.GetPositionY(), p.GetPositionZ(), 0, TEMPSUMMON_TIMED_DESPAWN, 20000.0f);
                     // addAura(246, wpCreature);
-                    units.push_back(wpCreature->GetGUID());
+                    units.push_back(wpCreature->GetObjectGuid());
 
                     if (!start)
                         start = wpCreature;
@@ -335,7 +339,7 @@ bool DebugAction::Execute(Event event)
             Creature* wpCreature = bot->SummonCreature(2334, botPos.GetPositionX(), botPos.GetPositionY(), botPos.GetPositionZ(), 0,
                                                        TEMPSUMMON_TIMED_DESPAWN, 10000.0f);
 
-            FakeSpell(spellEffect, wpCreature, wpCreature, prev->GetGUID(), {}, {}, botPos, botPos);
+            FakeSpell(spellEffect, wpCreature, wpCreature, prev->GetObjectGuid(), {}, {}, botPos, botPos);
 
             prev = wpCreature;
         }
@@ -364,7 +368,7 @@ bool DebugAction::Execute(Event event)
             if (wpCreature)
             {
                 WorldPacket data(SMSG_PLAY_SPELL_VISUAL, 8 + 4);  // visual effect on guid
-                data << wpCreature->GetGUID();
+                data << wpCreature->GetObjectGuid();
                 data << uint32(spellEffect);  // index from SpellVisualKit.dbc
                 wpCreature->SendMessageToSet(&data, true);
             }
@@ -419,7 +423,7 @@ bool DebugAction::Execute(Event event)
             Creature* wpCreature = bot->SummonCreature(2334, botPos.GetPositionX(), botPos.GetPositionY(), botPos.GetPositionZ(), 0,
                                                        TEMPSUMMON_TIMED_DESPAWN, 10000.0f);
 
-            units.push_back(wpCreature->GetGUID());
+            units.push_back(wpCreature->GetObjectGuid());
         }
 
         WorldPosition botPos(bot);
@@ -445,7 +449,7 @@ bool DebugAction::Execute(Event event)
             data << uint16(0);
             data << uint32(0);
             data << uint16(2);
-            data << master->GetGUID();
+            data << master->GetObjectGuid();
             bot->SendMessageToSet(&data, true);
         }
 
@@ -456,10 +460,10 @@ bool DebugAction::Execute(Event event)
             data << uint32(spellEffect);   // spellID
             data << uint8(0) << uint8(1);  // flags
             data << uint8(1);              // amount of targets
-            data << master->GetGUID();
+            data << master->GetObjectGuid();
             data << uint8(0);
             data << uint16(2);
-            data << master->GetGUID();
+            data << master->GetObjectGuid();
             bot->SendMessageToSet(&data, true);
         }
 
@@ -497,7 +501,7 @@ bool DebugAction::Execute(Event event)
 
                     std::string const& Cname = out.str();
 
-                    wpCreature->Say(Cname.c_str(), LANG_UNIVERSAL, master);
+                    wpCreature->MonsterSay(Cname.c_str(), LANG_UNIVERSAL, master);
                 }
             }
         }
@@ -563,7 +567,7 @@ bool DebugAction::Execute(Event event)
                 if (wpCreature)
                 {
                     WorldPacket data(SMSG_PLAY_SPELL_VISUAL, 8 + 4);  // visual effect on guid
-                    data << wpCreature->GetGUID();
+                    data << wpCreature->GetObjectGuid();
                     data << uint32(effect);
                     ;  // index from SpellVisualKit.dbc
                     // wpCreature->SendMessageToSet(&data, true);
@@ -612,7 +616,7 @@ bool DebugAction::Execute(Event event)
                 if (wpCreature)
                 {
                     WorldPacket data(SMSG_PLAY_SPELL_IMPACT, 8 + 4);  // visual effect on player
-                    data << wpCreature->GetGUID();
+                    data << wpCreature->GetObjectGuid();
                     data << uint32(effect);  // index from SpellVisualKit.dbc
                     // wpCreature->SendMessageToSet(&data, true);
                     datMap.push_back(data);
@@ -656,7 +660,7 @@ bool DebugAction::Execute(Event event)
 
                 if (wpCreature && lCreature)
                 {
-                    wpCreature->CastSpell(lCreature, effect, TRIGGERED_FULL_MASK);
+                    wpCreature->CastSpell(lCreature, effect, true);
                 }
 
                 lCreature = wpCreature;
@@ -693,8 +697,8 @@ bool DebugAction::Execute(Event event)
     }
     else if (text.find("gspellmap") != std::string::npos)
     {
-        GuidVector all_targets;  // = { bot->GetGUID(), master->GetGUID() };
-        // std::GuidVector all_dummies = { bot->GetGUID(), master->GetGUID() };
+        GuidVector all_targets;  // = { bot->GetObjectGuid(), master->GetObjectGuid() };
+        // std::GuidVector all_dummies = { bot->GetObjectGuid(), master->GetObjectGuid() };
 
         /*GuidVector a_targets = *context->GetValue<GuidVector >("all targets");
         for (auto t : a_targets)
@@ -716,12 +720,12 @@ bool DebugAction::Execute(Event event)
                 Creature* wpCreature = bot->SummonCreature(2334, botPos.GetPositionX(), botPos.GetPositionY(), botPos.GetPositionZ(), 0,
                                                            TEMPSUMMON_TIMED_DESPAWN, 10000.0f);
 
-                all_targets.push_back(wpCreature->GetGUID());
+                all_targets.push_back(wpCreature->GetObjectGuid());
             }
         }
 
-        all_targets.push_back(master->GetGUID());
-        all_targets.push_back(bot->GetGUID());
+        all_targets.push_back(master->GetObjectGuid());
+        all_targets.push_back(bot->GetObjectGuid());
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
@@ -736,8 +740,8 @@ bool DebugAction::Execute(Event event)
                     uint32 i = dx + dy * 10;
                     GuidVector hits, miss;
 
-                    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(effect);
-                    if (spellInfo && spellInfo->Speed > 0)
+                    SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(effect);
+                    if (spellInfo && spellInfo->speed > 0)
                         for (auto tar : all_targets)
                         {
                             // hits.push_back(tar);
@@ -771,7 +775,7 @@ bool DebugAction::Execute(Event event)
                     if (!target)
                         target = master;
 
-                    FakeSpell(effect, realCaster, caster, target->GetGUID(), hits, miss, WorldPosition(caster),
+                    FakeSpell(effect, realCaster, caster, target->GetObjectGuid(), hits, miss, WorldPosition(caster),
                               WorldPosition(target));
 
                     std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -796,12 +800,12 @@ bool DebugAction::Execute(Event event)
                 Creature* wpCreature = bot->SummonCreature(2334, botPos.GetPositionX(), botPos.GetPositionY(), botPos.GetPositionZ(), 0,
                                                            TEMPSUMMON_TIMED_DESPAWN, 10000.0f);
 
-                all_targets.push_back(wpCreature->GetGUID());
+                all_targets.push_back(wpCreature->GetObjectGuid());
             }
         }
 
-        all_targets.push_back(master->GetGUID());
-        all_targets.push_back(bot->GetGUID());
+        all_targets.push_back(master->GetObjectGuid());
+        all_targets.push_back(bot->GetObjectGuid());
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
@@ -816,7 +820,7 @@ bool DebugAction::Execute(Event event)
                     uint32 i = dx + dy * 10;
                     GuidVector hits, miss;
 
-                    // SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(effect); //not used, line marked for removal.
+                    // SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(effect); //not used, line marked for removal.
                     for (auto tar : all_targets)
                     {
                         // hits.push_back(tar);
@@ -850,7 +854,7 @@ bool DebugAction::Execute(Event event)
                         target = master;
 
                     caster->SendPlaySpellVisual(5036);
-                    FakeSpell(effect, realCaster, caster, target->GetGUID(), hits, miss, WorldPosition(caster),
+                    FakeSpell(effect, realCaster, caster, target->GetObjectGuid(), hits, miss, WorldPosition(caster),
                               WorldPosition(target));
 
                     std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -920,7 +924,8 @@ bool DebugAction::Execute(Event event)
 void DebugAction::FakeSpell(uint32 spellId, Unit* truecaster, Unit* caster, ObjectGuid target, GuidVector otherTargets,
                             GuidVector missTargets, WorldPosition source, WorldPosition dest, bool forceDest)
 {
-    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    /*
+    SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
     {
         uint32 castFlags = CAST_FLAG_HAS_TRAJECTORY;
 
@@ -1035,6 +1040,7 @@ void DebugAction::FakeSpell(uint32 spellId, Unit* truecaster, Unit* caster, Obje
         else
             truecaster->SendMessageToSet(&data, true);
     }
+    */
 }
 
 void DebugAction::addAura(uint32 spellId, Unit* target)
@@ -1042,13 +1048,14 @@ void DebugAction::addAura(uint32 spellId, Unit* target)
     if (!target)
         return;
 
-    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
     if (!spellInfo)
         return;
 
-    if (!target->IsAlive() && !spellInfo->HasAttribute(SPELL_ATTR0_PASSIVE) &&
-        !spellInfo->HasAttribute(SPELL_ATTR2_ALLOW_DEAD_TARGET))
+    if (!target->IsAlive() && !spellInfo->HasAttribute(SPELL_ATTR_PASSIVE) &&
+        !spellInfo->HasAttribute(SPELL_ATTR_EX2_ALLOW_DEAD_TARGET))
         return;
 
-    target->AddAura(spellInfo, MAX_EFFECT_MASK, target);
+    // target->AddAura(spellInfo, MAX_EFFECT_MASK, target);
+    target->AddAura(spellInfo->Id, MAX_EFFECT_MASK, target);
 }

@@ -127,12 +127,12 @@ void PlayerbotsDatabaseConnection::DoPrepareStatements()
 
     PrepareStatement(PLAYERBOTS_SEL_TEXT_CHANCE, "SELECT name, probability FROM ai_playerbot_texts_chance", CONNECTION_SYNCH);
 }
-PlayerbotsDatabaseConnection::PlayerbotsDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo)
+PlayerbotsDatabaseConnection::PlayerbotsDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection2(connInfo)
 {
 }
 
 PlayerbotsDatabaseConnection::PlayerbotsDatabaseConnection(ProducerConsumerQueue<SQLOperation*>* queue,
-    MySQLConnectionInfo& connInfo) : MySQLConnection(queue, connInfo)
+    MySQLConnectionInfo& connInfo) : MySQLConnection2(queue, connInfo)
 {
 }
 

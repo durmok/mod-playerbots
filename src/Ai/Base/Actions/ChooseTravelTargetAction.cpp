@@ -396,11 +396,11 @@ bool ChooseTravelTargetAction::SetGroupTarget(TravelTarget* target)
             {
                 if (ref->getSubGroup() != bot->GetSubGroup())
                 {
-                    groupPlayers.push_back(ref->GetSource()->GetGUID());
+                    groupPlayers.push_back(ref->GetSource()->GetObjectGuid());
                 }
                 else
                 {
-                    groupPlayers.push_front(ref->GetSource()->GetGUID());
+                    groupPlayers.push_front(ref->GetSource()->GetObjectGuid());
                 }
             }
         }
@@ -492,7 +492,7 @@ bool ChooseTravelTargetAction::SetQuestTarget(TravelTarget* target, bool /*onlyC
 
             uint32 questId = quest.first;
             // QuestStatusData* questStatus = &quest.second; //not used, line marked for removal.
-            const auto questTemplate = sObjectMgr->GetQuestTemplate(questId);
+            const auto questTemplate = sObjectMgr.GetQuestTemplate(questId);
 
             if (!activeQuests && !bot->CanRewardQuest(questTemplate, false))
                 continue;
@@ -706,13 +706,13 @@ bool ChooseTravelTargetAction::SetNpcFlagTarget(TravelTarget* target, std::vecto
         if (!d->getEntry())
             continue;
 
-        CreatureTemplate const* cInfo = sObjectMgr->GetCreatureTemplate(d->getEntry());
+        CreatureTemplate const* cInfo = sObjectMgr.GetCreatureTemplate(d->getEntry());
         if (!cInfo)
             continue;
 
         bool foundFlag = false;
         for (auto flag : flags)
-            if (cInfo->npcflag & flag)
+            if (cInfo->npc_flags & flag)
             {
                 foundFlag = true;
                 break;
@@ -721,14 +721,14 @@ bool ChooseTravelTargetAction::SetNpcFlagTarget(TravelTarget* target, std::vecto
         if (!foundFlag)
             continue;
 
-        if (!name.empty() && !strstri(cInfo->Name.c_str(), name.c_str()) &&
-            !strstri(cInfo->SubName.c_str(), name.c_str()))
+        if (!name.empty() && !strstri(cInfo->name.c_str(), name.c_str()) &&
+            !strstri(cInfo->subname.c_str(), name.c_str()))
             continue;
 
         if (!items.empty())
         {
             bool foundItem = false;
-            VendorItemData const* vItems = sObjectMgr->GetNpcVendorItemList(d->getEntry());
+            VendorItemData const* vItems = sObjectMgr.GetNpcVendorItemList(d->getEntry());
             if (vItems)
             {
                 for (auto item : items)
@@ -748,7 +748,7 @@ bool ChooseTravelTargetAction::SetNpcFlagTarget(TravelTarget* target, std::vecto
                 continue;
         }
 
-        FactionTemplateEntry const* factionEntry = sFactionTemplateStore.LookupEntry(cInfo->faction);
+        FactionTemplateEntry const* factionEntry = sObjectMgr.GetFactionTemplateEntry(cInfo->faction);
         ReputationRank reaction = Unit::GetFactionReactionTo(botAI->GetBot()->GetFactionTemplateEntry(), factionEntry);
 
         if (reaction < REP_NEUTRAL)
@@ -889,12 +889,12 @@ bool ChooseTravelTargetAction::isUseful()
 
 bool ChooseTravelTargetAction::needForQuest(Unit* target)
 {
-    bool justCheck = (bot->GetGUID() == target->GetGUID());
+    bool justCheck = (bot->GetObjectGuid() == target->GetObjectGuid());
 
     QuestStatusMap& questMap = bot->getQuestStatusMap();
     for (auto& quest : questMap)
     {
-        Quest const* questTemplate = sObjectMgr->GetQuestTemplate(quest.first);
+        Quest const* questTemplate = sObjectMgr.GetQuestTemplate(quest.first);
         if (!questTemplate)
             continue;
 
@@ -921,12 +921,15 @@ bool ChooseTravelTargetAction::needForQuest(Unit* target)
 
             for (int j = 0; j < QUEST_OBJECTIVES_COUNT; j++)
             {
-                int32 entry = questTemplate->RequiredNpcOrGo[j];
+                // int32 entry = questTemplate->ReqCreatureOrGOId[j];
+                int32 entry = questTemplate->ReqCreatureOrGOId[j];
 
                 if (entry && entry > 0)
                 {
-                    int required = questTemplate->RequiredNpcOrGoCount[j];
-                    int available = questStatus.CreatureOrGOCount[j];
+                    // int required = questTemplate->ReqCreatureOrGOCount[j];
+                    int required = questTemplate->ReqCreatureOrGOCount[j];
+                    // int available = questStatus.m_creatureOrGOcount[j];
+                    int available = questStatus.m_creatureOrGOcount[j];
 
                     if (required && available < required && (target->GetEntry() == uint32(entry) || justCheck))
                         return true;
@@ -934,12 +937,15 @@ bool ChooseTravelTargetAction::needForQuest(Unit* target)
 
                 if (justCheck)
                 {
-                    int32 itemId = questTemplate->RequiredItemId[j];
+                    // int32 itemId = questTemplate->ReqItemId[j];
+                    int32 itemId = questTemplate->ReqItemId[j];
 
                     if (itemId && itemId > 0)
                     {
-                        int required = questTemplate->RequiredItemCount[j];
-                        int available = questStatus.ItemCount[j];
+                        // int required = questTemplate->ReqItemCount[j];
+                        int required = questTemplate->ReqItemCount[j];
+                        // int available = questStatus.m_itemcount[j];
+                        int available = questStatus.m_itemcount[j];
 
                         if (required && available < required)
                             return true;
@@ -949,9 +955,9 @@ bool ChooseTravelTargetAction::needForQuest(Unit* target)
 
             if (!justCheck)
             {
-                if (CreatureTemplate const* data = sObjectMgr->GetCreatureTemplate(target->GetEntry()))
+                if (CreatureTemplate const* data = sObjectMgr.GetCreatureTemplate(target->GetEntry()))
                 {
-                    if (uint32 lootId = data->lootid)
+                    if (uint32 lootId = data->loot_id)
                     {
                         if (LootTemplates_Creature.HaveQuestLootForPlayer(lootId, bot))
                             return true;
@@ -968,11 +974,14 @@ bool ChooseTravelTargetAction::needItemForQuest(uint32 itemId, Quest const* ques
 {
     for (uint32 i = 0; i < QUEST_OBJECTIVES_COUNT; i++)
     {
-        if (questTemplate->RequiredItemId[i] != itemId)
+        // if (questTemplate->ReqItemId[i] != itemId)
+        if (questTemplate->ReqItemId[i] != itemId)
             continue;
 
-        uint32 required = questTemplate->RequiredItemCount[i];
-        uint32 available = questStatus->ItemCount[i];
+        // uint32 required = questTemplate->ReqItemCount[i];
+        uint32 required = questTemplate->ReqItemCount[i];
+        // uint32 available = questStatus->m_itemcount[i];
+        uint32 available = questStatus->m_itemcount[i];
 
         if (!required)
             continue;

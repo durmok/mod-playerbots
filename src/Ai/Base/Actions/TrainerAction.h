@@ -28,7 +28,7 @@ public:
 private:
     Creature* GetCreatureTarget();
     void Iterate(Creature* creature, bool learnSpells, uint32 spellId);
-    void Learn(SpellInfo const* spellInfo, uint32 cost, std::ostringstream& out);
+    void Learn(SpellEntry const* spellInfo, uint32 cost, std::ostringstream& out);
     void TellHeader(Creature* creature);
     void TellFooter(uint32 totalCost);
 };
@@ -40,12 +40,14 @@ public:
     bool Execute(Event event) override;
 };
 
+/*
 class RemoveGlyphAction : public Action
 {
 public:
     RemoveGlyphAction(PlayerbotAI* botAI) : Action(botAI, "remove glyph") {}
     bool Execute(Event event) override;
 };
+*/
 
 class AutoGearAction : public Action
 {

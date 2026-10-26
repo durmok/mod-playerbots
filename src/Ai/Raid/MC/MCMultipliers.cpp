@@ -7,7 +7,7 @@
 #include "MCMultipliers.h"
 #include "AttackAction.h"
 #include "ChooseTargetActions.h"
-#include "DKActions.h"
+// #include "DKActions.h"
 #include "DruidActions.h"
 #include "GenericSpellActions.h"
 #include "HunterActions.h"
@@ -29,8 +29,8 @@ static bool IsDpsBotWithAoeAction(Player* bot, Action* action)
     {
         if (dynamic_cast<DpsAoeAction*>(action) || dynamic_cast<CastConsecrationAction*>(action) ||
             dynamic_cast<CastStarfallAction*>(action) || dynamic_cast<CastWhirlwindAction*>(action) ||
-            dynamic_cast<CastMagmaTotemAction*>(action) || dynamic_cast<CastExplosiveTrapAction*>(action) ||
-            dynamic_cast<CastDeathAndDecayAction*>(action))
+            dynamic_cast<CastMagmaTotemAction*>(action) || dynamic_cast<CastExplosiveTrapAction*>(action)/* ||
+            dynamic_cast<CastDeathAndDecayAction*>(action)*/)
             return true;
 
         if (auto castSpellAction = dynamic_cast<CastSpellAction*>(action))

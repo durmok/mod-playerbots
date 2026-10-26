@@ -13,24 +13,25 @@
 #include "ItemVisitors.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
+#include "World.h"
 #include <functional>
 
 enum eTalkType
 {
-    /*0x18*/ General = ChannelFlags::CHANNEL_FLAG_GENERAL | ChannelFlags::CHANNEL_FLAG_NOT_LFG,
-    /*0x3C*/ Trade = ChannelFlags::CHANNEL_FLAG_CITY | ChannelFlags::CHANNEL_FLAG_GENERAL |
-                     ChannelFlags::CHANNEL_FLAG_NOT_LFG | ChannelFlags::CHANNEL_FLAG_TRADE,
-    /*0x18*/ LocalDefence = ChannelFlags::CHANNEL_FLAG_GENERAL | ChannelFlags::CHANNEL_FLAG_NOT_LFG,
+    /*0x18*/ General = Channel::CHANNEL_FLAG_GENERAL | Channel::CHANNEL_FLAG_NOT_LFG,
+    /*0x3C*/ Trade = Channel::CHANNEL_FLAG_CITY | Channel::CHANNEL_FLAG_GENERAL |
+                     Channel::CHANNEL_FLAG_NOT_LFG | Channel::CHANNEL_FLAG_TRADE,
+    /*0x18*/ LocalDefence = Channel::CHANNEL_FLAG_GENERAL | Channel::CHANNEL_FLAG_NOT_LFG,
     /*x038*/ GuildRecruitment =
-        ChannelFlags::CHANNEL_FLAG_CITY | ChannelFlags::CHANNEL_FLAG_GENERAL | ChannelFlags::CHANNEL_FLAG_NOT_LFG,
-    /*0x50*/ LookingForGroup = ChannelFlags::CHANNEL_FLAG_LFG | ChannelFlags::CHANNEL_FLAG_GENERAL
+        Channel::CHANNEL_FLAG_CITY | Channel::CHANNEL_FLAG_GENERAL | Channel::CHANNEL_FLAG_NOT_LFG,
+    /*0x50*/ LookingForGroup = Channel::CHANNEL_FLAG_LFG | Channel::CHANNEL_FLAG_GENERAL
 };
 
 std::map<std::string, uint8> SuggestDungeonAction::instances;
 std::map<std::string, uint8> SuggestWhatToDoAction::factions;
 
 SuggestWhatToDoAction::SuggestWhatToDoAction(PlayerbotAI* botAI, std::string const name)
-    : InventoryAction{botAI, name}, _dbc_locale{sWorld->GetDefaultDbcLocale()}
+    : InventoryAction{botAI, name}, _dbc_locale{sWorld.GetDefaultDbcLocale()}
 {
     suggestions.push_back(std::bind(&SuggestWhatToDoAction::specificQuest, this));
     suggestions.push_back(std::bind(&SuggestWhatToDoAction::grindReputation, this));
@@ -356,7 +357,7 @@ bool SuggestTradeAction::Execute(Event /*event*/)
     if (!item || !count)
         return false;
 
-    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(item);
+    ItemTemplate const* proto = sObjectMgr.GetItemTemplate(item);
     if (!proto)
         return false;
 

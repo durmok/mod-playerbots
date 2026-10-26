@@ -27,7 +27,8 @@ bool RTSCAction::Execute(Event event)
     {
         if (master->HasSpell(RTSC_MOVE_SPELL))
         {
-            master->removeSpell(RTSC_MOVE_SPELL, SPEC_MASK_ALL, false);
+            // master->removeSpell(RTSC_MOVE_SPELL, SPEC_MASK_ALL, false);
+            master->RemoveSpell(RTSC_MOVE_SPELL);
             botAI->TellMasterNoFacing("RTS control spell removed.");
         }
 

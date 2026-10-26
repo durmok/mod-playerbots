@@ -6,12 +6,13 @@
 
 #include "GuildTriggers.h"
 #include "GuildMgr.h"
+#include "Guild.h"
 #include "Playerbots.h"
 
 bool PetitionTurnInTrigger::IsActive()
 {
     return !bot->GetGuildId() && AI_VALUE2(uint32, "item count", chat->FormatQItem(5863)) &&
-           AI_VALUE(uint8, "petition signs") >= sWorld->getIntConfig(CONFIG_MIN_PETITION_SIGNS);
+           AI_VALUE(uint8, "petition signs") >= sWorld.getConfig(CONFIG_UINT32_MIN_PETITION_SIGNS);
 }
 
 bool BuyTabardTrigger::IsActive()
@@ -35,16 +36,16 @@ bool LeaveLargeGuildTrigger::IsActive()
 
     GuilderType type = botAI->GetGuilderType();
 
-    Guild* guild = sGuildMgr->GetGuildById(bot->GetGuildId());
+    Guild* guild = sGuildMgr.GetGuildById(bot->GetGuildId());
 
-    Player* leader = ObjectAccessor::FindPlayer(guild->GetLeaderGUID());
+    Player* leader = ObjectAccessor::FindPlayer(guild->GetLeaderGuid());
 
     // Only leave the guild if the leader is a bot (but not a SelfBot).
     PlayerbotAI* leaderBotAI = leader ? GET_PLAYERBOT_AI(leader) : nullptr;
     if (!leaderBotAI || IsSelfBot(leader))
         return false;
 
-    if (type == GuilderType::SOLO && guild->GetLeaderGUID() != bot->GetGUID())
+    if (type == GuilderType::SOLO && guild->GetLeaderGuid() != bot->GetObjectGuid())
         return true;
 
     uint32 members = guild->GetMemberSize();

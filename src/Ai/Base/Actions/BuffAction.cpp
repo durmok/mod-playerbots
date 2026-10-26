@@ -24,10 +24,12 @@ public:
         if (proto->Class != ITEM_CLASS_CONSUMABLE)
             return true;
 
+        /*
         if (proto->SubClass != ITEM_SUBCLASS_ELIXIR && proto->SubClass != ITEM_SUBCLASS_FLASK &&
             proto->SubClass != ITEM_SUBCLASS_SCROLL && proto->SubClass != ITEM_SUBCLASS_FOOD &&
             proto->SubClass != ITEM_SUBCLASS_CONSUMABLE_OTHER && proto->SubClass != ITEM_SUBCLASS_ITEM_ENHANCEMENT)
             return true;
+        */
 
         for (uint8 i = 0; i < MAX_ITEM_PROTO_SPELLS; i++)
         {
@@ -63,6 +65,7 @@ void BuffAction::TellHeader(uint32 subClass)
 {
     switch (subClass)
     {
+        /*
         case ITEM_SUBCLASS_ELIXIR:
             botAI->TellMaster("--- Elixir ---");
             return;
@@ -77,6 +80,9 @@ void BuffAction::TellHeader(uint32 subClass)
             return;
         case ITEM_SUBCLASS_ITEM_ENHANCEMENT:
             botAI->TellMaster("--- Enchant ---");
+        */
+        case ITEM_SUBCLASS_CONSUMABLE:
+            botAI->TellMaster("--- Consumable ---");
             return;
     }
 }

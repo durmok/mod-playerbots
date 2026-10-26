@@ -65,14 +65,15 @@ void LootObject::Refresh(Player* bot, ObjectGuid lootGUID)
         return;
     }
     Creature* creature = botAI->GetCreature(lootGUID);
-    if (creature && creature->getDeathState() == DeathState::Corpse)
+    if (creature && creature->getDeathState() == DeathState::CORPSE)
     {
         if (creature->HasFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE))
             guid = lootGUID;
 
         if (creature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE))
         {
-            skillId = creature->GetCreatureTemplate()->GetRequiredLootSkill();
+            skillId = creature->GetCreatureInfo()->GetRequiredLootSkill();
+            skillId = creature->GetCreatureInfo()->GetRequiredLootSkill();
             uint32 targetLevel = creature->GetLevel();
             reqSkillValue = targetLevel < 10 ? 1 : targetLevel < 20 ? (targetLevel - 10) * 10 : targetLevel * 5;
             if (botAI->HasSkill((SkillType)skillId) && bot->GetSkillValue(skillId) >= reqSkillValue)
@@ -85,11 +86,12 @@ void LootObject::Refresh(Player* bot, ObjectGuid lootGUID)
     GameObject* go = botAI->GetGameObject(lootGUID);
     if (go && go->isSpawned() && go->GetGoState() == GO_STATE_READY)
     {
+        /*
         bool onlyHasQuestItems = true;
         bool hasAnyQuestItems = false;
         bool neededQuestItem = false;
 
-        GameObjectQuestItemList const* items = sObjectMgr->GetGameObjectQuestItemList(go->GetEntry());
+        GameObjectQuestItemList const* items = sObjectMgr.GetGameObjectQuestItemList(go->GetEntry());
         for (size_t i = 0; i < MAX_GAMEOBJECT_QUEST_ITEMS; i++)
         {
             if (!items || i >= items->size())
@@ -111,7 +113,7 @@ void LootObject::Refresh(Player* bot, ObjectGuid lootGUID)
                 neededQuestItem = true;
             }
 
-            ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+            ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemId);
             if (!proto)
                 continue;
 
@@ -138,7 +140,7 @@ void LootObject::Refresh(Player* bot, ObjectGuid lootGUID)
                 if (!itemId)
                     continue;
 
-                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+                ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemId);
                 if (!proto)
                     continue;
 
@@ -160,7 +162,7 @@ void LootObject::Refresh(Player* bot, ObjectGuid lootGUID)
                         if (!refItemId)
                             continue;
 
-                        ItemTemplate const* refProto = sObjectMgr->GetItemTemplate(refItemId);
+                        ItemTemplate const* refProto = sObjectMgr.GetItemTemplate(refItemId);
                         if (!refProto)
                             continue;
 
@@ -177,6 +179,7 @@ void LootObject::Refresh(Player* bot, ObjectGuid lootGUID)
         // If gameobject has only quest items that bot doesn’t need, skip it.
         if (!neededQuestItem && hasAnyQuestItems && onlyHasQuestItems)
             return;
+        */
 
         // Otherwise, loot it.
         guid = lootGUID;
@@ -226,6 +229,7 @@ void LootObject::Refresh(Player* bot, ObjectGuid lootGUID)
     }
 }
 
+/*
 bool LootObject::IsNeededForQuest(Player* bot, uint32 itemId)
 {
     for (int qs = 0; qs < MAX_QUEST_LOG_SIZE; ++qs)
@@ -238,16 +242,16 @@ bool LootObject::IsNeededForQuest(Player* bot, uint32 itemId)
         if (qData.Status != QUEST_STATUS_INCOMPLETE)
             continue;
 
-        Quest const* qInfo = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* qInfo = sObjectMgr.GetQuestTemplate(questId);
         if (!qInfo)
             continue;
 
         for (int i = 0; i < QUEST_ITEM_OBJECTIVES_COUNT; ++i)
         {
-            if (!qInfo->RequiredItemCount[i] || (qInfo->RequiredItemCount[i] - qData.ItemCount[i]) <= 0)
+            if (!qInfo->ReqItemCount[i] || (qInfo->ReqItemCount[i] - qData.m_itemcount[i]) <= 0)
                 continue;
 
-            if (qInfo->RequiredItemId[i] != itemId)
+            if (qInfo->ReqItemId[i] != itemId)
                 continue;
 
             return true;
@@ -256,6 +260,7 @@ bool LootObject::IsNeededForQuest(Player* bot, uint32 itemId)
 
     return false;
 }
+*/
 
 WorldObject* LootObject::GetWorldObject(Player* bot)
 {
@@ -267,7 +272,7 @@ WorldObject* LootObject::GetWorldObject(Player* bot)
         return nullptr;
     }
     Creature* creature = botAI->GetCreature(guid);
-    if (creature && creature->getDeathState() == DeathState::Corpse && creature->IsInWorld())
+    if (creature && creature->getDeathState() == DeathState::CORPSE && creature->IsInWorld())
         return creature;
 
     GameObject* go = botAI->GetGameObject(guid);
@@ -296,12 +301,15 @@ bool LootObject::IsLootPossible(Player* bot)
     if (!botAI)
         return false;
 
-    if (abs(worldObj->GetPositionZ() - bot->GetPositionZ()) > INTERACTION_DISTANCE - 2.0f)
-        return false;
+    // if (abs(worldObj->GetPositionZ() - bot->GetPositionZ()) > INTERACTION_DISTANCE - 2.0f)
+    //     return false;
 
     Creature* creature = botAI->GetCreature(guid);
-    if (creature && creature->getDeathState() == DeathState::Corpse)
+    if (creature && creature->getDeathState() == DeathState::CORPSE)
     {
+        if (creature->loot.roundRobinPlayer == bot->GetObjectGuid())
+            return true;
+
         if (!bot->isAllowedToLoot(creature) && skillId != SKILL_SKINNING)
             return false;
     }
@@ -501,7 +509,7 @@ LootObject LootObjectStack::GetLoot(float maxDistance)
 
 LootObject LootObjectStack::GetNearest(float maxDistance)
 {
-    availableLoot.shrink(time(nullptr) - 30);
+    availableLoot.shrink(time(nullptr) - 300);
 
     LootObject nearest;
     float nearestDistance = std::numeric_limits<float>::max();
@@ -522,6 +530,14 @@ LootObject LootObjectStack::GetNearest(float maxDistance)
             i = availableLoot.erase(i);
             continue;
         }
+
+        // check if alive for vmangos respawn with fixed guid
+        if (worldObj->IsInWorld() && worldObj->IsUnit() && worldObj->ToUnit()->IsAlive())
+        {
+            i = availableLoot.erase(i);
+            continue;
+        }
+
 
         float distance = bot->GetDistance(worldObj);
 

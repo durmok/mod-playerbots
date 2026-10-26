@@ -54,7 +54,7 @@ bool BuyAction::Execute(Event event)
             m_items_sorted.erase(std::remove_if(m_items_sorted.begin(), m_items_sorted.end(),
                                                 [](VendorItem* i)
                                                 {
-                                                    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(i->item);
+                                                    ItemTemplate const* proto = sObjectMgr.GetItemTemplate(i->item);
                                                     return !proto;
                                                 }),
                                  m_items_sorted.end());
@@ -69,8 +69,8 @@ bool BuyAction::Execute(Event event)
             std::sort(m_items_sorted.begin(), m_items_sorted.end(),
                 [&calculator](VendorItem* i, VendorItem* j)
                 {
-                    ItemTemplate const* item1 = sObjectMgr->GetItemTemplate(i->item);
-                    ItemTemplate const* item2 = sObjectMgr->GetItemTemplate(j->item);
+                    ItemTemplate const* item1 = sObjectMgr.GetItemTemplate(i->item);
+                    ItemTemplate const* item2 = sObjectMgr.GetItemTemplate(j->item);
 
                     if (!item1 || !item2)
                         return false;
@@ -92,7 +92,7 @@ bool BuyAction::Execute(Event event)
             for (auto& tItem : m_items_sorted)
             {
                 uint32 maxPurchases = 1;  // Default to buying once
-                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(tItem->item);
+                ItemTemplate const* proto = sObjectMgr.GetItemTemplate(tItem->item);
                 if (!proto)
                     continue;
 
@@ -188,7 +188,7 @@ bool BuyAction::Execute(Event event)
             for (ItemIds::iterator i = itemIds.begin(); i != itemIds.end(); i++)
             {
                 uint32 itemId = *i;
-                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+                ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemId);
                 if (!proto)
                     continue;
 
@@ -233,7 +233,7 @@ bool BuyAction::BuyItem(VendorItemData const* tItems, ObjectGuid vendorguid, Ite
         if (botAI->HasCheat(BotCheatMask::gold))
             bot->SetMoney(10000000);
 
-        bot->BuyItemFromVendorSlot(vendorguid, slot, itemId, 1, NULL_BAG, NULL_SLOT);
+        bot->BuyItemFromVendor(vendorguid, itemId, 1, NULL_BAG, NULL_SLOT);
 
         if (botAI->HasCheat(BotCheatMask::gold))
             bot->SetMoney(botMoney);

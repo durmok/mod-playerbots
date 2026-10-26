@@ -28,7 +28,7 @@ bool QueryItemUsageAction::Execute(Event event)
     // Process each extracted item ID (assuming single-item queries for now)
     for (uint32 itemId : itemIds)
     {
-        ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(itemId);
+        ItemTemplate const* itemTemplate = sObjectMgr.GetItemTemplate(itemId);
         if (!itemTemplate)
             continue;
 
@@ -165,7 +165,7 @@ std::string const QueryItemUsageAction::QueryQuestItem(uint32 itemId)
     QuestStatusMap& questMap = bot->getQuestStatusMap();
     for (QuestStatusMap::const_iterator i = questMap.begin(); i != questMap.end(); i++)
     {
-        Quest const* questTemplate = sObjectMgr->GetQuestTemplate(i->first);
+        Quest const* questTemplate = sObjectMgr.GetQuestTemplate(i->first);
         if (!questTemplate)
             continue;
 
@@ -189,11 +189,11 @@ std::string const QueryItemUsageAction::QueryQuestItem(uint32 itemId, Quest cons
 {
     for (uint32 i = 0; i < QUEST_OBJECTIVES_COUNT; i++)
     {
-        if (questTemplate->RequiredItemId[i] != itemId)
+        if (questTemplate->ReqItemId[i] != itemId)
             continue;
 
-        uint32 required = questTemplate->RequiredItemCount[i];
-        uint32 available = questStatus->ItemCount[i];
+        uint32 required = questTemplate->ReqItemCount[i];
+        uint32 available = questStatus->m_itemcount[i];
         if (!required)
             continue;
 

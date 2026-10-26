@@ -15,7 +15,7 @@
 #include "StatsWeightCalculator.h"
 #include "WorldPacket.h"
 
-bool TalkToQuestGiverAction::ProcessQuest(Quest const* quest, Object* questGiver)
+bool TalkToQuestGiverAction::ProcessQuest(Quest const* quest, WorldObject* questGiver)
 {
     bool isCompleted = false;
     std::ostringstream out;
@@ -69,7 +69,7 @@ bool TalkToQuestGiverAction::ProcessQuest(Quest const* quest, Object* questGiver
     return isCompleted;
 }
 
-bool TalkToQuestGiverAction::TurnInQuest(Quest const* quest, Object* questGiver, std::ostringstream& out)
+bool TalkToQuestGiverAction::TurnInQuest(Quest const* quest, WorldObject* questGiver, std::ostringstream& out)
 {
     uint32 questID = quest->GetQuestId();
 
@@ -89,16 +89,16 @@ bool TalkToQuestGiverAction::TurnInQuest(Quest const* quest, Object* questGiver,
 
     if (botAI->HasStrategy("debug quest", BotState::BOT_STATE_NON_COMBAT) || botAI->HasStrategy("debug rpg", BotState::BOT_STATE_COMBAT))
     {
-        Quest const* pQuest = sObjectMgr->GetQuestTemplate(questID);
+        Quest const* pQuest = sObjectMgr.GetQuestTemplate(questID);
         const std::string text_quest = ChatHelper::FormatQuest(pQuest);
-        LOG_INFO("playerbots", "{} => Quest [ {} ] completed", bot->GetName(), pQuest->GetTitle());
+        LOG_INFO("playerbots", "{} => Quest [ {} ] completed", bot->GetName(), pQuest->GetTitle().c_str());
         bot->Say("Quest [ " + text_quest + " ] completed", LANG_UNIVERSAL);
     }
 
     return true;
 }
 
-void TalkToQuestGiverAction::RewardNoItem(Quest const* quest, Object* questGiver, std::ostringstream& out)
+void TalkToQuestGiverAction::RewardNoItem(Quest const* quest, WorldObject* questGiver, std::ostringstream& out)
 {
     std::map<std::string, std::string> args;
     args["%quest"] = chat->FormatQuest(quest);
@@ -116,10 +116,10 @@ void TalkToQuestGiverAction::RewardNoItem(Quest const* quest, Object* questGiver
     }
 }
 
-void TalkToQuestGiverAction::RewardSingleItem(Quest const* quest, Object* questGiver, std::ostringstream& out)
+void TalkToQuestGiverAction::RewardSingleItem(Quest const* quest, WorldObject* questGiver, std::ostringstream& out)
 {
     int index = 0;
-    ItemTemplate const* item = sObjectMgr->GetItemTemplate(quest->RewardChoiceItemId[index]);
+    ItemTemplate const* item = sObjectMgr.GetItemTemplate(quest->RewChoiceItemId[index]);
     std::map<std::string, std::string> args;
     args["%quest"] = chat->FormatQuest(quest);
     args["%item"] = chat->FormatItem(item);
@@ -148,7 +148,7 @@ ItemIds TalkToQuestGiverAction::BestRewards(Quest const* quest)
     {
         for (uint8 i = 0; i < quest->GetRewChoiceItemsCount(); ++i)
         {
-            ItemUsage usage = AI_VALUE2(ItemUsage, "item usage", quest->RewardChoiceItemId[i]);
+            ItemUsage usage = AI_VALUE2(ItemUsage, "item usage", quest->RewChoiceItemId[i]);
             if (usage == ITEM_USAGE_EQUIP || usage == ITEM_USAGE_REPLACE)
                 bestUsage = ITEM_USAGE_EQUIP;
             else if (usage == ITEM_USAGE_BAD_EQUIP && bestUsage != ITEM_USAGE_EQUIP)
@@ -158,7 +158,7 @@ ItemIds TalkToQuestGiverAction::BestRewards(Quest const* quest)
         }
         for (uint8 i = 0; i < quest->GetRewChoiceItemsCount(); ++i)
         {
-            ItemUsage usage = AI_VALUE2(ItemUsage, "item usage", quest->RewardChoiceItemId[i]);
+            ItemUsage usage = AI_VALUE2(ItemUsage, "item usage", quest->RewChoiceItemId[i]);
             if (usage == bestUsage || usage == ITEM_USAGE_REPLACE)
                 returnIds.insert(i);
         }
@@ -166,7 +166,7 @@ ItemIds TalkToQuestGiverAction::BestRewards(Quest const* quest)
     }
 }
 
-void TalkToQuestGiverAction::RewardMultipleItem(Quest const* quest, Object* questGiver, std::ostringstream& out)
+void TalkToQuestGiverAction::RewardMultipleItem(Quest const* quest, WorldObject* questGiver, std::ostringstream& out)
 {
     std::set<uint32> bestIds;
 
@@ -181,14 +181,14 @@ void TalkToQuestGiverAction::RewardMultipleItem(Quest const* quest, Object* ques
             float bestScore = 0;
             for (uint32 id : bestIds)
             {
-                float score = calc.CalculateItem(quest->RewardChoiceItemId[id]);
+                float score = calc.CalculateItem(quest->RewChoiceItemId[id]);
                 if (score > bestScore)
                 {
                     bestScore = score;
                     best = id;
                 }
             }
-            ItemTemplate const* item = sObjectMgr->GetItemTemplate(quest->RewardChoiceItemId[best]);
+            ItemTemplate const* item = sObjectMgr.GetItemTemplate(quest->RewChoiceItemId[best]);
             bot->RewardQuest(quest, best, questGiver, true);
             out << "Rewarded " << ChatHelper::FormatItem(item);
         }
@@ -215,7 +215,7 @@ void TalkToQuestGiverAction::RewardMultipleItem(Quest const* quest, Object* ques
         {
             // Pick the first item
             uint32 firstId = *bestIds.begin();
-            ItemTemplate const* item = sObjectMgr->GetItemTemplate(quest->RewardChoiceItemId[firstId]);
+            ItemTemplate const* item = sObjectMgr.GetItemTemplate(quest->RewChoiceItemId[firstId]);
             bot->RewardQuest(quest, firstId, questGiver, true);
 
             out << "Rewarded " << ChatHelper::FormatItem(item);
@@ -230,7 +230,7 @@ void TalkToQuestGiverAction::AskToSelectReward(Quest const* quest, std::ostrings
 
     for (uint8 i = 0; i < quest->GetRewChoiceItemsCount(); ++i)
     {
-        ItemTemplate const* item = sObjectMgr->GetItemTemplate(quest->RewardChoiceItemId[i]);
+        ItemTemplate const* item = sObjectMgr.GetItemTemplate(quest->RewChoiceItemId[i]);
 
         if (!forEquip || BestRewards(quest).count(i) > 0)
         {
@@ -248,13 +248,18 @@ bool TurnInQueryQuestAction::Execute(Event event)
     ObjectGuid guid;
     uint32 questId;
     pakcet >> guid >> questId;
+    /*
     Object* object =
         ObjectAccessor::GetObjectByTypeMask(*bot, guid, TYPEMASK_UNIT | TYPEMASK_GAMEOBJECT | TYPEMASK_ITEM);
-    if (!object || (!object->hasQuest(questId) && !object->hasInvolvedQuest(questId)))
+    */
+    WorldObject* object = ObjectAccessor::GetWorldObject(*bot, guid);
+    if (!object || (!object->hasInvolvedQuest(questId)))
     {
         return false;
     }
-    Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+    if (!object->IsUnit() && !object->IsGameObject())
+        return false;
+    Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
     QuestStatus status = bot->GetQuestStatus(quest->GetQuestId());
     Player* master = GetMaster();
 
@@ -293,9 +298,11 @@ bool TurnInQueryQuestAction::Execute(Event event)
     case QUEST_STATUS_FAILED:
         out << "|cffff0000Failed|r";
         break;
+    /*
     case QUEST_STATUS_REWARDED:
         out << "|cffff0000Rewarded|r";
         break;
+    */
     default:
         break;
     }

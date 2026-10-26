@@ -84,8 +84,8 @@ bool SayAction::Execute(Event /*event*/)
 
     if (bot->GetMap())
     {
-        if (AreaTableEntry const* zone = sAreaTableStore.LookupEntry(bot->GetMap()->GetZoneId(bot->GetPhaseMask(), bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ())))
-            placeholders["<subzone>"] = zone->area_name[sWorld->GetDefaultDbcLocale()];
+        if (AreaTableEntry const* zone = sAreaTableStore.LookupEntry<AreaEntry>(bot->GetMap()->GetTerrain()->GetZoneId(bot->GetPositionX(), bot->GetPositionY(), bot->GetPositionZ())))
+            placeholders["<subzone>"] = zone->Name;
     }
 
     // set delay before next say
@@ -222,7 +222,7 @@ void ChatReplyAction::ChatReplyDo(Player* bot, uint32& type, uint32& guid1, std:
 bool ChatReplyAction::HandleThunderfuryReply(Player* bot, ChatChannelSource chatChannelSource)
 {
     std::map<std::string, std::string> placeholders;
-    const auto thunderfury = sObjectMgr->GetItemTemplate(19019);
+    const auto thunderfury = sObjectMgr.GetItemTemplate(19019);
     placeholders["%thunderfury_link"] = GET_PLAYERBOT_AI(bot)->GetChatHelper()->FormatItem(thunderfury);
 
     std::string responseMessage = PlayerbotTextMgr::instance().GetBotText("thunderfury_spam", placeholders);
@@ -271,7 +271,7 @@ bool ChatReplyAction::HandleToxicLinksReply(Player* bot, ChatChannelSource chatC
 
     if (incompleteQuests.size() > 0)
     {
-        Quest const* quest = sObjectMgr->GetQuestTemplate(incompleteQuests[rand() % incompleteQuests.size()]);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(incompleteQuests[rand() % incompleteQuests.size()]);
         placeholders["%random_taken_quest_or_item_link"] = GET_PLAYERBOT_AI(bot)->GetChatHelper()->FormatQuest(quest);
     }
     else
@@ -348,7 +348,7 @@ bool ChatReplyAction::HandleWTBItemsReply(Player* bot, ChatChannelSource chatCha
 
         for (auto matchingItemId : matchingItemIds)
         {
-            ItemTemplate const* proto = sObjectMgr->GetItemTemplate(matchingItemId);
+            ItemTemplate const* proto = sObjectMgr.GetItemTemplate(matchingItemId);
             placeholders["%formatted_item_links"] += GET_PLAYERBOT_AI(bot)->GetChatHelper()->FormatItem(proto, GET_PLAYERBOT_AI(bot)->GetInventoryItemsCountWithId(matchingItemId));
             placeholders["%formatted_item_links"] += " ";
         }
@@ -442,7 +442,7 @@ bool ChatReplyAction::HandleLFGQuestsReply(Player* bot, ChatChannelSource chatCh
         placeholders["%quest_links"] = "";
         for (auto matchingQuestId : matchingQuestIds)
         {
-            Quest const* quest = sObjectMgr->GetQuestTemplate(matchingQuestId);
+            Quest const* quest = sObjectMgr.GetQuestTemplate(matchingQuestId);
             placeholders["%quest_links"] += GET_PLAYERBOT_AI(bot)->GetChatHelper()->FormatQuest(quest);
         }
 
@@ -612,9 +612,9 @@ std::string ChatReplyAction::GenerateReplyMessage(Player* bot, std::string& inco
     for (uint32 i = 0; i < 8; i++)
     {
         // blame gm with chat tag
-        if (Player* plr = ObjectAccessor::FindPlayer(ObjectGuid(HighGuid::Player, guid1)))
+        if (Player* plr = ObjectAccessor::FindPlayer(ObjectGuid(HighGuid::HIGHGUID_PLAYER, guid1)))
         {
-            if (plr->isGMChat())
+            if (plr->IsGMChat())
             {
                 replyType = REPLY_ADMIN_ABUSE;
                 found = true;

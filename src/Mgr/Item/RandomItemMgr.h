@@ -8,8 +8,9 @@
 #define PLAYERBOTS_RANDOMITEMMGR_H
 
 #include "AiFactory.h"
-#include "ItemTemplate.h"
+#include "ItemPrototype.h"
 #include "Player.h"
+#include "Vmangos.h"
 #include <array>
 #include <atomic>
 #include <map>
@@ -19,7 +20,7 @@
 
 class ChatHandler;
 
-struct ItemTemplate;
+struct ItemPrototype;
 
 enum RandomItemType
 {

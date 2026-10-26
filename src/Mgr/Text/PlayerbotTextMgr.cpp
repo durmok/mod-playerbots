@@ -7,9 +7,10 @@
 #include "PlayerbotTextMgr.h"
 #include "PlayerbotsDatabase.h"
 #include "DatabaseEnv.h"
-#include "QueryResult.h"    // Required due to a poor implementation by AC
+#include "QueryResult2.h"    // Required due to a poor implementation by AC
 #include "Random.h"
-#include "WorldSessionMgr.h"
+#include "Vmangos.h"
+// #include "WorldSessionMgr.h"
 
 void PlayerbotTextMgr::replaceAll(std::string& str, std::string const& from, std::string const& to)
 {
@@ -34,7 +35,7 @@ void PlayerbotTextMgr::LoadBotTexts()
         do
         {
             std::map<uint32, std::string> text;
-            Field* fields = result->Fetch();
+            Field2* fields = result->Fetch();
             std::string name = fields[0].Get<std::string>();
             text[0] = fields[1].Get<std::string>();
             uint8 sayType = fields[2].Get<uint8>();
@@ -62,7 +63,7 @@ void PlayerbotTextMgr::LoadBotTextChance()
         {
             do
             {
-                Field* fields = results->Fetch();
+                Field2* fields = results->Fetch();
                 std::string name = fields[0].Get<std::string>();
                 uint32 probability = fields[1].Get<uint32>();
 
@@ -78,13 +79,13 @@ std::string PlayerbotTextMgr::GetBotText(std::string name)
 {
     if (botTexts.empty())
     {
-        LOG_ERROR("playerbots", "Can't get bot text {}! No bots texts loaded!", name);
+        LOG_ERROR("playerbots", "Can't get bot text {}! No bots texts loaded!", name.c_str());
         return "";
     }
 
     if (botTexts[name].empty())
     {
-        LOG_ERROR("playerbots", "Can't get bot text {}! No bots texts for this name!", name);
+        LOG_ERROR("playerbots", "Can't get bot text {}! No bots texts for this name!", name.c_str());
         return "";
     }
 
@@ -205,6 +206,7 @@ void PlayerbotTextMgr::AddLocalePriority(uint32 locale)
 
 uint32 PlayerbotTextMgr::GetLocalePriority()
 {
+    /*
     // if no real players online, reset top locale
     uint32 const activeSessions = sWorldSessionMgr->GetActiveSessionCount();
     if (!activeSessions)
@@ -212,6 +214,7 @@ uint32 PlayerbotTextMgr::GetLocalePriority()
         ResetLocalePriority();
         return 0;
     }
+    */
 
     uint32 topLocale = 0;
     for (uint8 i = 0; i < TOTAL_LOCALES; ++i)

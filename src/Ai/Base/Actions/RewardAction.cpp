@@ -43,15 +43,15 @@ bool RewardAction::Execute(Event event)
     return false;
 }
 
-bool RewardAction::Reward(uint32 itemId, Object* questGiver)
+bool RewardAction::Reward(uint32 itemId, WorldObject* questGiver)
 {
     QuestMenu& questMenu = bot->PlayerTalkClass->GetQuestMenu();
-    for (uint32 iI = 0; iI < questMenu.GetMenuItemCount(); ++iI)
+    for (uint32 iI = 0; iI < questMenu.MenuItemCount(); ++iI)
     {
         QuestMenuItem const& qItem = questMenu.GetItem(iI);
 
-        uint32 questID = qItem.QuestId;
-        Quest const* pQuest = sObjectMgr->GetQuestTemplate(questID);
+        uint32 questID = qItem.m_qId;
+        Quest const* pQuest = sObjectMgr.GetQuestTemplate(questID);
         QuestStatus status = bot->GetQuestStatus(questID);
 
         // if quest is complete, turn it in
@@ -60,7 +60,7 @@ bool RewardAction::Reward(uint32 itemId, Object* questGiver)
         {
             for (uint8 rewardIdx = 0; rewardIdx < pQuest->GetRewChoiceItemsCount(); ++rewardIdx)
             {
-                ItemTemplate const* pRewardItem = sObjectMgr->GetItemTemplate(pQuest->RewardChoiceItemId[rewardIdx]);
+                ItemTemplate const* pRewardItem = sObjectMgr.GetItemTemplate(pQuest->RewChoiceItemId[rewardIdx]);
                 if (itemId == pRewardItem->ItemId)
                 {
                     bot->RewardQuest(pQuest, rewardIdx, questGiver, false);

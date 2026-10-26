@@ -10,7 +10,7 @@
 #include "Pet.h"
 #include "PlayerbotAI.h"
 #include "ServerFacade.h"
-#include "Spell.h"
+#include "Spells/Spell.h"
 
 Unit* PartyMemberValue::FindPartyMember(std::vector<Player*>* party, FindPlayerPredicate& predicate)
 {
@@ -41,11 +41,11 @@ Unit* PartyMemberValue::FindPartyMember(FindPlayerPredicate& predicate, bool /*i
         {
             if (ref->getSubGroup() != bot->GetSubGroup())
             {
-                nearestGroupPlayers.push_back(ref->GetSource()->GetGUID());
+                nearestGroupPlayers.push_back(ref->GetSource()->GetObjectGuid());
             }
             else
             {
-                nearestGroupPlayers.push_front(ref->GetSource()->GetGUID());
+                nearestGroupPlayers.push_front(ref->GetSource()->GetObjectGuid());
             }
         }
     }
@@ -116,8 +116,8 @@ bool PartyMemberValue::Check(Unit* player)
 bool PartyMemberValue::IsTargetOfSpellCast(Player* target, SpellEntryPredicate& predicate)
 {
     // GuidVector nearestPlayers = AI_VALUE(GuidVector, "nearest friendly players");
-    ObjectGuid targetGuid = target ? target->GetGUID() : bot->GetGUID();
-    ObjectGuid corpseGuid = target && target->GetCorpse() ? target->GetCorpse()->GetGUID() : ObjectGuid::Empty;
+    ObjectGuid targetGuid = target ? target->GetObjectGuid() : bot->GetObjectGuid();
+    ObjectGuid corpseGuid = target && target->GetCorpse() ? target->GetCorpse()->GetObjectGuid() : ObjectGuid::Empty;
 
     Group* group = bot->GetGroup();
     if (!group)
@@ -137,10 +137,10 @@ bool PartyMemberValue::IsTargetOfSpellCast(Player* target, SpellEntryPredicate& 
                 Spell* spell = player->GetCurrentSpell((CurrentSpellTypes)type);
                 if (spell && predicate.Check(spell->m_spellInfo))
                 {
-                    ObjectGuid unitTarget = spell->m_targets.GetUnitTargetGUID();
+                    ObjectGuid unitTarget = spell->m_targets.getUnitTargetGuid();
                     if (unitTarget && unitTarget == targetGuid)
                         return true;
-                    ObjectGuid corpseTarget = spell->m_targets.GetCorpseTargetGUID();
+                    ObjectGuid corpseTarget = spell->m_targets.getCorpseTargetGuid();
                     if (corpseTarget && corpseTarget == corpseGuid)
                         return true;
                 }

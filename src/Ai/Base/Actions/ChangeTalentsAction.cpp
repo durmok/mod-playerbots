@@ -16,6 +16,7 @@
 
 bool ChangeTalentsAction::Execute(Event event)
 {
+    /*
     auto* flag = botAI->GetAiObjectContext()->GetValue<bool>("custom_glyphs"); // Added for custom Glyphs
 
     if (flag->Get()) // Added for custom Glyphs
@@ -23,6 +24,7 @@ bool ChangeTalentsAction::Execute(Event event)
         flag->Set(false);
         LOG_INFO("playerbots", "Custom Glyph Flag set to OFF");
     }
+    */
     std::string param = event.getParam();
 
     std::ostringstream out;
@@ -33,6 +35,7 @@ bool ChangeTalentsAction::Execute(Event event)
         {
             out << TalentsHelp();
         }
+        /*
         else if (param.find("switch") != std::string::npos)
         {
             if (param.find("switch 1") != std::string::npos)
@@ -43,16 +46,17 @@ bool ChangeTalentsAction::Execute(Event event)
             }
             else if (param.find("switch 2") != std::string::npos)
             {
-                if (bot->GetSpecsCount() == 1 && bot->GetLevel() >= sWorld->getIntConfig(CONFIG_MIN_DUALSPEC_LEVEL))
+                if (bot->GetSpecsCount() == 1 && bot->GetLevel() >= sWorld.getConfig(CONFIG_MIN_DUALSPEC_LEVEL))
                 {
-                    bot->CastSpell(bot, 63680, true, nullptr, nullptr, bot->GetGUID());
-                    bot->CastSpell(bot, 63624, true, nullptr, nullptr, bot->GetGUID());
+                    bot->CastSpell(bot, 63680, true, nullptr, nullptr, bot->GetObjectGuid());
+                    bot->CastSpell(bot, 63624, true, nullptr, nullptr, bot->GetObjectGuid());
                 }
                 bot->ActivateSpec(1);
                 out << "Active second talent";
                 botAI->ResetStrategies();
             }
         }
+        */
         else if (param.find("autopick") != std::string::npos)
         {
             PlayerbotFactory factory(bot, bot->GetLevel());
@@ -87,7 +91,9 @@ bool ChangeTalentsAction::Execute(Event event)
         out << "My current talent spec is: "
             << "|h|cffffffff";
         out << chat->FormatClass(bot, tab) << "\n";
-        out << TalentsHelp();
+        // out << TalentsHelp();
+        out << PlayerbotFactory::BuildTalentSpecLink(bot) << "\n";
+        out << "Free points: " << bot->GetFreeTalentPoints();
     }
 
     botAI->TellMaster(out);
@@ -98,7 +104,7 @@ bool ChangeTalentsAction::Execute(Event event)
 std::string ChangeTalentsAction::TalentsHelp()
 {
     std::ostringstream out;
-    out << "Talents usage: talents switch <1/2>, talents autopick, talents spec list, "
+    out << "Talents usage: talents autopick, talents spec list, "
            "talents spec <specName>, talents apply <link>.";
     return out.str();
 }
@@ -114,9 +120,18 @@ std::string ChangeTalentsAction::SpecList()
         {
             break;
         }
+
+        int level = bot->GetLevel();
+        while (level > 1 && level < 80 && sPlayerbotAIConfig.ParsedSpecLinkOrder[cls][specNo][level].size() == 0)
+            level--;
+        while (level <= 80 && sPlayerbotAIConfig.ParsedSpecLinkOrder[cls][specNo][level].size() == 0)
+            level++;
+        if (sPlayerbotAIConfig.ParsedSpecLinkOrder[cls][specNo][level].size() == 0)
+            continue;
+
         specFound++;
         std::ostringstream out;
-        std::vector<std::vector<uint32>> parsed = sPlayerbotAIConfig.ParsedSpecLinkOrder[cls][specNo][80];
+        std::vector<std::vector<uint32>> parsed = sPlayerbotAIConfig.ParsedSpecLinkOrder[cls][specNo][level];
         std::unordered_map<int, int> tabCount;
         tabCount[0] = tabCount[1] = tabCount[2] = 0;
         for (auto& item : parsed)
@@ -145,8 +160,8 @@ std::string ChangeTalentsAction::SpecPick(std::string param)
         {
             PlayerbotFactory::InitTalentsBySpecNo(bot, specNo, true);
 
-            PlayerbotFactory factory(bot, bot->GetLevel());
-            factory.InitGlyphs(false);
+            // PlayerbotFactory factory(bot, bot->GetLevel());
+            // factory.InitGlyphs(false);
 
             std::ostringstream out;
             out << "Picking " << sPlayerbotAIConfig.PremadeSpecName[cls][specNo];
@@ -270,9 +285,9 @@ std::string ChangeTalentsAction::SpecApply(std::string param)
 //         return false;
 //     }
 
-//     uint32 specNo = sRandomPlayerbotMgr.GetValue(bot->GetGUID().GetCounter(), "specNo");
+//     uint32 specNo = sRandomPlayerbotMgr.GetValue(bot->GetObjectGuid().GetCounter(), "specNo");
 //     uint32 specId = specNo - 1;
-//     std::string specLink = sRandomPlayerbotMgr.GetData(bot->GetGUID().GetCounter(), "specLink");
+//     std::string specLink = sRandomPlayerbotMgr.GetData(bot->GetObjectGuid().GetCounter(), "specLink");
 
 //     //Continue the current spec
 //     if (specNo > 0)
@@ -341,12 +356,12 @@ std::string ChangeTalentsAction::SpecApply(std::string param)
 //         }
 //     }
 
-//     sRandomPlayerbotMgr.SetValue(bot->GetGUID().GetCounter(), "specNo", specId + 1);
+//     sRandomPlayerbotMgr.SetValue(bot->GetObjectGuid().GetCounter(), "specNo", specId + 1);
 
 //     if (!specLink.empty() && specId == -1)
-//         sRandomPlayerbotMgr.SetValue(bot->GetGUID().GetCounter(), "specLink", 1, specLink);
+//         sRandomPlayerbotMgr.SetValue(bot->GetObjectGuid().GetCounter(), "specLink", 1, specLink);
 //     else
-//         sRandomPlayerbotMgr.SetValue(bot->GetGUID().GetCounter(), "specLink", 0);
+//         sRandomPlayerbotMgr.SetValue(bot->GetObjectGuid().GetCounter(), "specLink", 0);
 
 //     return (specNo == 0) ? false : true;
 // }
@@ -380,7 +395,7 @@ bool AutoSetTalentsAction::Execute(Event /*event*/)
 
     PlayerbotFactory factory(bot, bot->GetLevel());
     factory.InitTalentsTree(true, true, true);
-    factory.InitPetTalents();
+    // factory.InitPetTalents();
     botAI->TellMaster(out);
 
     return true;

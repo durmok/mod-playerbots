@@ -46,13 +46,13 @@ bool RpgTaxiTrigger::IsActive()
         return false;
 
     uint32 node =
-        sObjectMgr->GetNearestTaxiNode(guidP.GetPositionX(), guidP.GetPositionY(), guidP.GetPositionZ(),
-                                       guidP.GetMapId(), bot->GetTeamId());
+        sObjectMgr.GetNearestTaxiNode(guidP.GetPositionX(), guidP.GetPositionY(), guidP.GetPositionZ(),
+                                       guidP.GetMapId(), bot->GetTeam());
 
     if (!node)
         return false;
 
-    if (!bot->m_taxi.IsTaximaskNodeKnown(node))
+    if (!bot->GetTaxi().IsTaximaskNodeKnown(node))
         return false;
 
     return true;
@@ -69,10 +69,10 @@ bool RpgDiscoverTrigger::IsActive()
         return false;
 
     uint32 node =
-        sObjectMgr->GetNearestTaxiNode(guidP.GetPositionX(), guidP.GetPositionY(), guidP.GetPositionZ(),
-                                       guidP.GetMapId(), bot->GetTeamId());
+        sObjectMgr.GetNearestTaxiNode(guidP.GetPositionX(), guidP.GetPositionY(), guidP.GetPositionZ(),
+                                       guidP.GetMapId(), bot->GetTeam());
 
-    if (bot->m_taxi.IsTaximaskNodeKnown(node))
+    if (bot->GetTaxi().IsTaximaskNodeKnown(node))
         return false;
 
     return true;
@@ -224,10 +224,10 @@ bool RpgQueueBGTrigger::IsActive()
         return false;
 
     // if bot is not leader disallow tag bg
-    if (bot->GetGroup() && !bot->GetGroup()->IsLeader(bot->GetGUID()))
+    if (bot->GetGroup() && !bot->GetGroup()->IsLeader(bot->GetObjectGuid()))
         return false;
 
-    if (AI_VALUE(BattlegroundTypeId, "rpg bg type") == BATTLEGROUND_TYPE_NONE)
+    if (AI_VALUE(BattleGroundTypeId, "rpg bg type") == BATTLEGROUND_TYPE_NONE)
         return false;
 
     return true;
@@ -383,11 +383,11 @@ bool RpgDuelTrigger::IsActive()
         return false;
 
     // caster or target already have requested duel
-    if (bot->duel || player->duel || !player->GetSocial() || player->GetSocial()->HasIgnore(bot->GetGUID()))
+    if (bot->m_duel || player->m_duel || !player->GetSocial() || player->GetSocial()->HasIgnore(bot->GetObjectGuid()))
         return false;
 
-    AreaTableEntry const* targetAreaEntry = sAreaTableStore.LookupEntry(player->GetAreaId());
-    if (targetAreaEntry && !(targetAreaEntry->flags & AREA_FLAG_ALLOW_DUELS))
+    AreaTableEntry const* targetAreaEntry = sAreaTableStore.LookupEntry<AreaEntry>(player->GetAreaId());
+    if (targetAreaEntry && !(targetAreaEntry->Flags& AREA_FLAG_DUEL))
     {
         // Dueling isn't allowed here
         return false;

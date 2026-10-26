@@ -8,10 +8,10 @@
 #include "AiFactory.h"
 #include "Common.h"
 #include "DBCStores.h"
-#include "ItemTemplate.h"
+#include "ItemPrototype.h"
 #include "ObjectMgr.h"
 #include "Playerbots.h"
-#include "SpellInfo.h"
+#include "SpellEntry.h"
 #include "World.h"
 #include <regex>
 
@@ -58,8 +58,9 @@ ChatHelper::ChatHelper(PlayerbotAI* botAI) : PlayerbotAIAware(botAI)
     itemQualities["yellow"] = ITEM_QUALITY_LEGENDARY;
     itemQualities["orange"] = ITEM_QUALITY_LEGENDARY;
     itemQualities["artifact"] = ITEM_QUALITY_ARTIFACT;
-    itemQualities["heirloom"] = ITEM_QUALITY_HEIRLOOM;
+    // itemQualities["heirloom"] = ITEM_QUALITY_HEIRLOOM;
 
+    /*
     consumableSubClasses["potion"] = ITEM_SUBCLASS_POTION;
     consumableSubClasses["elixir"] = ITEM_SUBCLASS_ELIXIR;
     consumableSubClasses["flask"] = ITEM_SUBCLASS_FLASK;
@@ -67,10 +68,12 @@ ChatHelper::ChatHelper(PlayerbotAI* botAI) : PlayerbotAIAware(botAI)
     consumableSubClasses["food"] = ITEM_SUBCLASS_FOOD;
     consumableSubClasses["bandage"] = ITEM_SUBCLASS_BANDAGE;
     consumableSubClasses["enchant"] = ITEM_SUBCLASS_CONSUMABLE_OTHER;
+    */
 
     projectileSubClasses["arrows"] = ITEM_SUBCLASS_ARROW;
     projectileSubClasses["bullets"] = ITEM_SUBCLASS_BULLET;
 
+    /*
     tradeSubClasses["cloth"] = ITEM_SUBCLASS_CLOTH;
     tradeSubClasses["leather"] = ITEM_SUBCLASS_LEATHER;
     tradeSubClasses["metal"] = ITEM_SUBCLASS_METAL_STONE;
@@ -81,6 +84,7 @@ ChatHelper::ChatHelper(PlayerbotAI* botAI) : PlayerbotAIAware(botAI)
     tradeSubClasses["elemental"] = ITEM_SUBCLASS_ELEMENTAL;
     tradeSubClasses["disenchants"] = ITEM_SUBCLASS_ENCHANTING;
     tradeSubClasses["enchanting"] = ITEM_SUBCLASS_ENCHANTING;
+    */
     // Note: gems/jewels are ITEM_CLASS_GEM, not a trade-goods subclass, so they are not
     // mapped here (a JEWELCRAFTING trade-goods match would miss actual gems).
 
@@ -116,7 +120,7 @@ ChatHelper::ChatHelper(PlayerbotAI* botAI) : PlayerbotAIAware(botAI)
     skills["herbalism"] = SKILL_HERBALISM;
     skills["mining"] = SKILL_MINING;
     skills["skinning"] = SKILL_SKINNING;
-    skills["jewelcrafting"] = SKILL_JEWELCRAFTING;
+    // skills["jewelcrafting"] = SKILL_JEWELCRAFTING;
 
     chats["party"] = CHAT_MSG_PARTY;
     chats["p"] = CHAT_MSG_PARTY;
@@ -184,9 +188,9 @@ ChatHelper::ChatHelper(PlayerbotAI* botAI) : PlayerbotAIAware(botAI)
     races[RACE_ORC] = "Orc";
     races[RACE_TAUREN] = "Tauren";
     races[RACE_TROLL] = "Troll";
-    races[RACE_UNDEAD_PLAYER] = "Undead";
-    races[RACE_BLOODELF] = "Blood Elf";
-    races[RACE_DRAENEI] = "Draenei";
+    races[RACE_UNDEAD] = "Undead";
+    // races[RACE_BLOODELF] = "Blood Elf";
+    // races[RACE_DRAENEI] = "Draenei";
 }
 
 std::string const ChatHelper::formatMoney(uint32 copper)
@@ -292,11 +296,11 @@ ItemIds ChatHelper::parseItems(std::string const text)
     size_t pos = 0;
     while (true)
     {
-        auto i = text.find("Hitem:", pos);
+        auto i = text.find("item:", pos);
         if (i == std::string::npos)
             break;
 
-        pos = i + 6;
+        pos = i + 5;
         auto endPos = text.find(':', pos);
         if (endPos == std::string::npos)
             break;
@@ -365,11 +369,12 @@ std::string const ChatHelper::FormatQuest(Quest const* quest)
     }
 
     std::ostringstream out;
-    QuestLocale const* locale = sObjectMgr->GetQuestLocale(quest->GetQuestId());
-    std::string questTitle;
+    QuestLocale const* locale = sObjectMgr.GetQuestLocale(quest->GetQuestId());
+    std::string questTitle = quest->GetTitle();
 
-    if (locale && locale->Title.size() > sWorld->GetDefaultDbcLocale())
-        questTitle = locale->Title[sWorld->GetDefaultDbcLocale()];
+    uint32 loc = sObjectMgr.GetIndexForLocale(sWorld.GetDefaultDbcLocale());
+    if (locale && locale->Title.size() > loc)
+        questTitle = locale->Title[loc];
 
     if (questTitle.empty())
         questTitle = quest->GetTitle();
@@ -381,18 +386,19 @@ std::string const ChatHelper::FormatQuest(Quest const* quest)
 std::string const ChatHelper::FormatGameobject(GameObject* go)
 {
     std::ostringstream out;
-    out << "|cffffff00|Hfound:" << go->GetGUID().GetRawValue() << ":" << go->GetEntry() << ":"
-        << "|h[" << go->GetNameForLocaleIdx(sWorld->GetDefaultDbcLocale()) << "]|h|r";
+    out << "|cffffff00|Hfound:" << go->GetObjectGuid().GetRawValue() << ":" << go->GetEntry() << ":"
+        << "|h[" << go->GetNameForLocaleIdx(sObjectMgr.GetIndexForLocale(sWorld.GetDefaultDbcLocale())) << "]|h|r";
     return out.str();
 }
 
 std::string const ChatHelper::FormatWorldobject(WorldObject* wo)
 {
+    uint32 loc = sObjectMgr.GetIndexForLocale(sWorld.GetDefaultDbcLocale());
     std::ostringstream out;
-    out << "|cffffff00|Hfound:" << wo->GetGUID().GetRawValue() << ":" << wo->GetEntry() << ":"
+    out << "|cffffff00|Hfound:" << wo->GetObjectGuid().GetRawValue() << ":" << wo->GetEntry() << ":"
         << "|h[";
-    out << (wo->ToGameObject() ? ((GameObject*)wo)->GetNameForLocaleIdx(sWorld->GetDefaultDbcLocale())
-                               : wo->GetNameForLocaleIdx(sWorld->GetDefaultDbcLocale()))
+    out << (wo->ToGameObject() ? ((GameObject*)wo)->GetNameForLocaleIdx(loc)
+                               : wo->GetNameForLocaleIdx(loc))
         << "]|h|r";
     return out.str();
 }
@@ -403,9 +409,9 @@ std::string const ChatHelper::FormatWorldEntry(int32 entry)
     GameObjectTemplate const* gInfo = nullptr;
 
     if (entry > 0)
-        cInfo = sObjectMgr->GetCreatureTemplate(entry);
+        cInfo = sObjectMgr.GetCreatureTemplate(entry);
     else
-        gInfo = sObjectMgr->GetGameObjectTemplate(entry * -1);
+        gInfo = sObjectMgr.GetGameObjectTemplate(entry * -1);
 
     std::ostringstream out;
     out << "|cFFFFFF00|Hentry:" << abs(entry) << ":"
@@ -414,7 +420,7 @@ std::string const ChatHelper::FormatWorldEntry(int32 entry)
     if (entry < 0 && gInfo)
         out << gInfo->name;
     else if (entry > 0 && cInfo)
-        out << cInfo->Name;
+        out << cInfo->name;
     else
         out << "unknown";
 
@@ -425,8 +431,8 @@ std::string const ChatHelper::FormatWorldEntry(int32 entry)
 std::string const ChatHelper::FormatSpell(SpellInfo const* spellInfo)
 {
     std::ostringstream out;
-    std::string spellName = spellInfo->SpellName[sWorld->GetDefaultDbcLocale()] ?
-        spellInfo->SpellName[sWorld->GetDefaultDbcLocale()] : spellInfo->SpellName[LOCALE_enUS];
+    std::string spellName = spellInfo->SpellName[sWorld.GetDefaultDbcLocale()].empty() ?
+        spellInfo->SpellName[sWorld.GetDefaultDbcLocale()] : spellInfo->SpellName[LOCALE_enUS];
     out << "|cffffffff|Hspell:" << spellInfo->Id << "|h[" << spellName << "]|h|r";
     return out.str();
 }
@@ -436,11 +442,12 @@ std::string const ChatHelper::FormatItem(ItemTemplate const* proto, uint32 count
     char color[32];
     snprintf(color, sizeof(color), "%x", ItemQualityColors[proto->Quality]);
 
-    std::string itemName;
-    ItemLocale const* locale = sObjectMgr->GetItemLocale(proto->ItemId);
+    std::string itemName = proto->Name1;
+    ItemLocale const* locale = sObjectMgr.GetItemLocale(proto->ItemId);
 
-    if (locale && locale->Name.size() > sWorld->GetDefaultDbcLocale())
-        itemName = locale->Name[sWorld->GetDefaultDbcLocale()];
+    uint32 loc = sObjectMgr.GetIndexForLocale(sWorld.GetDefaultDbcLocale());
+    if (locale && locale->Name.size() > loc)
+        itemName = locale->Name[loc];
 
     if (itemName.empty())
         itemName = proto->Name1;
@@ -581,8 +588,8 @@ std::string const ChatHelper::FormatItemQuality(uint32 quality)
             return "orange";
         case ITEM_QUALITY_ARTIFACT:
             return "artifact";
-        case ITEM_QUALITY_HEIRLOOM:
-            return "heirloom";
+        // case ITEM_QUALITY_HEIRLOOM:
+        //     return "heirloom";
         default:
             return "unknown";
     }
@@ -671,7 +678,7 @@ std::string const ChatHelper::FormatRace(uint8 race)
         // English like the races map; DBCs from another locale leave enUS empty.
         char const* name = entry->name[LOCALE_enUS];
         if (!name || !*name)
-            name = entry->name[sWorld->GetDefaultDbcLocale()];
+            name = entry->name[sWorld.GetDefaultDbcLocale()];
         if (name && *name)
             return name;
     }

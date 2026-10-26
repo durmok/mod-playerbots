@@ -6,7 +6,7 @@
 
 #include "OutfitAction.h"
 #include "Event.h"
-#include "ItemPackets.h"
+// #include "ItemPackets.h"
 #include "ItemVisitors.h"
 #include "PlayerbotRepository.h"
 #include "PlayerbotTextMgr.h"
@@ -79,10 +79,16 @@ bool OutfitAction::Execute(Event event)
                 uint8 bagIndex = pItem->GetBagSlot();
                 uint8 dstBag = NULL_BAG;
 
+                /*
                 WorldPacket packet(CMSG_AUTOSTORE_BAG_ITEM, 3);
                 packet << bagIndex << slot << dstBag;
                 WorldPackets::Item::AutoStoreBagItem nicePacket(std::move(packet));
                 nicePacket.Read();
+                */
+                WorldPackets::Item::AutoStoreBagItem nicePacket;
+                nicePacket.srcbag = bagIndex;
+                nicePacket.srcslot = slot;
+                nicePacket.dstbag = dstBag;
                 bot->GetSession()->HandleAutoStoreBagItemOpcode(nicePacket);
             }
 
@@ -115,7 +121,7 @@ bool OutfitAction::Execute(Event event)
         bool remove = param.size() > 1 && param.substr(space + 1, 1) == "-";
         for (uint32 itemid : items)
         {
-            ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemid);
+            ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemid);
 
             if (remove)
             {
@@ -191,7 +197,7 @@ void OutfitAction::List()
         out << name << ": ";
 
         for (uint32 itemId : items)
-            if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId))
+            if (ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemId))
                 out << chat->FormatItem(proto) << " ";
 
         botAI->TellMaster(out);

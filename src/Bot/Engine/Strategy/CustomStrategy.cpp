@@ -59,7 +59,7 @@ void CustomStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
     {
         if (actionLinesCache[qualifier].empty())
         {
-            LoadActionLines((uint32)botAI->GetBot()->GetGUID().GetCounter());
+            LoadActionLines((uint32)botAI->GetBot()->GetObjectGuid().GetCounter());
             if (actionLines.empty())
                 LoadActionLines(0);
         }
@@ -100,7 +100,7 @@ void CustomStrategy::LoadActionLines(uint32 owner)
     {
         do
         {
-            Field* fields = result->Fetch();
+            Field2* fields = result->Fetch();
             std::string const action = fields[1].Get<std::string>();
             actionLines.push_back(action);
         } while (result->NextRow());

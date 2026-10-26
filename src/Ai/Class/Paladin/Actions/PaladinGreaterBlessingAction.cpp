@@ -12,7 +12,7 @@
 #include "PaladinHelper.h"
 #include "Playerbots.h"
 #include "SharedDefines.h"
-#include "SpellAuraEffects.h"
+#include "SpellAuras.h"
 #include "Value.h"
 #include <algorithm>
 #include <limits>
@@ -136,7 +136,7 @@ namespace
         std::sort(botPaladins.begin(), botPaladins.end(),
                   [](Player* left, Player* right)
                   {
-                      return left->GetGUID() < right->GetGUID();
+                      return left->GetObjectGuid() < right->GetObjectGuid();
                   });
 
         std::vector<Player*> selectedPaladins;
@@ -679,7 +679,7 @@ namespace
         int mySlot = -1;
         for (size_t i = 0; i < botPaladins.size(); ++i)
         {
-            if (botPaladins[i]->GetGUID() == bot->GetGUID())
+            if (botPaladins[i]->GetObjectGuid() == bot->GetObjectGuid())
             {
                 mySlot = static_cast<int>(i);
                 break;
@@ -810,7 +810,7 @@ namespace
 
             Player* bot = botAI->GetBot();
             Group* group = bot->GetGroup();
-            cached.groupKey = group ? group->GetLeaderGUID().GetCounter() : 0;
+            cached.groupKey = group ? group->GetLeaderGuid().GetCounter() : 0;
 
             std::vector<CachedBlessingBucketAssignment> assignments;
             if (!ComputeGreaterBlessingAssignments(botAI, assignments))
@@ -864,11 +864,18 @@ static int32 GetAuraStrength(Aura const* aura, AuraType auraType)
     int32 amount = 0;
     for (uint8 effect = 0; effect < MAX_SPELL_EFFECTS; ++effect)
     {
+        /*
         AuraEffect* auraEffect = aura->GetEffect(effect);
         if (!auraEffect || auraEffect->GetAuraType() != auraType)
             continue;
 
         amount = std::max(amount, auraEffect->GetAmount());
+        */
+        SpellAuraHolder *holder = aura->GetBase();
+        if (!holder|| !holder->HasAuraType(auraType))
+            continue;
+
+        amount = std::max(amount, (int32) holder->GetStackAmount());
     }
 
     return amount;
@@ -886,7 +893,7 @@ static int32 GetExistingBlessingStrength(
 
     for (BlessingType type : {ToSingleVariant(category), ToGreaterVariant(category)})
     {
-        Aura* aura = botAI->GetAura(BlessingSpellName(type), target);
+        Aura const* aura = botAI->GetAura(BlessingSpellName(type), target);
         strongestAmount = std::max(strongestAmount, GetAuraStrength(aura, auraType));
     }
 
@@ -914,7 +921,7 @@ static int32 GetBlessingCastStrength(Player* caster, BlessingType type, uint32 s
     if (category != BASE_MIGHT && category != BASE_WISDOM)
         return 0;
 
-    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
     if (!spellInfo)
         return 0;
 
@@ -923,10 +930,10 @@ static int32 GetBlessingCastStrength(Player* caster, BlessingType type, uint32 s
     int32 amount = 0;
     for (uint8 effect = 0; effect < MAX_SPELL_EFFECTS; ++effect)
     {
-        if (spellInfo->Effects[effect].ApplyAuraName != auraType)
+        if (spellInfo->EffectApplyAuraName[effect] != auraType)
             continue;
 
-        amount = std::max(amount, spellInfo->Effects[effect].BasePoints + 1);
+        amount = std::max(amount, spellInfo->EffectBasePoints[effect] + 1);
     }
 
     if (amount <= 0)
@@ -1011,7 +1018,7 @@ static bool GetCachedAssignments(
     AiObjectContext* context, Group* group,
     std::vector<CachedBlessingBucketAssignment>& outAssignments)
 {
-    uint32 const groupKey = group ? group->GetLeaderGUID().GetCounter() : 0;
+    uint32 const groupKey = group ? group->GetLeaderGuid().GetCounter() : 0;
 
     Value<CachedBlessingAssignments>* cacheValue =
         context->GetValue<CachedBlessingAssignments>("greater blessing assignments");
@@ -1101,7 +1108,7 @@ protected:
 
         Player* bot = botAI->GetBot();
         Group* group = bot->GetGroup();
-        cached.groupKey = group ? group->GetLeaderGUID().GetCounter() : 0;
+        cached.groupKey = group ? group->GetLeaderGuid().GetCounter() : 0;
 
         std::vector<CachedBlessingBucketAssignment> assignments;
         if (!GetCachedAssignments(this->context, group, assignments))
@@ -1177,7 +1184,7 @@ bool CastGreaterBlessingAssignmentAction::FindPendingAssignment(
     ai::gbless::GreaterBlessingPlayerAssignment& outAssignment, std::string& outSpellName)
 {
     Group* group = bot->GetGroup();
-    uint32 const groupKey = group ? group->GetLeaderGUID().GetCounter() : 0;
+    uint32 const groupKey = group ? group->GetLeaderGuid().GetCounter() : 0;
 
     Value<ai::gbless::CachedPendingBlessingAssignment>* pendingValue =
         context->GetValue<ai::gbless::CachedPendingBlessingAssignment>("greater blessing pending assignment");

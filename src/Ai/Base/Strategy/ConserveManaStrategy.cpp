@@ -34,7 +34,7 @@
 
 //     std::string const spell = spellAction->getName();
 //     uint32 spellId = AI_VALUE2(uint32, "spell id", spell);
-//     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+//     SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
 //     if (!spellInfo || spellInfo->PowerType != POWER_MANA)
 //         return 1.0f;
 
@@ -65,7 +65,7 @@
 
 //     std::string const spell = spellAction->getName();
 //     uint32 spellId = AI_VALUE2(uint32, "spell id", spell);
-//     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+//     SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
 //     if (!spellInfo || spellInfo->PowerType != POWER_MANA)
 //         return 1.0f;
 

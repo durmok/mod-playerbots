@@ -192,6 +192,7 @@ public:
         creators["explosive shot rank 2"] = &HunterAiObjectContextInternal::explosive_shot_rank_2;
         creators["explosive shot rank 1"] = &HunterAiObjectContextInternal::explosive_shot_rank_1;
         creators["intimidation"] = &HunterAiObjectContextInternal::intimidation;
+        creators["reach melee on flee failed"] = &HunterAiObjectContextInternal::reach_melee_on_flee_failed;
     }
 
 private:
@@ -249,6 +250,7 @@ private:
     static Action* explosive_shot_rank_2(PlayerbotAI* botAI) { return new CastExplosiveShotRank2Action(botAI); }
     static Action* explosive_shot_rank_1(PlayerbotAI* botAI) { return new CastExplosiveShotRank1Action(botAI); }
     static Action* intimidation(PlayerbotAI* botAI) { return new CastIntimidationAction(botAI); }
+    static Action* reach_melee_on_flee_failed(PlayerbotAI* botAI) { return new ReachMeleeOnFleeFailedAction(botAI); }
 };
 
 SharedNamedObjectContextList<Strategy> HunterAiObjectContext::sharedStrategyContexts;

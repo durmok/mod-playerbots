@@ -7,7 +7,7 @@
 #include "SpellIdValue.h"
 #include "ChatHelper.h"
 #include "Playerbots.h"
-#include "Vehicle.h"
+// #include "Vehicle.h"
 
 SpellIdValue::SpellIdValue(PlayerbotAI* botAI) : CalculatedValue<uint32>(botAI, "spell id", 20 * IN_MILLISECONDS) {}
 
@@ -21,7 +21,7 @@ uint32 SpellIdValue::Calculate()
     PlayerbotChatHandler handler(bot);
     uint32 extractedSpellId = handler.extractSpellId(namepart);
     if (extractedSpellId)
-        if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(extractedSpellId))
+        if (SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(extractedSpellId))
             namepart = spellInfo->SpellName[0];
 
     std::wstring wnamepart;
@@ -39,28 +39,28 @@ uint32 SpellIdValue::Calculate()
     {
         uint32 spellId = itr->first;
 
-        if (itr->second->State == PLAYERSPELL_REMOVED || !itr->second->Active)
+        if (itr->second.state == PLAYERSPELL_REMOVED || !itr->second.active)
             continue;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (!spellInfo || spellInfo->IsPassive())
             continue;
 
-        if (spellInfo->Effects[0].Effect == SPELL_EFFECT_LEARN_SPELL)
+        if (spellInfo->Effect[0] == SPELL_EFFECT_LEARN_SPELL)
             continue;
 
         bool useByItem = false;
         for (uint8 i = 0; i < 3; ++i)
         {
-            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_CREATE_ITEM &&
-                itemIds.find(spellInfo->Effects[i].ItemType) != itemIds.end())
+            if (spellInfo->Effect[i] == SPELL_EFFECT_CREATE_ITEM &&
+                itemIds.find(spellInfo->EffectItemType[i]) != itemIds.end())
             {
                 useByItem = true;
                 break;
             }
         }
 
-        char const* spellName = spellInfo->SpellName[loc];
+        char const* spellName = spellInfo->SpellName[loc].c_str();
         if (!useByItem && (tolower(spellName[0]) != firstSymbol || strlen(spellName) != spellLength ||
                            !Utf8FitTo(spellName, wnamepart)))
             continue;
@@ -71,20 +71,20 @@ uint32 SpellIdValue::Calculate()
     Pet* pet = bot->GetPet();
     if (spellIds.empty() && pet)
     {
-        for (PetSpellMap::const_iterator itr = pet->m_spells.begin(); itr != pet->m_spells.end(); ++itr)
+        for (PetSpellMap::const_iterator itr = pet->m_petSpells.begin(); itr != pet->m_petSpells.end(); ++itr)
         {
             if (itr->second.state == PETSPELL_REMOVED)
                 continue;
 
             uint32 spellId = itr->first;
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+            SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
             if (!spellInfo)
                 continue;
 
-            if (spellInfo->Effects[0].Effect == SPELL_EFFECT_LEARN_SPELL)
+            if (spellInfo->Effect[0] == SPELL_EFFECT_LEARN_SPELL)
                 continue;
 
-            char const* spellName = spellInfo->SpellName[loc];
+            char const* spellName = spellInfo->SpellName[loc].c_str();
             if (tolower(spellName[0]) != firstSymbol || strlen(spellName) != spellLength ||
                 !Utf8FitTo(spellName, wnamepart))
                 continue;
@@ -107,7 +107,7 @@ uint32 SpellIdValue::Calculate()
         for (auto it = spellIds.rbegin(); it != spellIds.rend(); ++it)
         {
             auto spellId = *it;
-            SpellInfo const* pSpellInfo = sSpellMgr->GetSpellInfo(spellId);
+            SpellInfo const* pSpellInfo = sSpellMgr.GetSpellInfo(spellId);
             if (!pSpellInfo)
                 continue;
 
@@ -163,8 +163,10 @@ uint32 SpellIdValue::Calculate()
     return saveMana > 1 ? lowestSpellId : highestSpellId;
 }
 
+
 uint32 VehicleSpellIdValue::Calculate()
 {
+    /*
     Vehicle* vehicle = bot->GetVehicle();
     if (!vehicle)
         return 0;
@@ -183,7 +185,7 @@ uint32 VehicleSpellIdValue::Calculate()
     PlayerbotChatHandler handler(bot);
     uint32 extractedSpellId = handler.extractSpellId(namepart);
     if (extractedSpellId)
-        if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(extractedSpellId))
+        if (SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(extractedSpellId))
             namepart = spellInfo->SpellName[0];
 
     std::wstring wnamepart;
@@ -203,7 +205,7 @@ uint32 VehicleSpellIdValue::Calculate()
         if (spellId == 2)
             continue;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (!spellInfo || spellInfo->IsPassive())
             continue;
 
@@ -214,6 +216,7 @@ uint32 VehicleSpellIdValue::Calculate()
 
         return spellId;
     }
+    */
 
     return 0;
 }

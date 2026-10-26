@@ -68,7 +68,7 @@ bool HeiganBossHelper::UpdateBossAI()
             ++itr;
     }
 
-    FightState& state = registry.states[_unit->GetGUID()];
+    FightState& state = registry.states[_unit->GetObjectGuid()];
     bool firstObservation = state.lastSeenMs == 0;
     uint32 elapsed = firstObservation ? 0 : now - state.phaseStartMs;
 
@@ -103,7 +103,7 @@ void HeiganBossHelper::UpdateFightState(FightState& state, bool fast, Aura const
         if (plagueCloud)
         {
             // Exact: the aura is applied PlagueCloudDelayMs into the phase and lasts FastPhaseDurationMs.
-            int32 auraElapsed = plagueCloud->GetMaxDuration() - plagueCloud->GetDuration();
+            int32 auraElapsed = plagueCloud->GetAuraMaxDuration() - plagueCloud->GetAuraDuration();
             if (auraElapsed < 0)
                 auraElapsed = 0;
             state.phaseStartMs = now - PlagueCloudDelayMs - uint32(auraElapsed);

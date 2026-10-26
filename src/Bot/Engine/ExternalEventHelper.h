@@ -8,6 +8,7 @@
 #define PLAYERBOTS_EXTERNALEVENTHELPER_H
 
 #include "Common.h"
+#include "Packet.h"
 #include <map>
 
 class AiObjectContext;
@@ -21,6 +22,7 @@ public:
 
     bool ParseChatCommand(std::string const command, Player* owner = nullptr);
     void HandlePacket(std::map<uint16, std::string>& handlers, WorldPacket const& packet, Player* owner = nullptr);
+    void HandlePacket(std::map<uint16, std::string>& handlers, std::shared_ptr<ClientPacket const> packet, Player* owner = nullptr);
     bool HandleCommand(std::string const name, std::string const param, Player* owner = nullptr);
 
 private:

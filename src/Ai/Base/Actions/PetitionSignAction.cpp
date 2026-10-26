@@ -5,7 +5,7 @@
  */
 
 #include "PetitionSignAction.h"
-#include "ArenaTeam.h"
+// #include "ArenaTeam.h"
 #include "Event.h"
 #include "Playerbots.h"
 
@@ -18,21 +18,25 @@ bool PetitionSignAction::Execute(Event event)
     uint8 unk = 0;
     bool isArena = false;
     p >> petitionGuid >> inviter;
+    uint32 type = 9;
 
-    QueryResult result =
-        CharacterDatabase.Query("SELECT `type` FROM `petition` WHERE `petitionguid` = {}", petitionGuid.GetCounter());
+    /*
+    QueryResult2 result =
+        CharacterDatabase2.Query("SELECT `type` FROM `petition` WHERE `petition_guid` = {}", petitionGuid.GetCounter());
     if (!result)
     {
         return false;
     }
 
-    Field* fields = result->Fetch();
+    Field2* fields = result->Fetch();
     uint32 type = fields[0].Get<uint32>();
+    */
 
     bool accept = true;
 
     if (type != 9)
     {
+        /*
         isArena = true;
         uint8 slot = ArenaTeam::GetSlotByType(ArenaType(type));
         if (bot->GetArenaTeamId(slot))
@@ -41,6 +45,7 @@ bool PetitionSignAction::Execute(Event event)
             botAI->TellError("Sorry, I am already in such team");
             accept = false;
         }
+        */
     }
     else
     {
@@ -75,22 +80,22 @@ bool PetitionSignAction::Execute(Event event)
 
     if (!accept || !botAI->GetSecurity()->CheckLevelFor(PLAYERBOT_SECURITY_INVITE, false, _inviter, true))
     {
-        WorldPacket data(MSG_PETITION_DECLINE);
-        data << petitionGuid;
+        WorldPackets::Petition::PetitionDecline data;
+        data.itemGuid = petitionGuid;
         bot->GetSession()->HandlePetitionDeclineOpcode(data);
-        LOG_INFO("playerbots", "Bot {} <{}> declines {} invite", bot->GetGUID().ToString().c_str(),
-                 bot->GetName().c_str(), isArena ? "Arena" : "Guild");
+        LOG_INFO("playerbots", "Bot {} <{}> declines {} invite", bot->GetObjectGuid().ToString().c_str(),
+                 bot->GetName(), isArena ? "Arena" : "Guild");
         return false;
     }
 
     if (accept)
     {
-        WorldPacket data(CMSG_PETITION_SIGN, 20);
-        data << petitionGuid << unk;
+        WorldPackets::Petition::PetitionSign data;
+        data.itemGuid = petitionGuid;
         bot->GetSession()->HandlePetitionSignOpcode(data);
         bot->Say("Thanks for the invite!", LANG_UNIVERSAL);
-        LOG_INFO("playerbots", "Bot {} <{}> accepts {} invite", bot->GetGUID().ToString().c_str(),
-                 bot->GetName().c_str(), isArena ? "Arena" : "Guild");
+        LOG_INFO("playerbots", "Bot {} <{}> accepts {} invite", bot->GetObjectGuid().ToString().c_str(),
+                 bot->GetName(), isArena ? "Arena" : "Guild");
         return true;
     }
 

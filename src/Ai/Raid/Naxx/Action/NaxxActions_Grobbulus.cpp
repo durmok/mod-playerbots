@@ -29,7 +29,7 @@ bool GrobbulusMoveAwayAction::Execute(Event /*event*/)
     if (!boss)
         return false;
 
-    const float currentDistance = bot->GetExactDist2d(boss);
+    const float currentDistance = bot->GetPosition().GetExactDist2d(boss->GetPosition());
     if (currentDistance >= distance)
         return false;
 

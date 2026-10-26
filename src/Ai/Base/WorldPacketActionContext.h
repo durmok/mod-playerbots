@@ -7,13 +7,13 @@
 #ifndef PLAYERBOTS_WORLDPACKETACTIONCONTEXT_H
 #define PLAYERBOTS_WORLDPACKETACTIONCONTEXT_H
 
-#include "AcceptBattlegroundInvitationAction.h"
+// #include "AcceptBattlegroundInvitationAction.h"
 #include "AcceptDuelAction.h"
 #include "AcceptInvitationAction.h"
 #include "AcceptQuestAction.h"
 #include "AcceptResurrectAction.h"
 #include "AreaTriggerAction.h"
-#include "ArenaTeamActions.h"
+// #include "ArenaTeamActions.h"
 #include "BattleGroundJoinAction.h"
 #include "BattleGroundTactics.h"
 #include "CheckMountStateAction.h"
@@ -22,13 +22,14 @@
 #include "GuildCreateActions.h"
 #include "InventoryChangeFailureAction.h"
 #include "LeaveGroupAction.h"
-#include "LfgActions.h"
+// #include "LfgActions.h"
 #include "LootAction.h"
 #include "LootRollAction.h"
 #include "NamedObjectContext.h"
 #include "PassLeadershipToMasterAction.h"
 #include "PetitionSignAction.h"
 #include "PetsAction.h"
+#include "PartykilllogAction.h"
 #include "QuestAction.h"
 #include "QuestConfirmAcceptAction.h"
 #include "ReadyCheckAction.h"
@@ -53,6 +54,7 @@ public:
     WorldPacketActionContext()
     {
         creators["accept invitation"] = &WorldPacketActionContext::accept_invitation;
+        creators["partykilllog"] = &WorldPacketActionContext::partykilllog;
         creators["give leader in dungeon"] = &WorldPacketActionContext::give_leader_in_dungeon;
         creators["leader"] = &WorldPacketActionContext::pass_leadership_to_master;
         creators["tell not enough money"] = &WorldPacketActionContext::tell_not_enough_money;
@@ -60,11 +62,13 @@ public:
         creators["tell cannot equip"] = &WorldPacketActionContext::tell_cannot_equip;
         creators["loot roll"] = &WorldPacketActionContext::loot_roll;
         creators["master loot roll"] = &WorldPacketActionContext::master_loot_roll;
+        creators["loot start roll"] = &WorldPacketActionContext::loot_start_roll;
         creators["revive from corpse"] = &WorldPacketActionContext::revive_from_corpse;
         creators["find corpse"] = &WorldPacketActionContext::find_corpse;
         creators["auto release"] = &WorldPacketActionContext::auto_release;
         creators["accept resurrect"] = &WorldPacketActionContext::accept_resurrect;
         creators["use meeting stone"] = &WorldPacketActionContext::use_meeting_stone;
+        creators["accept summon"] = &WorldPacketActionContext::accept_summon;
         creators["area trigger"] = &WorldPacketActionContext::area_trigger;
         creators["reach area trigger"] = &WorldPacketActionContext::reach_area_trigger;
         creators["check mount state"] = &WorldPacketActionContext::check_mount_state;
@@ -88,7 +92,7 @@ public:
         creators["quest update failed timer"] = &WorldPacketActionContext::quest_update_failed_timer;
         creators["quest update complete"] = &WorldPacketActionContext::quest_update_complete;
         creators["turn in query quest"] = &WorldPacketActionContext::turn_in_query_quest;
-        creators["quest item push result"] = &WorldPacketActionContext::quest_item_push_result;
+        // creators["quest item push result"] = &WorldPacketActionContext::quest_item_push_result;
 
         creators["party command"] = &WorldPacketActionContext::party_command;
         creators["tell cast failed"] = &WorldPacketActionContext::tell_cast_failed;
@@ -106,15 +110,15 @@ public:
         creators["bg status"] = &WorldPacketActionContext::bg_status;
         creators["bg join"] = &WorldPacketActionContext::bg_join;
         creators["bg leave"] = &WorldPacketActionContext::bg_leave;
-        creators["arena tactics"] = &WorldPacketActionContext::arena_tactics;
+        // creators["arena tactics"] = &WorldPacketActionContext::arena_tactics;
         creators["petition sign"] = &WorldPacketActionContext::petition_sign;
-        creators["lfg join"] = &WorldPacketActionContext::lfg_join;
-        creators["lfg accept"] = &WorldPacketActionContext::lfg_accept;
-        creators["lfg role check"] = &WorldPacketActionContext::lfg_role_check;
-        creators["lfg leave"] = &WorldPacketActionContext::lfg_leave;
-        creators["lfg teleport"] = &WorldPacketActionContext::lfg_teleport;
+        // creators["lfg join"] = &WorldPacketActionContext::lfg_join;
+        // creators["lfg accept"] = &WorldPacketActionContext::lfg_accept;
+        // creators["lfg role check"] = &WorldPacketActionContext::lfg_role_check;
+        // creators["lfg leave"] = &WorldPacketActionContext::lfg_leave;
+        // creators["lfg teleport"] = &WorldPacketActionContext::lfg_teleport;
         creators["see spell"] = &WorldPacketActionContext::see_spell;
-        creators["arena team accept"] = &WorldPacketActionContext::arena_team_accept;
+        // creators["arena team accept"] = &WorldPacketActionContext::arena_team_accept;
     }
 
 private:
@@ -137,11 +141,13 @@ private:
     static Action* area_trigger(PlayerbotAI* botAI) { return new AreaTriggerAction(botAI); }
     static Action* reach_area_trigger(PlayerbotAI* botAI) { return new ReachAreaTriggerAction(botAI); }
     static Action* use_meeting_stone(PlayerbotAI* botAI) { return new UseMeetingStoneAction(botAI); }
+    static Action* accept_summon(PlayerbotAI* botAI) { return new AcceptSummonAction(botAI); }
     static Action* accept_resurrect(PlayerbotAI* botAI) { return new AcceptResurrectAction(botAI); }
     static Action* find_corpse(PlayerbotAI* botAI) { return new FindCorpseAction(botAI); }
     static Action* auto_release(PlayerbotAI* botAI) { return new AutoReleaseSpiritAction(botAI); }
     static Action* revive_from_corpse(PlayerbotAI* botAI) { return new ReviveFromCorpseAction(botAI); }
     static Action* accept_invitation(PlayerbotAI* botAI) { return new AcceptInvitationAction(botAI); }
+    static Action* partykilllog(PlayerbotAI* botAI) { return new PartykilllogAction(botAI); }
     static Action* give_leader_in_dungeon(PlayerbotAI* botAI) { return new GiveLeaderAction(botAI, "I don't know this dungeon, lead the way!"); }
     static Action* pass_leadership_to_master(PlayerbotAI* botAI) { return new PassLeadershipToMasterAction(botAI); }
     static Action* tell_not_enough_money(PlayerbotAI* botAI) { return new TellMasterAction(botAI, "Not enough money"); }
@@ -157,7 +163,7 @@ private:
     static Action* quest_update_failed(PlayerbotAI* botAI) { return new QuestUpdateFailedAction(botAI); }
     static Action* quest_update_failed_timer(PlayerbotAI* botAI) { return new QuestUpdateFailedTimerAction(botAI); }
     static Action* quest_update_complete(PlayerbotAI* botAI) { return new QuestUpdateCompleteAction(botAI); }
-    static Action* quest_item_push_result(PlayerbotAI* botAI) { return new QuestItemPushResultAction(botAI); }
+    // static Action* quest_item_push_result(PlayerbotAI* botAI) { return new QuestItemPushResultAction(botAI); }
 
     static Action* turn_in_quest(PlayerbotAI* botAI) { return new TalkToQuestGiverAction(botAI); }
     static Action* accept_quest(PlayerbotAI* botAI) { return new AcceptQuestAction(botAI); }
@@ -169,20 +175,21 @@ private:
 
     static Action* loot_roll(PlayerbotAI* botAI) { return new LootRollAction(botAI); }
     static Action* master_loot_roll(PlayerbotAI* botAI) { return new MasterLootRollAction(botAI); }
+    static Action* loot_start_roll(PlayerbotAI* botAI) { return new LootStartRollAction(botAI); }
     static Action* bg_join(PlayerbotAI* botAI) { return new BGJoinAction(botAI); }
     static Action* bg_leave(PlayerbotAI* botAI) { return new BGLeaveAction(botAI); }
     static Action* bg_status(PlayerbotAI* botAI) { return new BGStatusAction(botAI); }
     static Action* bg_status_check(PlayerbotAI* botAI) { return new BGStatusCheckAction(botAI); }
     static Action* bg_strategy_check(PlayerbotAI* botAI) { return new BGStrategyCheckAction(botAI); }
-    static Action* arena_tactics(PlayerbotAI* botAI) { return new ArenaTactics(botAI); }
+    // static Action* arena_tactics(PlayerbotAI* botAI) { return new ArenaTactics(botAI); }
     static Action* petition_sign(PlayerbotAI* botAI) { return new PetitionSignAction(botAI); }
-    static Action* lfg_teleport(PlayerbotAI* botAI) { return new LfgTeleportAction(botAI); }
-    static Action* lfg_leave(PlayerbotAI* botAI) { return new LfgLeaveAction(botAI); }
-    static Action* lfg_accept(PlayerbotAI* botAI) { return new LfgAcceptAction(botAI); }
-    static Action* lfg_role_check(PlayerbotAI* botAI) { return new LfgRoleCheckAction(botAI); }
-    static Action* lfg_join(PlayerbotAI* botAI) { return new LfgJoinAction(botAI); }
+    // static Action* lfg_teleport(PlayerbotAI* botAI) { return new LfgTeleportAction(botAI); }
+    // static Action* lfg_leave(PlayerbotAI* botAI) { return new LfgLeaveAction(botAI); }
+    // static Action* lfg_accept(PlayerbotAI* botAI) { return new LfgAcceptAction(botAI); }
+    // static Action* lfg_role_check(PlayerbotAI* botAI) { return new LfgRoleCheckAction(botAI); }
+    // static Action* lfg_join(PlayerbotAI* botAI) { return new LfgJoinAction(botAI); }
     static Action* see_spell(PlayerbotAI* botAI) { return new SeeSpellAction(botAI); }
-    static Action* arena_team_accept(PlayerbotAI* botAI) { return new ArenaTeamAcceptAction(botAI); }
+    // static Action* arena_team_accept(PlayerbotAI* botAI) { return new ArenaTeamAcceptAction(botAI); }
 };
 
 #endif

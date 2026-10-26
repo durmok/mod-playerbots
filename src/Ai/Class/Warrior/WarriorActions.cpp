@@ -68,8 +68,8 @@ bool CastSunderArmorAction::isUseful()
         }
     }
 
-    Aura* aura = botAI->GetAura("sunder armor", GetTarget(), false, true);
-    return !aura || aura->GetStackAmount() < 5 || aura->GetDuration() <= 6000;
+    Aura const* aura = botAI->GetAura("sunder armor", GetTarget(), false, true);
+    return !aura || aura->GetStackAmount() < 5 || aura->GetAuraDuration() <= 6000;
 }
 
 Unit* CastVigilanceAction::GetTarget()
@@ -88,7 +88,7 @@ Unit* CastVigilanceAction::GetTarget()
             continue;
 
         // Same as trigger: early return if the bot's own Vigilance is already applied to a member.
-        if (member->HasAura(SPELL_VIGILANCE, bot->GetGUID()))
+        if (member->HasAura(SPELL_VIGILANCE))
             return nullptr;
 
         // A valid target must not have Vigilance from any source, not just the bot...
@@ -134,10 +134,15 @@ bool CastRetaliationAction::isUseful()
         if (attacker->IsCreature())
         {
             Creature* creature = attacker->ToCreature();
+            /*
             if (creature && (creature->IsClass(CLASS_WARRIOR)
                 || creature->IsClass(CLASS_ROGUE)
                 || creature->IsClass(CLASS_PALADIN)))
             {
+                ++meleeAttackers;
+            }
+            */
+            if (creature && !creature->IsNonMeleeSpellCasted()) {
                 ++meleeAttackers;
             }
         }

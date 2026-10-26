@@ -12,13 +12,13 @@
 
 void NearestFriendlyPlayersValue::FindUnits(std::list<Unit*>& targets)
 {
-    Acore::AnyFriendlyUnitInObjectRangeCheck u_check(bot, bot, range);
-    Acore::UnitListSearcher<Acore::AnyFriendlyUnitInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, range);
+    MaNGOS::AnyFriendlyUnitInObjectRangeCheck u_check(bot, range);
+    MaNGOS::UnitListSearcher<MaNGOS::AnyFriendlyUnitInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, range);
 }
 
 bool NearestFriendlyPlayersValue::AcceptUnit(Unit* unit)
 {
-    ObjectGuid guid = unit->GetGUID();
-    return guid.IsPlayer() && guid != botAI->GetBot()->GetGUID();
+    ObjectGuid guid = unit->GetObjectGuid();
+    return guid.IsPlayer() && guid != botAI->GetBot()->GetObjectGuid();
 }

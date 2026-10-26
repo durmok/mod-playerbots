@@ -86,6 +86,7 @@ public:
         creators["follow"] = &ChatTriggerContext::follow;
         creators["move from group"] = &ChatTriggerContext::move_from_group;
         creators["stay"] = &ChatTriggerContext::stay;
+        creators["guard"] = &ChatTriggerContext::guard;
         creators["flee"] = &ChatTriggerContext::flee;
         creators["grind"] = &ChatTriggerContext::grind;
         creators["tank attack"] = &ChatTriggerContext::tank_attack;
@@ -99,7 +100,10 @@ public:
         creators["spell"] = &ChatTriggerContext::spell;
         creators["rti"] = &ChatTriggerContext::rti;
         creators["revive"] = &ChatTriggerContext::revive;
+        creators["resurrect"] = &ChatTriggerContext::resurrect;
         creators["runaway"] = &ChatTriggerContext::runaway;
+        creators["movedir"] = &ChatTriggerContext::movedir;
+        creators["teletome"] = &ChatTriggerContext::teletome;
         creators["warning"] = &ChatTriggerContext::warning;
         creators["position"] = &ChatTriggerContext::position;
         creators["summon"] = &ChatTriggerContext::summon;
@@ -192,8 +196,11 @@ private:
     static Trigger* summon(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "summon"); }
     static Trigger* position(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "position"); }
     static Trigger* runaway(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "runaway"); }
+    static Trigger* movedir(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "movedir"); }
+    static Trigger* teletome(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "teletome"); }
     static Trigger* warning(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "warning"); }
     static Trigger* revive(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "revive"); }
+    static Trigger* resurrect(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "resurrect"); }
     static Trigger* rti(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "rti"); }
     static Trigger* invite(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "invite"); }
     static Trigger* lfg(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "lfg"); }
@@ -207,6 +214,7 @@ private:
     static Trigger* tank_attack(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "tank attack"); }
     static Trigger* stay(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "stay"); }
     static Trigger* follow(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "follow"); }
+    static Trigger* guard(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "guard"); }
     static Trigger* move_from_group(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "move from group"); }
     static Trigger* gb(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "gb"); }
     static Trigger* bank(PlayerbotAI* botAI) { return new ChatCommandTrigger(botAI, "bank"); }

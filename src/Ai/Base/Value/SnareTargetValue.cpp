@@ -33,7 +33,7 @@ Unit* SnareTargetValue::Calculate()
                 chaseTarget = ServerFacade::instance().GetChaseTarget(unit);
                 if (!chaseTarget)
                     continue;
-                Player* chaseTargetPlayer = ObjectAccessor::FindPlayer(chaseTarget->GetGUID());
+                Player* chaseTargetPlayer = ObjectAccessor::FindPlayer(chaseTarget->GetObjectGuid());
                 // check if need to snare
                 bool shouldSnare = true;
 

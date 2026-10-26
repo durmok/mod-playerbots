@@ -18,7 +18,10 @@
 
 bool AddLootAction::Execute(Event event)
 {
-    ObjectGuid guid = event.getObject();
+    auto packet = event.getClientPacket<WorldPackets::Misc::GameObjectUse>();
+    if (!packet)
+        return false;
+    ObjectGuid guid = packet->guid;
     if (!guid)
         return false;
 

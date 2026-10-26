@@ -82,7 +82,7 @@ void GenericHunterStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
                                                                NextAction("wing clip", 21.0f) }));
 
     triggers.push_back(new TriggerNode("enemy too close for auto shot", { NextAction("disengage", 35.0f),
-                                                                          NextAction("flee", 34.0f) }));
+                                                                          NextAction("reach melee on flee failed", 34.0f) }));
 }
 
 // ===== AoE Strategy, 2/3+ enemies =====

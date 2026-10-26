@@ -19,14 +19,14 @@ public:
     TalkToQuestGiverAction(PlayerbotAI* botAI, std::string name = "talk to quest giver") : QuestAction(botAI, name) { }
 
 protected:
-    bool ProcessQuest(Quest const* quest, Object* questGiver) override;
-    bool TurnInQuest(Quest const* quest, Object* questGiver, std::ostringstream& out);
+    bool ProcessQuest(Quest const* quest, WorldObject* questGiver) override;
+    bool TurnInQuest(Quest const* quest, WorldObject* questGiver, std::ostringstream& out);
 
 private:
-    void RewardNoItem(Quest const* quest, Object* questGiver, std::ostringstream& out);
-    void RewardSingleItem(Quest const* quest, Object* questGiver, std::ostringstream& out);
+    void RewardNoItem(Quest const* quest, WorldObject* questGiver, std::ostringstream& out);
+    void RewardSingleItem(Quest const* quest, WorldObject* questGiver, std::ostringstream& out);
     std::set<uint32> BestRewards(Quest const* quest);
-    void RewardMultipleItem(Quest const* quest, Object* questGiver, std::ostringstream& out);
+    void RewardMultipleItem(Quest const* quest, WorldObject* questGiver, std::ostringstream& out);
     void AskToSelectReward(Quest const* quest, std::ostringstream& out, bool forEquip);
 };
 

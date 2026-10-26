@@ -103,7 +103,7 @@ void FleeManager::calculatePossibleDestinations(std::vector<FleePoint*>& points)
                 bot->UpdateAllowedPositionZ(x, y, z);
 
                 Map* map = startPosition.getMap();
-                if (map && map->IsInWater(bot->GetPhaseMask(), x, y, z, bot->GetCollisionHeight()))
+                if (map && map->GetTerrain()->IsInWater(x, y, z))
                     continue;
 
                 if (!bot->IsWithinLOS(x, y, z) || (target && !target->IsWithinLOS(x, y, z)))

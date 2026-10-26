@@ -21,13 +21,16 @@ const std::vector<uint32> PossibleRpgTargetsValue::allowedNpcFlags = {
     UNIT_NPC_FLAG_QUESTGIVER,
     UNIT_NPC_FLAG_FLIGHTMASTER,
     UNIT_NPC_FLAG_BANKER,
+    /*
     UNIT_NPC_FLAG_GUILD_BANKER,
-    UNIT_NPC_FLAG_TRAINER_CLASS,
     UNIT_NPC_FLAG_TRAINER_PROFESSION,
     UNIT_NPC_FLAG_VENDOR_AMMO,
     UNIT_NPC_FLAG_VENDOR_FOOD,
     UNIT_NPC_FLAG_VENDOR_POISON,
     UNIT_NPC_FLAG_VENDOR_REAGENT,
+    */
+    UNIT_NPC_FLAG_TRAINER,
+    UNIT_NPC_FLAG_VENDOR,
     UNIT_NPC_FLAG_AUCTIONEER,
     UNIT_NPC_FLAG_STABLEMASTER,
     UNIT_NPC_FLAG_PETITIONER,
@@ -46,9 +49,9 @@ PossibleRpgTargetsValue::PossibleRpgTargetsValue(PlayerbotAI* botAI, float range
 
 void PossibleRpgTargetsValue::FindUnits(std::list<Unit*>& targets)
 {
-    Acore::AnyUnitInObjectRangeCheck u_check(bot, range);
-    Acore::UnitListSearcher<Acore::AnyUnitInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, range);
+    MaNGOS::AnyUnitInObjectRangeCheck u_check(bot, range);
+    MaNGOS::UnitListSearcher<MaNGOS::AnyUnitInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, range);
 }
 
 bool PossibleRpgTargetsValue::AcceptUnit(Unit* unit)
@@ -91,6 +94,7 @@ const std::vector<uint32> PossibleNewRpgTargetsValue::allowedNpcFlags = {
     UNIT_NPC_FLAG_QUESTGIVER,
     UNIT_NPC_FLAG_FLIGHTMASTER,
     UNIT_NPC_FLAG_BANKER,
+    /*
     UNIT_NPC_FLAG_GUILD_BANKER,
     UNIT_NPC_FLAG_TRAINER_CLASS,
     UNIT_NPC_FLAG_TRAINER_PROFESSION,
@@ -98,6 +102,9 @@ const std::vector<uint32> PossibleNewRpgTargetsValue::allowedNpcFlags = {
     UNIT_NPC_FLAG_VENDOR_FOOD,
     UNIT_NPC_FLAG_VENDOR_POISON,
     UNIT_NPC_FLAG_VENDOR_REAGENT,
+    */
+    UNIT_NPC_FLAG_TRAINER,
+    UNIT_NPC_FLAG_VENDOR,
     UNIT_NPC_FLAG_AUCTIONEER,
     UNIT_NPC_FLAG_STABLEMASTER,
     UNIT_NPC_FLAG_PETITIONER,
@@ -132,7 +139,7 @@ GuidVector PossibleNewRpgTargetsValue::Calculate()
     for (Unit* unit : targets)
     {
         if (AcceptUnit(unit) && (ignoreLos || bot->IsWithinLOSInMap(unit)))
-            guidDistancePairs.push_back({unit->GetGUID(), bot->GetExactDist(unit)});
+            guidDistancePairs.push_back({unit->GetObjectGuid(), bot->GetPosition().GetExactDist(unit->GetPosition())});
     }
     // Override to sort by distance
     std::sort(guidDistancePairs.begin(), guidDistancePairs.end(), [](auto const& a, auto const& b) {
@@ -147,9 +154,9 @@ GuidVector PossibleNewRpgTargetsValue::Calculate()
 
 void PossibleNewRpgTargetsValue::FindUnits(std::list<Unit*>& targets)
 {
-    Acore::AnyUnitInObjectRangeCheck u_check(bot, range);
-    Acore::UnitListSearcher<Acore::AnyUnitInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, range);
+    MaNGOS::AnyUnitInObjectRangeCheck u_check(bot, range);
+    MaNGOS::UnitListSearcher<MaNGOS::AnyUnitInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, range);
 }
 
 bool PossibleNewRpgTargetsValue::AcceptUnit(Unit* unit)
@@ -180,8 +187,8 @@ GuidVector PossibleNewRpgGameObjectsValue::Calculate()
 {
     std::list<GameObject*> targets;
     AnyGameObjectInObjectRangeCheck u_check(bot, range);
-    Acore::GameObjectListSearcher<AnyGameObjectInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, range);
+    MaNGOS::GameObjectListSearcher<AnyGameObjectInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, range);
 
     std::vector<std::pair<ObjectGuid, float>> guidDistancePairs;
     for (GameObject* go : targets)
@@ -201,7 +208,7 @@ GuidVector PossibleNewRpgGameObjectsValue::Calculate()
         if (!ignoreLos && !bot->IsWithinLOSInMap(go))
             continue;
 
-        guidDistancePairs.push_back({go->GetGUID(), bot->GetExactDist(go)});
+        guidDistancePairs.push_back({go->GetObjectGuid(), bot->GetPosition().GetExactDist(go->GetPosition())});
     }
     GuidVector results;
 

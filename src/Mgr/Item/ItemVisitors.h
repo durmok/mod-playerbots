@@ -50,7 +50,7 @@ public:
     std::vector<Item*>& GetResult() { return result; }
 
 protected:
-    virtual bool Accept(ItemTemplate const* proto) = 0;
+    virtual bool Accept(ItemPrototype const* proto) = 0;
 
 private:
     std::vector<Item*> result;
@@ -74,7 +74,7 @@ public:
 
     bool Visit(Item* item) override
     {
-        ItemTemplate const* proto = item->GetTemplate();
+        ItemPrototype const* proto = item->GetTemplate();
         if (proto && proto->InventoryType == INVTYPE_RELIC && proto->SubClass == subClass)
         {
             found = true;
@@ -184,6 +184,7 @@ public:
         if (proto->Class != ITEM_CLASS_TRADE_GOODS || proto->Quality == ITEM_QUALITY_POOR)
             return true;
 
+        /*
         switch (proto->SubClass)
         {
             case ITEM_SUBCLASS_CLOTH:
@@ -197,6 +198,7 @@ public:
             default:
                 return true;
         }
+        */
 
         if (result.size() >= (size_t)count)
             return false;
@@ -240,7 +242,7 @@ public:
     bool Visit(Item* item) override
     {
         ItemTemplate const* proto = item->GetTemplate();
-        if (proto && proto->Name1.c_str() && strstri(proto->Name1.c_str(), name.c_str()))
+        if (proto && proto->Name1 && strstri(proto->Name1, name.c_str()))
             count += item->GetCount();
 
         return true;
@@ -257,7 +259,7 @@ public:
 
     bool Accept(ItemTemplate const* proto) override
     {
-        return proto && proto->Name1.c_str() && strstri(proto->Name1.c_str(), name.c_str());
+        return proto && proto->Name1 && strstri(proto->Name1, name.c_str());
     }
 
 private:
@@ -362,7 +364,7 @@ public:
     bool Accept(ItemTemplate const* proto) override
     {
         return proto->Class == ITEM_CLASS_CONSUMABLE &&
-               (proto->SubClass == ITEM_SUBCLASS_CONSUMABLE || proto->SubClass == ITEM_SUBCLASS_FOOD) &&
+               (proto->SubClass == ITEM_SUBCLASS_CONSUMABLE) &&
                proto->Spells[0].SpellCategory == spellCategory && (!conjured || proto->IsConjuredConsumable());
     }
 

@@ -5,7 +5,7 @@
  */
 
 #include "TaxiAction.h"
-#include "Config.h"
+#include "Config/Config.h"
 #include "Event.h"
 #include "LastMovementValue.h"
 #include "PlayerbotAIConfig.h"
@@ -18,8 +18,9 @@ bool TaxiAction::Execute(Event event)
 
     LastMovement& movement = context->GetValue<LastMovement&>("last taxi")->Get();
 
-    WorldPacket& p = event.getPacket();
+    // WorldPacket& p = event.getPacket();
     std::string const param = event.getParam();
+    /*
     if ((!p.empty() && (p.GetOpcode() == CMSG_TAXICLEARALLNODES || p.GetOpcode() == CMSG_TAXICLEARNODE)) ||
         param == "clear")
     {
@@ -29,6 +30,7 @@ bool TaxiAction::Execute(Event event)
             "taxi_ready_next_flight", "I am ready for the next flight", {}));
         return true;
     }
+    */
 
     GuidVector units = *context->GetValue<GuidVector>("nearest npcs");
     for (ObjectGuid const guid : units)
@@ -37,15 +39,15 @@ bool TaxiAction::Execute(Event event)
         if (!npc || !npc->IsAlive())
             continue;
 
-        if (!(npc->GetNpcFlags() & UNIT_NPC_FLAG_FLIGHTMASTER))
+        if (!(npc->HasNpcFlag(UNIT_NPC_FLAG_FLIGHTMASTER)))
             continue;
 
         if (bot->GetDistance(npc) > sPlayerbotAIConfig.FarDistance)
             continue;
 
         bot->GetSession()->SendLearnNewTaxiNode(npc);
-        uint32 curloc = sObjectMgr->GetNearestTaxiNode(npc->GetPositionX(), npc->GetPositionY(), npc->GetPositionZ(),
-                                                       npc->GetMapId(), bot->GetTeamId());
+        uint32 curloc = sObjectMgr.GetNearestTaxiNode(npc->GetPositionX(), npc->GetPositionY(), npc->GetPositionZ(),
+                                                       npc->GetMapId(), bot->GetTeam());
 
         std::vector<uint32> nodes;
         for (uint32 i = 0; i < sTaxiPathStore.GetNumRows(); ++i)
@@ -70,7 +72,7 @@ bool TaxiAction::Execute(Event event)
             delay = std::min(delay, sPlayerbotAIConfig.BotTaxiDelayMax);
 
             // Store the NPC's GUID so we can re-acquire the pointer later
-            ObjectGuid npcGuid = npc->GetGUID();
+            ObjectGuid npcGuid = npc->GetObjectGuid();
 
             // schedule the take-off
             botAI->AddTimedEvent(
@@ -96,7 +98,7 @@ bool TaxiAction::Execute(Event event)
                 if (!entry)
                     continue;
 
-                TaxiNodesEntry const* dest = sTaxiNodesStore.LookupEntry(entry->to);
+                TaxiNodesEntry const* dest = sObjectMgr.GetTaxiNodeEntry(entry->to);
                 if (!dest)
                     continue;
 

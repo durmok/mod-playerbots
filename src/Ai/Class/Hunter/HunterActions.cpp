@@ -28,11 +28,13 @@ bool CastArcaneShotAction::isUseful()
     if (!target || !botAI->HasSpell("explosive shot"))
         return false;
 
+    /*
     // Armor Penetration rating check - will not cast Arcane Shot above 435 ArP
     int32 armorPenRating =
         bot->GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1) + bot->GetUInt32Value(CR_ARMOR_PENETRATION);
     if (armorPenRating > 435)
         return false;
+    */
 
     return true;
 }
@@ -65,8 +67,8 @@ bool CastAutoShotAction::isUseful()
         return false;
 
     if (AI_VALUE(Unit*, "current target") && bot->GetCurrentSpell(CURRENT_AUTOREPEAT_SPELL) &&
-        bot->GetCurrentSpell(CURRENT_AUTOREPEAT_SPELL)->m_targets.GetUnitTargetGUID() ==
-            AI_VALUE(Unit*, "current target")->GetGUID())
+        bot->GetCurrentSpell(CURRENT_AUTOREPEAT_SPELL)->m_targets.getUnitTargetGuid() ==
+            AI_VALUE(Unit*, "current target")->GetObjectGuid())
     {
         return false;
     }
@@ -108,4 +110,32 @@ bool CastWingClipAction::isUseful()
 std::vector<NextAction> CastWingClipAction::getPrerequisites()
 {
     return {};
+}
+
+bool ReachMeleeOnFleeFailedAction::Execute(Event /*event*/)
+{
+    Unit* target = AI_VALUE(Unit*, "current target");
+
+    if (MoveAway(target, 8.0, true))
+        return true;
+
+    if (!bot->IsWithinMeleeRange(target))
+        return ReachCombatTo(target, sPlayerbotAIConfig.MeleeDistance);
+
+    return false;
+}
+
+bool ReachMeleeOnFleeFailedAction::isUseful()
+{
+    if (bot->GetCurrentSpell(CURRENT_CHANNELED_SPELL) != nullptr)
+        return false;
+
+    if (bot->IsMoving())
+        return false;
+
+    Unit* target = AI_VALUE(Unit*, "current target");
+    if (!target)
+        return false;
+
+    return true;
 }

@@ -26,6 +26,7 @@ public:
     virtual Event Check();
     virtual void ExternalEvent([[maybe_unused]] std::string const param, [[maybe_unused]] Player* owner = nullptr) {}
     virtual void ExternalEvent([[maybe_unused]] WorldPacket& packet, [[maybe_unused]] Player* owner = nullptr) {}
+    virtual void ExternalEvent([[maybe_unused]] std::shared_ptr<ClientPacket const> packet, [[maybe_unused]] Player* owner = nullptr) {}
     virtual bool IsActive() { return false; }
     virtual bool IsBuffTrigger() { return false; }
     virtual bool IsDebuffTrigger() { return false; }

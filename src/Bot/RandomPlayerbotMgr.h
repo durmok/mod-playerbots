@@ -107,6 +107,9 @@ public:
     bool IsRandomBot(ObjectGuid::LowType bot);
     bool IsAddclassBot(Player* bot);
     bool IsAddclassBot(ObjectGuid::LowType bot);
+    bool IsBattleBot(Player* bot);
+    bool IsBattleBot(ObjectGuid::LowType bot);
+    std::vector<uint32> GetBattleTypeAccounts() { return battleTypeAccounts; }
     void Randomize(Player* bot);
     void Clear(Player* bot);
     void RandomizeFirst(Player* bot);
@@ -122,7 +125,7 @@ public:
     Player* GetRandomPlayer();
     std::vector<Player*> GetPlayers() { return players; };
     PlayerBotMap GetAllBots() { return playerBots; };
-    void InitArenaTeams();
+    // void InitArenaTeams();
     void PrintStats();
     double GetBuyMultiplier(Player* bot);
     double GetSellMultiplier(Player* bot);
@@ -145,19 +148,19 @@ public:
     void SetValue(Player* bot, std::string const& type, uint32 value, std::string const& data = "");
     bool IsSpecPvp(uint32 bot, uint8 cls);
     void Remove(Player* bot);
-    ObjectGuid GetBattleMasterGUID(Player* bot, BattlegroundTypeId bgTypeId);
+    ObjectGuid GetBattleMasterGUID(Player* bot, BattleGroundTypeId bgTypeId);
     CreatureData const* GetCreatureDataByEntry(uint32 entry);
     void LoadBattleMastersCache();
     std::map<uint32, std::map<uint32, BattlegroundInfo>> BattlegroundData;
     std::map<uint32, std::map<uint32, std::map<TeamId, uint32>>> VisualBots;
     std::map<uint32, std::map<uint32, std::map<uint32, uint32>>> Supporters;
     std::map<TeamId, std::vector<uint32>> LfgDungeons;
-    void CheckBgQueue();
-    void CheckLfgQueue();
+    // void CheckBgQueue();
+    // void CheckLfgQueue();
     void CheckPlayers();
-    void LogBattlegroundInfo();
+    // void LogBattlegroundInfo();
 
-    std::map<TeamId, std::map<BattlegroundTypeId, std::vector<uint32>>> getBattleMastersCache()
+    std::map<TeamId, std::map<BattleGroundTypeId, std::vector<uint32>>> getBattleMastersCache()
     {
         return BattleMastersCache;
     }
@@ -248,7 +251,7 @@ private:
 
     // std::map<uint32, std::vector<WorldLocation>> rpgLocsCache;
     std::map<uint32, std::map<uint32, std::vector<WorldLocation>>> rpgLocsCacheLevel;
-    std::map<TeamId, std::map<BattlegroundTypeId, std::vector<uint32>>> BattleMastersCache;
+    std::map<TeamId, std::map<BattleGroundTypeId, std::vector<uint32>>> BattleMastersCache;
     std::unordered_map<uint32, ObjectGuid::LowType> BattleMasterSpawnIds;
     std::unordered_map<uint32, BotEventCache> eventCache;
     std::unordered_set<uint32> currentBots;
@@ -257,6 +260,12 @@ private:
     // Account lists
     std::vector<uint32> rndBotTypeAccounts;             // Accounts marked as RNDbot (type 1)
     std::vector<uint32> addClassTypeAccounts;           // Accounts marked as AddClass (type 2)
+    std::vector<uint32> battleTypeAccounts;           // Accounts marked as Battlebot (type 8)
+
+    // Account maps
+    std::unordered_set<uint32> rndBotTypeAccountSet;             // Accounts marked as RNDbot (type 1)
+    std::unordered_set<uint32> addClassTypeAccountSet;           // Accounts marked as AddClass (type 2)
+    std::unordered_set<uint32> battleTypeAccountSet;           // Accounts marked as Battlebot (type 8)
 
     //void ScaleBotActivity();      // Deprecated function
     static inline uint32 NowSeconds() { return static_cast<uint32>(GameTime::GetGameTime().count()); }

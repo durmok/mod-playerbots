@@ -54,7 +54,7 @@ WorldPosition GetBestPoint(AiObjectContext* context, Player* bot, Unit* target,
             WorldPosition point(targetPosition.GetMapId(), x, y, z);
 
             float groundZ = bot->GetMapHeight(x, y, z);
-            if (groundZ == INVALID_HEIGHT || groundZ == VMAP_INVALID_HEIGHT_VALUE)
+            if (groundZ == INVALID_HEIGHT || groundZ == INVALID_HEIGHT_VALUE)
                 continue;
 
             point.setZ(groundZ);

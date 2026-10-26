@@ -26,7 +26,7 @@ public:
 
 protected:
     bool CompleteQuest(Player* player, uint32 entry);
-    virtual bool ProcessQuest(Quest const* quest, Object* questGiver) = 0;
+    virtual bool ProcessQuest(Quest const* quest, WorldObject* questGiver) = 0;
     bool AcceptQuest(Quest const* quest, ObjectGuid questGiver);
     bool ProcessQuests(ObjectGuid questGiver);
     bool ProcessQuests(WorldObject* questGiver);
@@ -67,11 +67,13 @@ public:
     bool Execute(Event event) override;
 };
 
+#ifdef false
 class QuestItemPushResultAction : public Action
 {
 public:
     QuestItemPushResultAction(PlayerbotAI* botAI) : Action(botAI, "quest item push result") {}
     bool Execute(Event event) override;
 };
+#endif
 
 #endif

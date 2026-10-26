@@ -21,9 +21,9 @@ bool TravelAction::Execute(Event /*event*/)
 
     Unit* newTarget = nullptr;
     std::list<Unit*> targets;
-    Acore::AnyUnitInObjectRangeCheck u_check(bot, sPlayerbotAIConfig.SightDistance * 2);
-    Acore::UnitListSearcher<Acore::AnyUnitInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, sPlayerbotAIConfig.SightDistance);
+    MaNGOS::AnyUnitInObjectRangeCheck u_check(bot, sPlayerbotAIConfig.SightDistance * 2);
+    MaNGOS::UnitListSearcher<MaNGOS::AnyUnitInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, sPlayerbotAIConfig.SightDistance);
 
     for (Unit* unit : targets)
     {
@@ -44,7 +44,7 @@ bool TravelAction::Execute(Event /*event*/)
             continue;
 
         if (bot->IsHostileTo(newTarget))
-            SET_AI_VALUE(ObjectGuid, "pull target", newTarget->GetGUID());
+            SET_AI_VALUE(ObjectGuid, "pull target", newTarget->GetObjectGuid());
         else
             SET_AI_VALUE(GuidPosition, "rpg target", GuidPosition(newTarget));
 
@@ -64,11 +64,12 @@ bool MoveToDarkPortalAction::Execute(Event /*event*/)
 {
     if (bot->GetGroup())
     {
-        if (bot->GetGroup()->GetLeaderGUID() != bot->GetGUID() &&
+        if (bot->GetGroup()->GetLeaderGuid() != bot->GetObjectGuid() &&
             !GET_PLAYERBOT_AI(GET_PLAYERBOT_AI(bot)->GetGroupLeader()))
             return false;
     }
 
+    #ifdef false
     if (bot->GetLevel() > 57)
     {
         if ((bot->GetTeamId() == TEAM_ALLIANCE && bot->GetQuestStatus(10119) == QUEST_STATUS_NONE) ||
@@ -78,7 +79,7 @@ bool MoveToDarkPortalAction::Execute(Event /*event*/)
             {
                 if (bot->GetTeamId() == TEAM_ALLIANCE)
                 {
-                    Quest const* quest = sObjectMgr->GetQuestTemplate(10119);
+                    Quest const* quest = sObjectMgr.GetQuestTemplate(10119);
                     CreatureData const* creatureData = sRandomPlayerbotMgr.GetCreatureDataByEntry(16841);
                     if (quest && creatureData)
                     {
@@ -90,7 +91,7 @@ bool MoveToDarkPortalAction::Execute(Event /*event*/)
                 }
                 else
                 {
-                    Quest const* quest = sObjectMgr->GetQuestTemplate(9407);
+                    Quest const* quest = sObjectMgr.GetQuestTemplate(9407);
                     CreatureData const* creatureData = sRandomPlayerbotMgr.GetCreatureDataByEntry(19254);
                     if (quest && creatureData)
                     {
@@ -107,6 +108,7 @@ bool MoveToDarkPortalAction::Execute(Event /*event*/)
 
         return MoveTo(0, -11906.9f, -3208.53f, -14.8616f, false, true);
     }
+    #endif
 
     return false;
 }

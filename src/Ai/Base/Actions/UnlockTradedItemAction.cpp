@@ -6,7 +6,7 @@
 
 #include "UnlockTradedItemAction.h"
 #include "PlayerbotAI.h"
-#include "SpellInfo.h"
+#include "SpellEntry.h"
 #include "TradeData.h"
 
 inline constexpr uint32_t PICK_LOCK_SPELL_ID = 1804;

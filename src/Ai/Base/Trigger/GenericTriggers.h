@@ -50,6 +50,14 @@ public:
     bool IsActive() override;
 };
 
+class EatDrinkTrigger : public Trigger
+{
+public:
+    EatDrinkTrigger(PlayerbotAI* botAI) : Trigger(botAI, "eat drink") {}
+
+    bool IsActive() override;
+};
+
 class RageAvailable : public StatAvailable
 {
 public:
@@ -472,6 +480,18 @@ protected:
     uint32 lastCheck;
 };
 
+class MaxIntervalTrigger : public Trigger
+{
+public:
+    MaxIntervalTrigger(PlayerbotAI* botAI, std::string const name, uint32 intervalSec = 5);
+
+    bool IsActive() override;
+
+protected:
+    uint32 intervalMilli;
+    uint32 nextTime;
+};
+
 class AndTrigger : public Trigger
 {
 public:
@@ -671,6 +691,22 @@ class IsNotFacingTargetTrigger : public Trigger
 {
 public:
     IsNotFacingTargetTrigger(PlayerbotAI* botAI) : Trigger(botAI, "not facing target") {}
+
+    bool IsActive() override;
+};
+
+class IsNotWithinLOSTargetTrigger : public Trigger
+{
+public:
+    IsNotWithinLOSTargetTrigger(PlayerbotAI* botAI) : Trigger(botAI, "not within los target") {}
+
+    bool IsActive() override;
+};
+
+class MoveCompleteTrigger : public Trigger
+{
+public:
+    MoveCompleteTrigger(PlayerbotAI* botAI) : Trigger(botAI, "move complete") {}
 
     bool IsActive() override;
 };

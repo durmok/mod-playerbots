@@ -59,7 +59,7 @@ ObjectGuid RpgHelper::guid() { return (ObjectGuid)guidP(); }
      if (!targetGuid)
          return false;
 
-    return bot->GetExactDist2dSq(targetGuid.GetPositionX(), targetGuid.GetPositionY()) <
+    return bot->GetPosition().GetExactDist2dSq(targetGuid.GetPositionX(), targetGuid.GetPositionY()) <
         INTERACTION_DISTANCE * INTERACTION_DISTANCE;
  }
 
@@ -108,7 +108,7 @@ bool RpgStayAction::isUseful() { return rpg->InRange() && !botAI->HasGameClientM
 
 bool RpgStayAction::Execute(Event /*event*/)
 {
-    bot->PlayerTalkClass->SendCloseGossip();
+    bot->PlayerTalkClass->CloseGossip();
 
     rpg->AfterExecute();
     return true;
@@ -118,7 +118,7 @@ bool RpgWorkAction::isUseful() { return rpg->InRange() && !botAI->HasGameClientM
 
 bool RpgWorkAction::Execute(Event /*event*/)
 {
-    bot->HandleEmoteCommand(EMOTE_STATE_USE_STANDING);
+    bot->HandleEmoteCommand(EMOTE_STATE_USESTANDING);
     rpg->AfterExecute();
     return true;
 }
@@ -129,8 +129,8 @@ bool RpgEmoteAction::Execute(Event /*event*/)
 {
     uint32 type = TalkAction::GetRandomEmote(rpg->guidP().GetUnit());
 
-    WorldPacket p1;
-    p1 << rpg->guid();
+    WorldPackets::Npc::GossipHello p1;
+    p1.npcGuid = rpg->guid();
     bot->GetSession()->HandleGossipHelloOpcode(p1);
 
     bot->HandleEmoteCommand(type);
@@ -153,17 +153,18 @@ bool RpgTaxiAction::Execute(Event /*event*/)
 {
     GuidPosition guidP = rpg->guidP();
 
-    WorldPacket emptyPacket;
-    bot->GetSession()->HandleCancelMountAuraOpcode(emptyPacket);
+    // WorldPacket emptyPacket;
+    // bot->GetSession()->HandleCancelMountAuraOpcode(emptyPacket);
+    bot->Dismount();
 
     uint32 node =
-        sObjectMgr->GetNearestTaxiNode(guidP.GetPositionX(), guidP.GetPositionY(), guidP.GetPositionZ(), guidP.GetMapId(), bot->GetTeamId());
+        sObjectMgr.GetNearestTaxiNode(guidP.GetPositionX(), guidP.GetPositionY(), guidP.GetPositionZ(), guidP.GetMapId(), bot->GetTeam());
 
     std::vector<uint32> nodes;
     for (uint32 i = 0; i < sTaxiPathStore.GetNumRows(); ++i)
     {
         TaxiPathEntry const* entry = sTaxiPathStore.LookupEntry(i);
-        if (entry && entry->from == node && (bot->m_taxi.IsTaximaskNodeKnown(entry->to) || bot->isTaxiCheater()))
+        if (entry && entry->from == node && (bot->GetTaxi().IsTaximaskNodeKnown(entry->to) || bot->isTaxiCheater()))
         {
             nodes.push_back(i);
         }
@@ -183,8 +184,8 @@ bool RpgTaxiAction::Execute(Event /*event*/)
     if (!entry)
         return false;
 
-    TaxiNodesEntry const* nodeFrom = sTaxiNodesStore.LookupEntry(entry->from);
-    TaxiNodesEntry const* nodeTo = sTaxiNodesStore.LookupEntry(entry->to);
+    TaxiNodesEntry const* nodeFrom = sObjectMgr.GetTaxiNodeEntry(entry->from);
+    TaxiNodesEntry const* nodeTo = sObjectMgr.GetTaxiNodeEntry(entry->to);
 
     Creature* flightMaster = bot->GetNPCIfCanInteractWith(guidP, UNIT_NPC_FLAG_FLIGHTMASTER);
     if (!flightMaster)
@@ -201,7 +202,7 @@ bool RpgTaxiAction::Execute(Event /*event*/)
     }
 
     LOG_INFO("playerbots", "Bot {} <{}> is flying from {} to {} ({} location available)",
-             bot->GetGUID().ToString().c_str(), bot->GetName(), nodeFrom->name[0], nodeTo->name[0], nodes.size());
+             bot->GetObjectGuid().ToString().c_str(), bot->GetName(), nodeFrom->name[0].c_str(), nodeTo->name[0].c_str(), nodes.size());
 
     bot->SetMoney(money);
 
@@ -215,7 +216,7 @@ bool RpgDiscoverAction::Execute(Event /*event*/)
     GuidPosition guidP = rpg->guidP();
 
     uint32 node =
-        sObjectMgr->GetNearestTaxiNode(guidP.GetPositionX(), guidP.GetPositionY(), guidP.GetPositionZ(), guidP.GetMapId(), bot->GetTeamId());
+        sObjectMgr.GetNearestTaxiNode(guidP.GetPositionX(), guidP.GetPositionY(), guidP.GetPositionZ(), guidP.GetMapId(), bot->GetTeam());
 
     if (!node)
         return false;
@@ -274,13 +275,14 @@ bool RpgTrainAction::isUseful()
 
 bool RpgTrainAction::isPossible()
 {
+    /*
     GuidPosition gp = rpg->guidP();
 
     CreatureTemplate const* cinfo = gp.GetCreatureTemplate();
     if (!cinfo)
         return false;
 
-    Trainer::Trainer* trainer = sObjectMgr->GetTrainer(cinfo->Entry);
+    Trainer::Trainer* trainer = sObjectMgr.GetTrainer(cinfo->Entry);
     if (!trainer)
         return false;
 
@@ -307,6 +309,7 @@ bool RpgTrainAction::isPossible()
         // otherwise, the train action should not be allowed
         return true;
     }
+    */
 
     return false;
 }
@@ -340,7 +343,7 @@ std::string const RpgHomeBindAction::ActionName() { return "home"; }
 
 std::string const RpgQueueBgAction::ActionName()
 {
-    SET_AI_VALUE(uint32, "bg type", (uint32)AI_VALUE(BattlegroundTypeId, "rpg bg type"));
+    SET_AI_VALUE(uint32, "bg type", (uint32)AI_VALUE(BattleGroundTypeId, "rpg bg type"));
     return "free bg join";
 }
 
@@ -389,7 +392,7 @@ std::vector<Item*> RpgTradeUsefulAction::CanGiveItems(GuidPosition guidPosition)
             if (!item->CanBeTraded())
                 continue;
 
-            if (bot->GetTradeData() && bot->GetTradeData()->HasItem(item->GetGUID()))
+            if (bot->GetTradeData() && bot->GetTradeData()->HasItem(item->GetObjectGuid()))
                 continue;
 
             ItemUsage otherUsage = PAI_VALUE2(ItemUsage, "item usage", item->GetEntry());
@@ -428,7 +431,7 @@ bool RpgTradeUsefulAction::Execute(Event /*event*/)
 
     if (hasTraded || bot->GetTradeData())
     {
-        if (bot->GetTradeData() && bot->GetTradeData()->HasItem(item->GetGUID()))
+        if (bot->GetTradeData() && bot->GetTradeData()->HasItem(item->GetObjectGuid()))
         {
             if (bot->GetGroup() && bot->GetGroup()->IsMember(guidP) && botAI->HasGameClientMaster())
                 botAI->TellMasterNoFacing(PlayerbotTextMgr::instance().GetBotTextOrDefault(
@@ -446,9 +449,8 @@ bool RpgTradeUsefulAction::Execute(Event /*event*/)
             {
                 // bot->Say("End trade with" + chat->FormatWorldobject(player), (bot->GetTeamId() == TEAM_ALLIANCE ?
                 // LANG_COMMON : LANG_ORCISH));
-                WorldPacket p;
-                uint32 status = TRADE_STATUS_TRADE_ACCEPT;
-                p << status;
+                WorldPackets::Trade::AcceptTrade p;
+                // p << status;
                 bot->GetSession()->HandleAcceptTradeOpcode(p);
             }
         }
@@ -473,8 +475,8 @@ bool RpgDuelAction::isUseful()
         return false;
 
     // Players can only fight a duel with each other outside (=not inside dungeons and not in capital cities)
-    AreaTableEntry const* casterAreaEntry = sAreaTableStore.LookupEntry(bot->GetAreaId());
-    if (casterAreaEntry && !(casterAreaEntry->flags & AREA_FLAG_ALLOW_DUELS))
+    AreaTableEntry const* casterAreaEntry = sAreaTableStore.LookupEntry<AreaEntry>(bot->GetAreaId());
+    if (casterAreaEntry && !(casterAreaEntry->Flags & AREA_FLAG_DUEL))
     {
         // Dueling isn't allowed here
         return false;
@@ -503,7 +505,7 @@ bool RpgMountAnimAction::isUseful()
 
 bool RpgMountAnimAction::Execute(Event /*event*/)
 {
-    WorldPacket p;
+    NullClientPacket p(CMSG_MOUNTSPECIAL_ANIM);
     bot->GetSession()->HandleMountSpecialAnimOpcode(p);
 
     return true;

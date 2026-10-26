@@ -9,6 +9,8 @@
 #include "Player.h"
 #include "SpellMgr.h"
 #include "World.h"
+#include "Random.h"
+#include "Vmangos.h"
 
 uint32 TalentSpec::TalentListEntry::tabPage() const
 {
@@ -46,12 +48,12 @@ bool TalentSpec::CheckTalentLink(std::string const link, std::ostringstream* out
 uint32 TalentSpec::LeveltoPoints(uint32 level) const
 {
     uint32 talentPointsForLevel = level < 10 ? 0 : level - 9;
-    return uint32(talentPointsForLevel * sWorld->getRate(RATE_TALENT));
+    return uint32(talentPointsForLevel * sWorld.getConfig(CONFIG_FLOAT_RATE_TALENT));
 }
 
 uint32 TalentSpec::PointstoLevel(uint32 points) const
 {
-    return uint32(ceil(points / sWorld->getRate(RATE_TALENT))) + 9;
+    return uint32(ceil(points / sWorld.getConfig(CONFIG_FLOAT_RATE_TALENT))) + 9;
 }
 
 TalentSpec::TalentSpec(uint32 classMask) { GetTalents(classMask); }
@@ -81,7 +83,7 @@ bool TalentSpec::CheckTalents(uint32 level, std::ostringstream* out)
     {
         if (entry.rank > entry.maxRank)
         {
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(entry.talentInfo->RankID[0]);
+            SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(entry.talentInfo->RankID[0]);
             *out << "spec is not for this class. " << spellInfo->SpellName[0] << " has " << (entry.rank - entry.maxRank)
                  << " points above max rank.";
             return false;
@@ -97,14 +99,14 @@ bool TalentSpec::CheckTalents(uint32 level, std::ostringstream* out)
                 for (auto& dep : talents)
                     if (dep.talentInfo->TalentID == entry.talentInfo->DependsOn)
                     {
-                        spellInfodep = sSpellMgr->GetSpellInfo(dep.talentInfo->RankID[0]);
+                        spellInfodep = sSpellMgr.GetSpellInfo(dep.talentInfo->RankID[0]);
                         if (dep.rank >= entry.talentInfo->DependsOnRank)
                             found = true;
                     }
 
                 if (!found)
                 {
-                    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(entry.talentInfo->RankID[0]);
+                    SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(entry.talentInfo->RankID[0]);
                     *out << "spec is invalid. Talent:" << spellInfo->SpellName[0]
                          << " needs: " << spellInfodep->SpellName[0] << " at rank: " << entry.talentInfo->DependsOnRank;
                     return false;
@@ -122,7 +124,7 @@ bool TalentSpec::CheckTalents(uint32 level, std::ostringstream* out)
         {
             if (entry.rank > 0 && entry.talentInfo->Row * 5 > points)
             {
-                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(entry.talentInfo->RankID[0]);
+                SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(entry.talentInfo->RankID[0]);
                 *out << "spec is is invalid. Talent " << spellInfo->SpellName[0] << " is selected with only " << points
                      << " in row below it.";
                 return false;

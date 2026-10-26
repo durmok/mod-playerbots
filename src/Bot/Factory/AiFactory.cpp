@@ -5,8 +5,8 @@
  */
 
 #include "AiFactory.h"
-#include "BattlegroundMgr.h"
-#include "DKAiObjectContext.h"
+#include "BattleGroundMgr.h"
+// #include "DKAiObjectContext.h"
 #include "DruidAiObjectContext.h"
 #include "Engine.h"
 #include "Group.h"
@@ -22,7 +22,7 @@
 #include "RogueAiObjectContext.h"
 #include "ShamanAiObjectContext.h"
 #include "SharedDefines.h"
-#include "SpellInfo.h"
+#include "SpellEntry.h"
 #include "SpellMgr.h"
 #include "WarlockAiObjectContext.h"
 #include "WarriorAiObjectContext.h"
@@ -58,8 +58,8 @@ AiObjectContext* AiFactory::createAiObjectContext(Player* player, PlayerbotAI* b
             return new HunterAiObjectContext(botAI);
         case CLASS_ROGUE:
             return new RogueAiObjectContext(botAI);
-        case CLASS_DEATH_KNIGHT:
-            return new DKAiObjectContext(botAI);
+        // case CLASS_DEATH_KNIGHT:
+        //     return new DKAiObjectContext(botAI);
     }
 
     return new AiObjectContext(botAI);
@@ -107,6 +107,7 @@ uint8 AiFactory::GetPlayerSpecTab(Player* bot)
     }
 }
 
+/*
 std::map<uint8, uint32> AiFactory::GetPlayerSpecTabs(Player* bot)
 {
     std::map<uint8, uint32> tabs = {{0, 0}, {0, 0}, {0, 0}};
@@ -127,7 +128,7 @@ std::map<uint8, uint32> AiFactory::GetPlayerSpecTabs(Player* bot)
 
         uint32 const* talentTabIds = GetTalentTabPages(bot->getClass());
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         int rank = spellInfo ? spellInfo->GetRank() : 1;
         if (talentInfo->TalentTab == talentTabIds[0])
             tabs[0] += rank;
@@ -136,6 +137,52 @@ std::map<uint8, uint32> AiFactory::GetPlayerSpecTabs(Player* bot)
         if (talentInfo->TalentTab == talentTabIds[2])
             tabs[2] += rank;
     }
+    return tabs;
+}
+*/
+
+std::map<uint8, uint32> AiFactory::GetPlayerSpecTabs(Player* bot)
+{
+    std::map<uint8, uint32> tabs;
+    for (uint32 i = 0; i < uint32(3); i++)
+        tabs[i] = 0;
+
+    uint32 classMask = bot->getClassMask();
+    for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
+    {
+        TalentEntry const *talentInfo = sTalentStore.LookupEntry(i);
+        if (!talentInfo)
+            continue;
+
+        TalentTabEntry const *talentTabInfo = sTalentTabStore.LookupEntry(talentInfo->TalentTab);
+        if (!talentTabInfo)
+            continue;
+
+        if ((classMask & talentTabInfo->ClassMask) == 0)
+            continue;
+
+        int maxRank = 0;
+        for (int rank = MAX_TALENT_RANK - 1; rank >= 0; --rank)
+        {
+            if (!talentInfo->RankID[rank])
+                continue;
+
+            uint32 spellid = talentInfo->RankID[rank];
+            if (spellid && bot->HasSpell(spellid))
+            {
+                maxRank = rank + 1;
+                break;
+            }
+        }
+
+        uint32 tabpage = talentTabInfo->tabpage;
+        // fix dbc fire mage OrderIndex=0 error 
+        if (talentTabInfo->TalentTabID == 41)
+            tabpage = 1;
+
+        tabs[tabpage] += maxRank;
+    }
+
     return tabs;
 }
 
@@ -416,7 +463,7 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
             engine->addStrategy("healer dps", false);
     }
 
-    if (IsSelfBot(player) || sRandomPlayerbotMgr.IsRandomBot(player))
+    if (IsSelfBot(player) || sRandomPlayerbotMgr.IsRandomBot(player) || sRandomPlayerbotMgr.IsBattleBot(player))
     {
         if (!player->GetGroup())
         {
@@ -464,9 +511,11 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
     // Battleground switch
     if (player->InBattleground() && player->GetBattleground())
     {
-        BattlegroundTypeId bgType = player->GetBattlegroundTypeId();
+        BattleGroundTypeId bgType = player->GetBattlegroundTypeId();
+        /*
         if (bgType == BATTLEGROUND_RB)
             bgType = player->GetBattleground()->GetBgTypeID(true);
+        */
 
         if (bgType == BATTLEGROUND_WS)
             engine->addStrategy("warsong", false);
@@ -477,11 +526,13 @@ void AiFactory::AddDefaultCombatStrategies(Player* player, PlayerbotAI* const fa
         if (bgType == BATTLEGROUND_AV)
             engine->addStrategy("alterac", false);
 
+        /*
         if (bgType == BATTLEGROUND_EY)
             engine->addStrategy("eye", false);
 
         if (bgType == BATTLEGROUND_IC)
             engine->addStrategy("isle", false);
+        */
 
         if (player->InArena())
         {
@@ -582,10 +633,22 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
             break;
     }
 
-    if (!player->InBattleground())
+    if (!player->InBattleground() && sRandomPlayerbotMgr.IsRandomBot(player))
     {
         nonCombatEngine->addStrategiesNoInit("nc", "food", "chat", "follow", "default", "force rebuff", "quest", "loot",
                                             "gather", "duel", "pvp", "buff", "mount", "emote", nullptr);
+    }
+
+    if (!player->InBattleground() && facade->IsAltBot())
+    {
+        nonCombatEngine->addStrategiesNoInit("nc", "food", "chat", "follow", "default", "force rebuff", "loot",
+                                            "duel", "pvp", "buff", "mount", "emote", nullptr);
+    }
+
+    if (!player->InBattleground() && sRandomPlayerbotMgr.IsBattleBot(player))
+    {
+        nonCombatEngine->addStrategiesNoInit("nc", "food", "chat", "follow", "default", "force rebuff",
+                                            "duel", "pvp", "buff", "mount", "emote", "bg", nullptr);
     }
 
     if (sPlayerbotAIConfig.AutoSaveMana && PlayerbotAI::IsHeal(player, true))
@@ -602,7 +665,7 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
         if (sPlayerbotAIConfig.RandomBotJoinLfg)
             nonCombatEngine->addStrategy("lfg", false);
 
-        if (!player->GetGroup() || player->GetGroup()->GetLeaderGUID() == player->GetGUID())
+        if (!player->GetGroup() || player->GetGroup()->GetLeaderGuid() == player->GetObjectGuid())
         {
             // let 25% of random not grouped (or grp leader) bots help other players
             // if (!urand(0, 3))
@@ -683,12 +746,16 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
         nonCombatEngine->removeStrategy("rpg", false);
         nonCombatEngine->removeStrategy("grind", false);
 
-        BattlegroundTypeId bgType = player->GetBattlegroundTypeId();
+        BattleGroundTypeId bgType = player->GetBattlegroundTypeId();
+        /*
         if (bgType == BATTLEGROUND_RB)
             bgType = player->GetBattleground()->GetBgTypeID(true);
 
         if ((bgType <= BATTLEGROUND_EY || bgType == BATTLEGROUND_IC) &&
             !player->InArena())  // do not add for not supported bg or arena
+            nonCombatEngine->addStrategy("battleground", false);
+        */
+        if (bgType <= BATTLEGROUND_AB)
             nonCombatEngine->addStrategy("battleground", false);
 
         if (bgType == BATTLEGROUND_WS)
@@ -700,11 +767,13 @@ void AiFactory::AddDefaultNonCombatStrategies(Player* player, PlayerbotAI* const
         if (bgType == BATTLEGROUND_AB)
             nonCombatEngine->addStrategy("arathi", false);
 
+        /*
         if (bgType == BATTLEGROUND_EY)
             nonCombatEngine->addStrategy("eye", false);
 
         if (bgType == BATTLEGROUND_IC)
             nonCombatEngine->addStrategy("isle", false);
+        */
 
         if (player->InArena())
         {
@@ -729,6 +798,9 @@ void AiFactory::AddDefaultDeadStrategies(Player* player, PlayerbotAI* const faca
     deadEngine->addStrategiesNoInit("dead", "stay", "chat", "default", "follow", nullptr);
 
     if (sRandomPlayerbotMgr.IsRandomBot(player) && !player->GetGroup())
+        deadEngine->removeStrategy("follow", false);
+
+    if (sRandomPlayerbotMgr.IsBattleBot(player))
         deadEngine->removeStrategy("follow", false);
 }
 

@@ -11,6 +11,7 @@
 #include "Event.h"
 #include "GenericSpellActions.h"
 #include "Unit.h"
+#include "MovementActions.h"
 
 class PlayerbotAI;
 class Unit;
@@ -248,7 +249,7 @@ public:
     CastAutoShotAction(PlayerbotAI* botAI) : CastSpellAction(botAI, "auto shot") {}
     ActionThreatType getThreatType() override
     {
-        return ActionThreatType::None;
+        return ActionThreatType::Single;
     }
     bool isUseful() override;
 };
@@ -508,6 +509,17 @@ public:
     {
         return ActionThreatType::Aoe;
     }
+};
+
+class ReachMeleeOnFleeFailedAction : public MovementAction
+{
+public:
+    ReachMeleeOnFleeFailedAction(PlayerbotAI* botAI) : MovementAction(botAI, "reach melee on flee failed")
+    {
+    }
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
 };
 
 #endif

@@ -32,7 +32,7 @@ protected:
     bool JumpTo(uint32 mapId, float x, float y, float z, MovementPriority priority = MovementPriority::MOVEMENT_NORMAL);
     bool MoveNear(uint32 mapId, float x, float y, float z, float distance = sPlayerbotAIConfig.ContactDistance,
                   MovementPriority priority = MovementPriority::MOVEMENT_NORMAL);
-    bool MoveToLOS(WorldObject* target, bool ranged = false);
+    bool MoveToLOS(WorldObject* target, MovementPriority priority = MovementPriority::MOVEMENT_NORMAL, bool ranged = false);
     bool MoveTo(uint32 mapId, float x, float y, float z, bool idle = false, bool react = false,
                 bool normal_only = false, bool exact_waypoint = false,
                 MovementPriority priority = MovementPriority::MOVEMENT_NORMAL, bool lessDelay = false,
@@ -238,6 +238,16 @@ public:
     SetBehindTargetAction(PlayerbotAI* botAI) : CombatFormationMoveAction(botAI, "set behind") {}
 
     bool Execute(Event event) override;
+};
+
+class MoveToLOSTargetAction : public MovementAction 
+{
+public:
+    MoveToLOSTargetAction(PlayerbotAI* botAI) : MovementAction(botAI, "move to los") {}
+
+    bool Execute(Event event) override;
+    bool isUseful() override;
+    bool isPossible() override;
 };
 
 class MoveOutOfCollisionAction : public MovementAction

@@ -8,6 +8,7 @@
 #define PLAYERBOTS_PLAYERBOTDUNGEONREPOSITORY_H
 
 #include "DBCEnums.h"
+#include "Vmangos.h"
 #include <string>
 #include <vector>
 

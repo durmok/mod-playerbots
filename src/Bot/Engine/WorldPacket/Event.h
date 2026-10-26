@@ -8,6 +8,7 @@
 #define PLAYERBOTS_EVENT_H
 
 #include "WorldPacket.h"
+#include "Packet.h"
 
 class ObjectGuid;
 class Player;
@@ -27,12 +28,23 @@ public:
         : source(source), packet(packet), owner(owner)
     {
     }
+    Event(std::string const source, WorldPacket& packet, std::vector<std::pair<WorldPacket, Player*>> allPackets, Player* owner = nullptr)
+        : source(source), packet(packet), allPackets(std::move(allPackets)), owner(owner)
+    {
+    }
+    Event(std::string const source, std::shared_ptr<ClientPacket const> clientPacket, std::vector<std::pair<std::shared_ptr<ClientPacket const>, Player*>> allClientPackets, Player* owner = nullptr)
+        : source(source), clientPacket(clientPacket), allClientPackets(allClientPackets), owner(owner)
+    {
+    }
     Event(std::string const source, ObjectGuid object, Player* owner = nullptr);
     virtual ~Event() {}
 
     std::string const GetSource() { return source; }
     std::string const getParam() { return param; }
     WorldPacket& getPacket() { return packet; }
+    template<typename T> T const* getClientPacket() { return clientPacket ? dynamic_cast<T const*>(clientPacket.get()) : nullptr; }
+    std::vector<std::pair<WorldPacket, Player*>>& getAllPackets() { return allPackets; }
+    std::vector<std::pair<std::shared_ptr<ClientPacket const>, Player*>>& getAllClientPackets() { return allClientPackets; }
     ObjectGuid getObject();
     Player* getOwner() { return owner; }
     bool operator!() const { return source.empty(); }
@@ -41,6 +53,9 @@ protected:
     std::string source;
     std::string param;
     WorldPacket packet;
+    std::shared_ptr<ClientPacket const> clientPacket = nullptr;
+    std::vector<std::pair<WorldPacket, Player*>> allPackets;
+    std::vector<std::pair<std::shared_ptr<ClientPacket const>, Player*>> allClientPackets;
     Player* owner = nullptr;
 };
 

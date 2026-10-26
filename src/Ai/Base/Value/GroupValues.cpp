@@ -17,11 +17,11 @@ GuidVector GroupMembersValue::Calculate()
     {
         for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
         {
-            members.push_back(ref->GetSource()->GetGUID());
+            members.push_back(ref->GetSource()->GetObjectGuid());
         }
     }
     else
-        members.push_back(bot->GetGUID());
+        members.push_back(bot->GetObjectGuid());
 
     return members;
 }

@@ -24,7 +24,8 @@ void ForceRebuffState::Begin(bool reply)
 
 bool ForceRebuffState::IsOnGlobalCooldown() const
 {
-    return bot && lastGcdSpell && bot->GetGlobalCooldownMgr().HasGlobalCooldown(lastGcdSpell);
+    // return bot && lastGcdSpell && bot->GetGlobalCooldownMgr().HasGlobalCooldown(lastGcdSpell);
+    return bot->HasSpellCooldown(lastGcdSpell->Id);
 }
 
 bool ForceRebuffState::IsPending() const

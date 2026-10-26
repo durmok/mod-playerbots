@@ -32,17 +32,17 @@ std::string const LogLevelAction::logLevel2string(LogLevel level)
 {
     switch (level)
     {
-        case LOG_LEVEL_DISABLED:
+        case LOG_LVL_MINIMAL:
             return "disabled";
-        case LOG_LEVEL_FATAL:
-            return "fatal";
-        case LOG_LEVEL_ERROR:
+        // case LOG_LVL_FATAL:
+        //     return "fatal";
+        case LOG_LVL_ERROR:
             return "error";
-        case LOG_LEVEL_WARN:
+        case LOG_LVL_WARN:
             return "warn";
-        case LOG_LEVEL_INFO:
+        case LOG_LVL_BASIC:
             return "info";
-        case LOG_LEVEL_DEBUG:
+        case LOG_LVL_DEBUG:
             return "debug";
         default:
             return "trace";
@@ -52,17 +52,17 @@ std::string const LogLevelAction::logLevel2string(LogLevel level)
 LogLevel LogLevelAction::string2logLevel(std::string const level)
 {
     if (level == "disabled")
-        return LOG_LEVEL_DISABLED;
-    else if (level == "fatal")
-        return LOG_LEVEL_FATAL;
+        return LOG_LVL_MINIMAL;
+    // else if (level == "fatal")
+    //     return LOG_LVL_FATAL;
     else if (level == "error")
-        return LOG_LEVEL_ERROR;
+        return LOG_LVL_ERROR;
     else if (level == "warn")
-        return LOG_LEVEL_WARN;
+        return LOG_LVL_WARN;
     else if (level == "info")
-        return LOG_LEVEL_INFO;
+        return LOG_LVL_BASIC;
     else if (level == "debug")
-        return LOG_LEVEL_DEBUG;
+        return LOG_LVL_DEBUG;
 
-    return LOG_LEVEL_TRACE;
+    return LOG_LVL_DETAIL;
 }

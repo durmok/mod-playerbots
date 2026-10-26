@@ -76,7 +76,7 @@ public:
     {
         Unit* target = GetTarget();
 
-        if (target->GetVictim() && target->GetVictim()->GetGUID() == bot->GetGUID())
+        if (target->GetVictim() && target->GetVictim()->GetObjectGuid() == bot->GetObjectGuid())
             return target->GetOrientation();
 
         if (botAI->HasStrategy("behind", BOT_STATE_COMBAT))

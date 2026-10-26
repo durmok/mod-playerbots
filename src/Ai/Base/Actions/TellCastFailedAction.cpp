@@ -21,7 +21,7 @@ bool TellCastFailedAction::Execute(Event event)
     if (result == SPELL_CAST_OK)
         return false;
 
-    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
 
     std::ostringstream out;
     out << chat->FormatSpell(spellInfo) << ": ";
@@ -63,7 +63,7 @@ bool TellSpellAction::Execute(Event event)
     if (!spellId)
         return false;
 
-    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
     if (!spellInfo)
         return false;
 

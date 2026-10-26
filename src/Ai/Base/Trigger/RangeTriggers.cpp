@@ -22,7 +22,7 @@ bool EnemyTooCloseForSpellTrigger::IsActive()
     //         return false;
     //     }
 
-    //     if (target->GetTarget() == bot->GetGUID() && !bot->GetGroup() && !target->HasUnitState(UNIT_STATE_ROOT) &&
+    //     if (target->GetTarget() == bot->GetObjectGuid() && !bot->GetGroup() && !target->HasUnitState(UNIT_STATE_ROOT) &&
     //     GetSpeedInMotion(target) > GetSpeedInMotion(bot) * 0.65f)
     //         return false;
 
@@ -32,7 +32,7 @@ bool EnemyTooCloseForSpellTrigger::IsActive()
     //     float targetDistance = ServerFacade::instance().GetDistance2d(bot, target) + combatReach;
     //     if (target->IsCreature())
     //     {
-    //         Creature* creature = botAI->GetCreature(target->GetGUID());
+    //         Creature* creature = botAI->GetCreature(target->GetObjectGuid());
     //             if (creature)
     //             {
     //                 isBoss = creature->isWorldBoss();
@@ -66,9 +66,10 @@ bool EnemyTooCloseForAutoShotTrigger::IsActive()
         trapToCast = false;
 
     return !trapToCast && (target->GetVictim() != bot || target->isFrozen() || target->HasRootAura()) &&
-           bot->IsWithinMeleeRange(target);
+        //    bot->IsWithinMeleeRange(target);
+           bot->GetCombatDistance(target) < sPlayerbotAIConfig.ShootDistance;
 
-    // if (target->GetTarget() == bot->GetGUID() && !bot->GetGroup() && !target->HasUnitState(UNIT_STATE_ROOT) &&
+    // if (target->GetTarget() == bot->GetObjectGuid() && !bot->GetGroup() && !target->HasUnitState(UNIT_STATE_ROOT) &&
     // GetSpeedInMotion(target) > GetSpeedInMotion(bot) * 0.65f)
     //     return false;
 
@@ -78,7 +79,7 @@ bool EnemyTooCloseForAutoShotTrigger::IsActive()
     // float targetDistance = ServerFacade::instance().GetDistance2d(bot, target) + combatReach;
     // if (target->IsCreature())
     // {
-    //     Creature* creature = botAI->GetCreature(target->GetGUID());
+    //     Creature* creature = botAI->GetCreature(target->GetObjectGuid());
     //     if (creature)
     //     {
     //         isBoss = creature->isWorldBoss();
@@ -97,13 +98,14 @@ bool EnemyTooCloseForShootTrigger::IsActive()
     // target->IsWithinCombatRange()
 
     return target && (target->GetVictim() != bot || target->isFrozen() || target->HasRootAura()) &&
-           target->IsWithinCombatRange(bot, MIN_MELEE_REACH);
+        //    target->IsWithinCombatRange(bot, MIN_MELEE_REACH);
+           bot->GetCombatDistance(target) < sPlayerbotAIConfig.ShootDistance;
 
     //     Unit* target = AI_VALUE(Unit*, "current target");
     //     if (!target)
     //         return false;
 
-    //     if (target->GetTarget() == bot->GetGUID() && !bot->GetGroup() && !target->HasUnitState(UNIT_STATE_ROOT) &&
+    //     if (target->GetTarget() == bot->GetObjectGuid() && !bot->GetGroup() && !target->HasUnitState(UNIT_STATE_ROOT) &&
     //     GetSpeedInMotion(target) > GetSpeedInMotion(bot) * 0.65f)
     //         return false;
 
@@ -113,7 +115,7 @@ bool EnemyTooCloseForShootTrigger::IsActive()
     //     float targetDistance = ServerFacade::instance().GetDistance2d(bot, target) + combatReach;
     //     if (target->IsCreature())
     //     {
-    //         Creature* creature = botAI->GetCreature(target->GetGUID());
+    //         Creature* creature = botAI->GetCreature(target->GetObjectGuid());
     //         if (creature)
     //         {
     //             isBoss = creature->isWorldBoss();
@@ -242,7 +244,7 @@ bool TooCloseToPlayerWithDebuffTrigger::TooCloseToPlayerWithDebuff(uint32 spellI
 
     for (Unit* debuffedPlayer : debuffedPlayers)
     {
-        float dist = debuffedPlayer->GetExactDist2d(bot->GetPositionX(), bot->GetPositionY());
+        float dist = debuffedPlayer->GetPosition().GetExactDist2d(bot->GetPositionX(), bot->GetPositionY());
         if (dist < range)
         {
             return true;
@@ -266,7 +268,7 @@ bool TooFarFromPlayerWithAuraTrigger::TooFarFromPlayerWithAura(uint32 spellId, f
     {
         Player* player = gref->GetSource();
         if (player && player->IsAlive() && player->HasAura(spellId) &&
-            (selfInclude || (!selfInclude && player->GetGUID() != bot->GetGUID())))
+            (selfInclude || (!selfInclude && player->GetObjectGuid() != bot->GetObjectGuid())))
         {
             debuffedPlayers.push_back(player);
         }
@@ -281,7 +283,7 @@ bool TooFarFromPlayerWithAuraTrigger::TooFarFromPlayerWithAura(uint32 spellId, f
 
     for (Unit* debuffedPlayer : debuffedPlayers)
     {
-        float dist = debuffedPlayer->GetExactDist2d(bot->GetPositionX(), bot->GetPositionY());
+        float dist = debuffedPlayer->GetPosition().GetExactDist2d(bot->GetPositionX(), bot->GetPositionY());
         if (dist > range)
         {
             return true;

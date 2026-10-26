@@ -17,7 +17,7 @@ std::vector<NextAction> FrostMageStrategy::getDefaultActions()
 {
     return {
         NextAction("frostbolt", 5.4f),
-        NextAction("ice lance", 5.3f),   // cast during movement
+        // NextAction("ice lance", 5.3f),   // cast during movement
         NextAction("fire blast", 5.2f),  // cast during movement if ice lance is not learned
         NextAction("shoot", 5.1f),
         NextAction("fireball", 5.0f)
@@ -29,6 +29,7 @@ void FrostMageStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
 {
     GenericMageStrategy::InitTriggers(triggers);
 
+    /*
     // Pet/Defensive triggers
     triggers.push_back(
         new TriggerNode(
@@ -54,6 +55,7 @@ void FrostMageStrategy::InitTriggers(std::vector<TriggerNode*>& triggers)
             }
         )
     );
+    */
     triggers.push_back(
         new TriggerNode(
             "medium health",

@@ -34,7 +34,7 @@ bool LootStrategyAction::Execute(Event event)
 
             for (uint32 itemId : alwaysLootItems)
             {
-                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+                ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemId);
                 if (!proto)
                     continue;
 
@@ -64,7 +64,7 @@ bool LootStrategyAction::Execute(Event event)
         {
             if (query)
             {
-                if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemid))
+                if (ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemid))
                 {
                     std::ostringstream out;
                     out << (StoreLootAction::IsLootAllowed(itemid, botAI) ? "|cFF000000Will loot "

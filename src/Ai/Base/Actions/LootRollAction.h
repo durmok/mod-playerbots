@@ -8,12 +8,13 @@
 #define PLAYERBOTS_LOOTROLLACTION_H
 
 #include "QueryItemUsageAction.h"
+#include "Group.h"
 
 class PlayerbotAI;
 
 struct ItemTemplate;
 
-enum RollVote : uint8;
+// enum RollVote : uint8;
 
 class LootRollAction : public QueryItemUsageAction
 {
@@ -44,6 +45,35 @@ public:
     RollAction(PlayerbotAI* botAI) : Action(botAI, "roll") {}
 
     bool Execute(Event event) override;
+};
+
+class RollDependChecker
+{
+public:
+    RollDependChecker(ItemTemplate const* itemProto, Player* bot, Group* group, ObjectGuid const* itemGUID = nullptr);
+
+    bool Check();
+
+    ItemTemplate const* itemProto;
+    bool depend;
+    std::vector<uint32> dependPlayers;
+    std::ostringstream verbose;
+
+private:
+    void CheckClass(std::initializer_list<uint32> preferedClasses);
+
+    Player* bot;
+    Group* group;
+    const Roll* itemRoll;
+};
+
+class LootStartRollAction : public LootRollAction
+{
+public:
+    LootStartRollAction(PlayerbotAI* botAI) : LootRollAction(botAI, "loot start roll") {}
+
+    bool Execute(Event event) override;
+    bool ExecutePacket(WorldPacket& packet);
 };
 
 #endif

@@ -34,7 +34,7 @@ bool CustomStrategyEditAction::PrintHelp()
 {
     botAI->TellMaster("=== Custom strategies ===");
 
-    uint32 owner = botAI->GetBot()->GetGUID().GetCounter();
+    uint32 owner = botAI->GetBot()->GetObjectGuid().GetCounter();
 
     PlayerbotsDatabasePreparedStatement* stmt =
         PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_SEL_CUSTOM_STRATEGY_BY_OWNER);
@@ -43,7 +43,7 @@ bool CustomStrategyEditAction::PrintHelp()
     {
         do
         {
-            Field* fields = result->Fetch();
+            Field2* fields = result->Fetch();
             std::string const name = fields[0].Get<std::string>();
             botAI->TellMaster(name);
         } while (result->NextRow());
@@ -59,7 +59,7 @@ bool CustomStrategyEditAction::Print(std::string const name)
     out << "=== " << name << " ===";
     botAI->TellMaster(out.str());
 
-    uint32 owner = botAI->GetBot()->GetGUID().GetCounter();
+    uint32 owner = botAI->GetBot()->GetObjectGuid().GetCounter();
 
     PlayerbotsDatabasePreparedStatement* stmt =
         PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_SEL_CUSTOM_STRATEGY_BY_OWNER_AND_NAME);
@@ -69,7 +69,7 @@ bool CustomStrategyEditAction::Print(std::string const name)
     {
         do
         {
-            Field* fields = result->Fetch();
+            Field2* fields = result->Fetch();
             uint32 idx = fields[0].Get<uint32>();
             std::string const action = fields[1].Get<std::string>();
 
@@ -82,7 +82,7 @@ bool CustomStrategyEditAction::Print(std::string const name)
 
 bool CustomStrategyEditAction::Edit(std::string const name, uint32 idx, std::string const command)
 {
-    uint32 owner = botAI->GetBot()->GetGUID().GetCounter();
+    uint32 owner = botAI->GetBot()->GetObjectGuid().GetCounter();
 
     PlayerbotsDatabasePreparedStatement* stmt =
         PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_SEL_CUSTOM_STRATEGY_BY_OWNER_AND_NAME_AND_IDX);

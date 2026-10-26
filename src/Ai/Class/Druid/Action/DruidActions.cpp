@@ -21,11 +21,12 @@ namespace
         if (!target)
             return false;
 
-        Aura* existingThorns = botAI->GetAura("thorns", target, true);
+        Aura const* existingThorns = botAI->GetAura("thorns", target, true);
         if (!existingThorns)
             return true;
 
-        target->RemoveOwnedAura(existingThorns, AURA_REMOVE_BY_CANCEL);
+        // target->RemoveOwnedAura(existingThorns, AURA_REMOVE_BY_CANCEL);
+        target->RemoveAura(existingThorns->GetSpellInfo()->Id, AURA_REMOVE_BY_CANCEL);
         return true;
     }
 }
@@ -48,8 +49,8 @@ bool CastLifebloomOnMainTankAction::isUseful()
     if (!target || !target->IsAlive() || !CastSpellAction::isUseful())
         return false;
 
-    Aura* lifebloom = botAI->GetAura("lifebloom", target, true, true);
-    return !lifebloom || lifebloom->GetStackAmount() < 3 || lifebloom->GetDuration() < 2000;
+    Aura const* lifebloom = botAI->GetAura("lifebloom", target, true, true);
+    return !lifebloom || lifebloom->GetStackAmount() < 3 || lifebloom->GetAuraDuration() < 2000;
 }
 
 bool CastThornsAction::Execute(Event event)
@@ -285,7 +286,7 @@ ObjectGuid BlanketHotTargetValue::Calculate()
             continue;
 
         if (PlayerbotAI::IsTank(member))
-            return member->GetGUID();
+            return member->GetObjectGuid();
         else if (!firstMelee && PlayerbotAI::IsMelee(member) && !PlayerbotAI::IsTank(member))
             firstMelee = member;
         else if (!firstRanged && PlayerbotAI::IsRanged(member))
@@ -296,10 +297,10 @@ ObjectGuid BlanketHotTargetValue::Calculate()
     }
 
     if (firstMelee)
-        return firstMelee->GetGUID();
+        return firstMelee->GetObjectGuid();
 
     if (firstRanged)
-        return firstRanged->GetGUID();
+        return firstRanged->GetObjectGuid();
 
     return ObjectGuid::Empty;
 }

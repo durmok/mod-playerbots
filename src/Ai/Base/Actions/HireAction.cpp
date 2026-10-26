@@ -19,12 +19,12 @@ bool HireAction::Execute(Event /*event*/)
         return false;
 
     uint32 account = master->GetSession()->GetAccountId();
-    QueryResult results = CharacterDatabase.Query("SELECT COUNT(*) FROM characters WHERE account = {}", account);
+    QueryResult2 results = CharacterDatabase2.Query("SELECT COUNT(*) FROM characters WHERE account = {}", account);
 
     uint32 charCount = 10;
     if (results)
     {
-        Field* fields = results->Fetch();
+        Field2* fields = results->Fetch();
         charCount = uint32(fields[0].Get<uint64>());
     }
 
@@ -56,8 +56,8 @@ bool HireAction::Execute(Event /*event*/)
 
     bot->SetMoney(moneyReq);
     RandomPlayerbotMgr::instance().Remove(bot);
-    CharacterDatabase.Execute("UPDATE characters SET account = {} WHERE guid = {}", account,
-                              bot->GetGUID().GetCounter());
+    CharacterDatabase2.Execute("UPDATE characters SET account = {} WHERE guid = {}", account,
+                              bot->GetObjectGuid().GetCounter());
 
     return true;
 }

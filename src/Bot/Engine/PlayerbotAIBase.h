@@ -7,7 +7,7 @@
 #ifndef PLAYERBOTS_PLAYERBOTAIBASE_H
 #define PLAYERBOTS_PLAYERBOTAIBASE_H
 
-#include "Define.h"
+#include "Platform/Define.h"
 #include "Player.h"
 #include "PlayerbotAIConfig.h"
 

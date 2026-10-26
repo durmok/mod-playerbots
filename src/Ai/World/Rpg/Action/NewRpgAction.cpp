@@ -10,7 +10,7 @@
 #include "ChatHelper.h"
 #include "DBCStores.h"
 #include "GossipDef.h"
-#include "IVMapMgr.h"
+// #include "IVMapMgr.h"
 #include "MotionMaster.h"
 #include "MoveSpline.h"
 #include "NewRpgInfo.h"
@@ -20,7 +20,7 @@
 #include "ObjectDefines.h"
 #include "ObjectGuid.h"
 #include "ObjectMgr.h"
-#include "PathGenerator.h"
+#include "PathFinder.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotTextMgr.h"
@@ -57,7 +57,7 @@ bool TellRpgStatusAction::Execute(Event event)
     }
 
     Player* master = botAI->GetMaster();
-    bool isMaster = master && master->GetGUID() == owner->GetGUID();
+    bool isMaster = master && master->GetObjectGuid() == owner->GetObjectGuid();
     bool isGM = owner->GetSession() && owner->GetSession()->GetSecurity() >= SEC_GAMEMASTER;
     if (!isMaster && !isGM)
     {
@@ -188,7 +188,7 @@ bool TellRpgStatusAction::Execute(Event event)
             bot->Whisper(msg, LANG_UNIVERSAL, owner);
             return false;
         }
-        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
         QuestStatus questStatus = bot->GetQuestStatus(questId);
         if (!quest || (questStatus != QUEST_STATUS_INCOMPLETE && questStatus != QUEST_STATUS_COMPLETE))
         {
@@ -220,7 +220,7 @@ bool StartRpgDoQuestAction::Execute(Event event)
     std::string const text = event.getParam();
     PlayerbotChatHandler ch(owner);
     uint32 questId = ch.extractQuestId(text);
-    Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+    Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
     if (quest)
     {
         botAI->rpgInfo.ChangeToDoQuest(questId, quest);
@@ -247,7 +247,7 @@ bool NewRpgStatusUpdateAction::Execute(Event /*event*/)
             WorldPosition& originalPos = data.pos;
             assert(data.pos != WorldPosition());
             // GO_GRIND -> WANDER_RANDOM
-            if (bot->GetExactDist(originalPos) < 10.0f)
+            if (bot->GetPosition().GetExactDist(originalPos) < 10.0f)
             {
                 info.ChangeToWanderRandom();
                 return true;
@@ -260,7 +260,7 @@ bool NewRpgStatusUpdateAction::Execute(Event /*event*/)
             WorldPosition& originalPos = data.pos;
             assert(data.pos != WorldPosition());
             // GO_CAMP -> WANDER_NPC
-            if (bot->GetExactDist(originalPos) < 10.0f)
+            if (bot->GetPosition().GetExactDist(originalPos) < 10.0f)
             {
                 info.ChangeToWanderNpc();
                 return true;
@@ -460,18 +460,18 @@ bool NewRpgDoQuestAction::DoIncompleteQuest(NewRpgInfo::DoQuest& data)
         /// @TODO: extract to a new function
         int32 currentObjective = data.objectiveIdx;
         // check if the objective has completed
-        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
         QuestStatusData const& q_status = bot->getQuestStatusMap().at(questId);
         bool completed = true;
         if (currentObjective < QUEST_OBJECTIVES_COUNT)
         {
-            if (q_status.CreatureOrGOCount[currentObjective] < quest->RequiredNpcOrGoCount[currentObjective])
+            if (q_status.m_creatureOrGOcount[currentObjective] < quest->ReqCreatureOrGOCount[currentObjective])
                 completed = false;
         }
         else if (currentObjective < QUEST_OBJECTIVES_COUNT + QUEST_ITEM_OBJECTIVES_COUNT)
         {
-            if (q_status.ItemCount[currentObjective - QUEST_OBJECTIVES_COUNT] <
-                quest->RequiredItemCount[currentObjective - QUEST_OBJECTIVES_COUNT])
+            if (q_status.m_itemcount[currentObjective - QUEST_OBJECTIVES_COUNT] <
+                quest->ReqItemCount[currentObjective - QUEST_OBJECTIVES_COUNT])
                 completed = false;
         }
         // the current objective is completed, clear and find a new objective later
@@ -501,7 +501,7 @@ bool NewRpgDoQuestAction::DoIncompleteQuest(NewRpgInfo::DoQuest& data)
         float dz = std::max(bot->GetMap()->GetHeight(dx, dy, MAX_HEIGHT), bot->GetMap()->GetWaterLevel(dx, dy));
 
         // double check for GetQuestPOIPosAndObjectiveIdx
-        if (dz == INVALID_HEIGHT || dz == VMAP_INVALID_HEIGHT_VALUE)
+        if (dz == INVALID_HEIGHT || dz == INVALID_HEIGHT_VALUE)
             return false;
 
         WorldPosition pos(bot->GetMapId(), dx, dy, dz);
@@ -533,17 +533,17 @@ bool NewRpgDoQuestAction::DoIncompleteQuest(NewRpgInfo::DoQuest& data)
         bool hasProgression = false;
         int32 currentObjective = data.objectiveIdx;
         // check if the objective has progression
-        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
         QuestStatusData const& q_status = bot->getQuestStatusMap().at(questId);
         if (currentObjective < QUEST_OBJECTIVES_COUNT)
         {
-            if (q_status.CreatureOrGOCount[currentObjective] != 0 && quest->RequiredNpcOrGoCount[currentObjective])
+            if (q_status.m_creatureOrGOcount[currentObjective] != 0 && quest->ReqCreatureOrGOCount[currentObjective])
                 hasProgression = true;
         }
         else if (currentObjective < QUEST_OBJECTIVES_COUNT + QUEST_ITEM_OBJECTIVES_COUNT)
         {
-            if (q_status.ItemCount[currentObjective - QUEST_OBJECTIVES_COUNT] != 0 &&
-                quest->RequiredItemCount[currentObjective - QUEST_OBJECTIVES_COUNT])
+            if (q_status.m_itemcount[currentObjective - QUEST_OBJECTIVES_COUNT] != 0 &&
+                quest->ReqItemCount[currentObjective - QUEST_OBJECTIVES_COUNT])
                 hasProgression = true;
         }
         if (!hasProgression)
@@ -595,7 +595,7 @@ bool NewRpgDoQuestAction::DoCompletedQuest(NewRpgInfo::DoQuest& data)
         float dz = std::max(bot->GetMap()->GetHeight(dx, dy, MAX_HEIGHT), bot->GetMap()->GetWaterLevel(dx, dy));
 
         // double check for GetQuestPOIPosAndObjectiveIdx
-        if (dz == INVALID_HEIGHT || dz == VMAP_INVALID_HEIGHT_VALUE)
+        if (dz == INVALID_HEIGHT || dz == INVALID_HEIGHT_VALUE)
             return false;
 
         WorldPosition pos(bot->GetMapId(), dx, dy, dz);
@@ -693,12 +693,12 @@ void NewRpgTravelFlightAction::ContinueCrossMapTaxi()
         return;
 
     // Check if we are at our destination.
-    uint32 nextDest = bot->m_taxi.GetTaxiDestination();
+    uint32 nextDest = bot->GetTaxi().GetTaxiDestination();
     if (!nextDest)
         return;
 
     // Confirm next node needs different map.
-    TaxiNodesEntry const* nextNode = sTaxiNodesStore.LookupEntry(nextDest);
+    TaxiNodesEntry const* nextNode = sObjectMgr.GetTaxiNodeEntry(nextDest);
     if (!nextNode || nextNode->map_id == bot->GetMapId())
         return;
 
@@ -714,8 +714,8 @@ void NewRpgTravelFlightAction::ContinueCrossMapTaxi()
     if (flight->HasArrived())
         return;
 
-    TaxiPathNodeEntry const* node = flight->GetPath()[flight->GetCurrentNode()];
+    TaxiPathNodeEntry const& node = flight->GetPath()[flight->GetCurrentNode()];
     flight->SkipCurrentNode();
 
-    bot->TeleportTo(nextNode->map_id, node->x, node->y, node->z, bot->GetOrientation(), TELE_TO_NOT_LEAVE_TAXI);
+    bot->TeleportTo(nextNode->map_id, node.x, node.y, node.z, bot->GetOrientation());
 }

@@ -5,10 +5,10 @@
  */
 
 #include "EnemyPlayerValue.h"
-#include "CombatManager.h"
+// #include "CombatManager.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
-#include "Vehicle.h"
+// #include "Vehicle.h"
 
 bool NearestEnemyPlayersValue::AcceptUnit(Unit* unit)
 {
@@ -41,6 +41,7 @@ Unit* EnemyPlayerValue::Calculate()
     bool controllingCannon = false;
     bool controllingVehicle = false;
     bool passenger = false;
+    /*
     if (Vehicle* vehicle = bot->GetVehicle())
     {
         VehicleSeatEntry const* seat = vehicle->GetSeatForPassenger(bot);
@@ -53,10 +54,12 @@ Unit* EnemyPlayerValue::Calculate()
         else
             controllingVehicle = true;
     }
+    */
 
     // 1. Check units we are currently in PvP combat with.
     std::vector<Unit*> targets;
     Unit* pVictim = bot->GetVictim();
+    /*
     for (auto const& [guid, combatRef] : bot->GetCombatManager().GetPvPCombatRefs())
     {
         Unit* pTarget = combatRef->GetOther(bot);
@@ -71,6 +74,7 @@ Unit* EnemyPlayerValue::Calculate()
 
         targets.push_back(pTarget);
     }
+    */
 
     if (!targets.empty())
     {
@@ -154,11 +158,12 @@ float EnemyPlayerValue::GetMaxAttackDistance()
     if (!bot->GetBattleground())
         return 60.0f;
 
-    Battleground* bg = bot->GetBattleground();
+    BattleGround* bg = bot->GetBattleground();
     if (!bg)
         return 40.0f;
 
-    BattlegroundTypeId bgType = bg->GetBgTypeID();
+    /*
+    BattleGroundTypeId bgType = bg->GetBgTypeID();
     if (bgType == BATTLEGROUND_RB)
         bgType = bg->GetBgTypeID(true);
 
@@ -167,6 +172,7 @@ float EnemyPlayerValue::GetMaxAttackDistance()
         if (botAI->IsInVehicle(false, true))
             return 120.0f;
     }
+    */
 
     return 40.0f;
 }

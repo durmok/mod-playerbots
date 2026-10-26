@@ -15,7 +15,7 @@ class PlayerbotAI;
 class CastFeralChargeBearAction : public CastReachTargetSpellAction
 {
 public:
-    CastFeralChargeBearAction(PlayerbotAI* botAI) : CastReachTargetSpellAction(botAI, "feral charge - bear", 1.5f) {}
+    CastFeralChargeBearAction(PlayerbotAI* botAI) : CastReachTargetSpellAction(botAI, "feral charge", 1.5f) {}
 };
 
 class CastGrowlAction : public CastSpellAction
@@ -59,7 +59,7 @@ public:
 class CastSwipeBearAction : public CastMeleeSpellAction
 {
 public:
-    CastSwipeBearAction(PlayerbotAI* botAI) : CastMeleeSpellAction(botAI, "swipe (bear)") {}
+    CastSwipeBearAction(PlayerbotAI* botAI) : CastMeleeSpellAction(botAI, "swipe") {}
 };
 
 class CastLacerateAction : public CastMeleeSpellAction

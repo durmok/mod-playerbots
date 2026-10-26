@@ -17,7 +17,7 @@ bool WorldBuffAction::Execute(Event event)
 
     for (auto& wb : buffs)
     {
-        bot->AddAura(wb, bot);
+        bot->AddAura(wb);
     }
     return false;
 }
@@ -29,7 +29,7 @@ std::vector<uint32> WorldBuffAction::NeedWorldBuffs(Unit* unit)
     if (sPlayerbotAIConfig.WorldBuffs.empty())
         return retVec;
 
-    FactionTemplateEntry const* humanFaction = sFactionTemplateStore.LookupEntry(1);
+    FactionTemplateEntry const* humanFaction = sObjectMgr.GetFactionTemplateEntry(1);
     uint32 factionId =
         (Unit::GetFactionReactionTo(unit->GetFactionTemplateEntry(), humanFaction) >= REP_NEUTRAL) ? 1 : 2;
 
@@ -50,7 +50,7 @@ std::vector<uint32> WorldBuffAction::NeedWorldBuffs(Unit* unit)
     // If this is a druid in the Feral tab, decide Bear vs. Cat
     if (botClass == CLASS_DRUID && tab == 1)  // 1 = feral
     {
-        bool isBear = bot->HasTalent(16931, bot->GetActiveSpec()); // Thick Hide rank 3
+        bool isBear = bot->HasSpell(16931); // Thick Hide rank 3
         if (!isBear)
         {
             // If not bear, then treat it as "cat" spec = 3
@@ -62,7 +62,7 @@ std::vector<uint32> WorldBuffAction::NeedWorldBuffs(Unit* unit)
     // If this is a Death Knight in the Blood tab, decide Tank vs. DPS
     if (botClass == CLASS_DEATH_KNIGHT && tab == 0)  // 0 = Blood
     {
-        bool isTank = bot->HasTalent(55226, bot->GetActiveSpec()); // Blade Barrier rank 5
+        bool isTank = bot->HasSpell(55226); // Blade Barrier rank 5
         if (!isTank)
         {
             // If not tank, then treat it as DPS spec = 3

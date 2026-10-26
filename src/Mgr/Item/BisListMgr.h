@@ -7,7 +7,7 @@
 #ifndef PLAYERBOTS_BISLISTMGR_H
 #define PLAYERBOTS_BISLISTMGR_H
 
-#include "Define.h"
+#include "Platform/Define.h"
 #include <map>
 
 class BisListMgr

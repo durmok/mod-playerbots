@@ -9,12 +9,13 @@
 #include "Channel.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
+#include "World.h"
 
 BroadcastHelper::BroadcastHelper() {}
 
 uint8 BroadcastHelper::GetLocale()
 {
-    uint8 locale = sWorld->GetDefaultDbcLocale();
+    uint8 locale = sWorld.GetDefaultDbcLocale();
     // -- In case we're using auto detect on config file^M
     if (locale >= TOTAL_LOCALES)
         locale = LocaleConstant::LOCALE_enUS;
@@ -497,7 +498,8 @@ bool BroadcastHelper::BroadcastKill(PlayerbotAI* botAI, Player* bot, Creature *c
     }
     else
     {
-        switch (creature->GetCreatureTemplate()->rank)
+        CreatureTemplate const* creatureTemplate = sObjectMgr.GetCreatureTemplate(creature->GetEntry());
+        switch (creatureTemplate->rank)
         {
             case CREATURE_ELITE_NORMAL:
                 if (urand(1, sPlayerbotAIConfig.BroadcastChanceMaxValue) <= sPlayerbotAIConfig.BroadcastChanceKillNormal)
@@ -549,6 +551,7 @@ bool BroadcastHelper::BroadcastKill(PlayerbotAI* botAI, Player* bot, Creature *c
                     );
                 }
                 break;
+            /*
             case CREATURE_UNKNOWN:
                 if (urand(1, sPlayerbotAIConfig.BroadcastChanceMaxValue) <= sPlayerbotAIConfig.BroadcastChanceKillUnknown)
                 {
@@ -559,6 +562,7 @@ bool BroadcastHelper::BroadcastKill(PlayerbotAI* botAI, Player* bot, Creature *c
                     );
                 }
                 break;
+            */
             default:
                 break;
         }
@@ -723,7 +727,7 @@ bool BroadcastHelper::BroadcastSuggestQuest(PlayerbotAI* botAI, std::vector<uint
 
         int index = rand() % quests.size();
 
-        Quest const* quest = sObjectMgr->GetQuestTemplate(quests[index]);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(quests[index]);
 
         std::map<std::string, std::string> placeholders;
         placeholders["%my_role"] = ChatHelper::FormatClass(bot, AiFactory::GetPlayerSpecTab(bot));
@@ -918,7 +922,7 @@ bool BroadcastHelper::BroadcastSuggestToxicLinks(PlayerbotAI* botAI, Player* bot
 
         if (incompleteQuests.size() > 0)
         {
-            Quest const* quest = sObjectMgr->GetQuestTemplate(incompleteQuests[rand() % incompleteQuests.size()]);
+            Quest const* quest = sObjectMgr.GetQuestTemplate(incompleteQuests[rand() % incompleteQuests.size()]);
             placeholders["%random_taken_quest_or_item_link"] = botAI->GetChatHelper()->FormatQuest(quest);
         }
         else
@@ -950,7 +954,7 @@ bool BroadcastHelper::BroadcastSuggestThunderfury(PlayerbotAI* botAI, Player* bo
     if (urand(1, sPlayerbotAIConfig.BroadcastChanceMaxValue) <= sPlayerbotAIConfig.BroadcastChanceSuggestThunderfury)
     {
         std::map<std::string, std::string> placeholders;
-        ItemTemplate const* thunderfuryProto = sObjectMgr->GetItemTemplate(19019);
+        ItemTemplate const* thunderfuryProto = sObjectMgr.GetItemTemplate(19019);
         placeholders["%thunderfury_link"] = GET_PLAYERBOT_AI(bot)->GetChatHelper()->FormatItem(thunderfuryProto);
 
         return BroadcastToChannelWithGlobalChance(

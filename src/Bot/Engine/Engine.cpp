@@ -201,6 +201,7 @@ bool Engine::DoNextAction(Unit* /*unit*/, uint32 /*depth*/, bool minimal)
                         multiplier->NoteBlock();
 
                     LogAction("Multiplier %s made action %s useless", multiplier->getName().c_str(), action->getName().c_str());
+                    action->SetUseless();
                     break;
                 }
             }
@@ -247,6 +248,7 @@ bool Engine::DoNextAction(Unit* /*unit*/, uint32 /*depth*/, bool minimal)
         {
             LogAction("A:%s - USELESS", action->getName().c_str());
             lastRelevance = relevance;
+            action->SetUseless();
         }
 
         delete actionNode;  // Always delete after processing the action node
@@ -452,7 +454,8 @@ void Engine::ProcessTriggers(bool minimal)
 {
     std::unordered_map<Trigger*, Event> fires;
     uint32 now = getMSTime();
-    for (std::vector<TriggerNode*>::iterator i = triggers.begin(); i != triggers.end(); i++)
+    uint32 j = 0;
+    for (std::vector<TriggerNode*>::iterator i = triggers.begin(); i != triggers.end(); i++, j++)
     {
         TriggerNode* node = *i;
         if (!node)
@@ -619,7 +622,13 @@ bool Engine::ListenAndExecute(Action* action, Event event)
             out << " [" << event.GetSource() << "]";
 
         botAI->TellMasterNoFacing(out);
+        LOG_INFO("playerbots", "\"{}\" {}", botAI->GetBot()->GetName(), out.str());
+
+        if (!botAI->isDebug)
+            botAI->isDebug = true;
     }
+    else if (botAI->isDebug)
+        botAI->isDebug = false;
 
     actionExecuted = actionExecutionListeners.OverrideResult(action, actionExecuted, event);
     actionExecutionListeners.After(action, actionExecuted, event);
@@ -661,7 +670,7 @@ void Engine::LogAction(char const* format, ...)
     }
     else
     {
-        LOG_DEBUG("playerbots", "{} {}", bot->GetName().c_str(), buf);
+        LOG_DEBUG("playerbots", "{} {}", bot->GetName(), buf);
     }
 }
 
@@ -708,5 +717,5 @@ void Engine::LogValues()
         return;
 
     std::string const text = botAI->GetAiObjectContext()->FormatValues();
-    LOG_DEBUG("playerbots", "Values for {}: {}", bot->GetName().c_str(), text.c_str());
+    LOG_DEBUG("playerbots", "Values for {}: {}", bot->GetName(), text.c_str());
 }

@@ -20,7 +20,7 @@ float CastTimeMultiplier::GetValue(Action* action)
     {
         CastSpellAction* spellAction = dynamic_cast<CastSpellAction*>(action);
         uint32 spellId = AI_VALUE2(uint32, "spell id", spellAction->getSpell());
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (!spellInfo)
             return 1.0f;
 

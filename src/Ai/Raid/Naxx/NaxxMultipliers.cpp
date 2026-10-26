@@ -6,7 +6,7 @@
 
 #include "NaxxMultipliers.h"
 #include "ChooseTargetActions.h"
-#include "DKActions.h"
+// #include "DKActions.h"
 #include "DruidActions.h"
 #include "DruidBearActions.h"
 #include "FollowActions.h"
@@ -21,9 +21,9 @@
 #include "PriestActions.h"
 #include "ReachTargetActions.h"
 #include "RogueActions.h"
-#include "ScriptedCreature.h"
+// #include "ScriptedCreature.h"
 #include "ShamanActions.h"
-#include "Spell.h"
+#include "Spells/Spell.h"
 #include "UseMeetingStoneAction.h"
 #include "WarriorActions.h"
 #include "WipeAction.h"
@@ -76,7 +76,7 @@ float HeiganDanceMultiplier::GetValue(Action* action)
 
     // Casts are allowed while standing on the safe spot with enough time left before the next eruption.
     uint32 spellId = AI_VALUE2(uint32, "spell id", spellAction->getSpell());
-    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
     if (!spellInfo)
         return 1.0f;
 
@@ -110,13 +110,13 @@ float LoathebGenericMultiplier::GetValue(Action* action)
     if (!dynamic_cast<CastHealingSpellAction*>(action))
         return 1.0f;
 
-    Aura* aura = NaxxSpellIds::GetAnyAura(bot, {NaxxSpellIds::NecroticAura10});
+    Aura const* aura = NaxxSpellIds::GetAnyAura(bot, {NaxxSpellIds::NecroticAura10});
     if (!aura)
     {
         // Fallback to name for custom spell data.
         aura = botAI->GetAura("necrotic aura", bot);
     }
-    if (!aura || aura->GetDuration() <= 1500)
+    if (!aura || aura->GetAuraDuration() <= 1500)
         return 1.0f;
 
     return 0.0f;
@@ -171,7 +171,7 @@ float SapphironGenericMultiplier::GetValue(Action* action)
     if (!helper.UpdateBossAI())
         return 1.0f;
 
-    if (dynamic_cast<CastDeathGripAction*>(action) || dynamic_cast<CombatFormationMoveAction*>(action))
+    if (/*dynamic_cast<CastDeathGripAction*>(action) ||*/ dynamic_cast<CombatFormationMoveAction*>(action))
         return 0.0f;
 
     return 1.0f;
@@ -185,7 +185,7 @@ float InstructorRazuviousGenericMultiplier::GetValue(Action* action)
     context->GetValue<bool>("neglect threat")->Set(true);
     if (botAI->GetState() == BOT_STATE_COMBAT &&
         (dynamic_cast<DpsAssistAction*>(action) || dynamic_cast<TankAssistAction*>(action) ||
-         dynamic_cast<CastTauntAction*>(action) || dynamic_cast<CastDarkCommandAction*>(action) ||
+         dynamic_cast<CastTauntAction*>(action)/* || dynamic_cast<CastDarkCommandAction*>(action) */||
          dynamic_cast<CastHandOfReckoningAction*>(action) || dynamic_cast<CastGrowlAction*>(action)))
     {
         return 0.0f;
@@ -206,7 +206,7 @@ float KelthuzadGenericMultiplier::GetValue(Action* action)
     if (helper.IsPhaseOne())
     {
         if (dynamic_cast<CastTotemAction*>(action) || dynamic_cast<CastShadowfiendAction*>(action) ||
-            dynamic_cast<CastRaiseDeadAction*>(action) || dynamic_cast<CastFeignDeathAction*>(action) ||
+            /*dynamic_cast<CastRaiseDeadAction*>(action) || */dynamic_cast<CastFeignDeathAction*>(action) ||
             dynamic_cast<CastInvisibilityAction*>(action) || dynamic_cast<CastVanishAction*>(action) ||
             dynamic_cast<PetAttackAction*>(action))
         {
@@ -290,7 +290,7 @@ float GluthGenericMultiplier::GetValue(Action* action)
 
     if (PlayerbotAI::IsMainTank(bot))
     {
-        Aura* aura = NaxxSpellIds::GetAnyAura(bot, {NaxxSpellIds::MortalWound10, NaxxSpellIds::MortalWound25});
+        Aura const* aura = NaxxSpellIds::GetAnyAura(bot, {NaxxSpellIds::MortalWound10, NaxxSpellIds::MortalWound25});
         if (!aura)
         {
             // Fallback to name for custom spell data.
@@ -298,7 +298,7 @@ float GluthGenericMultiplier::GetValue(Action* action)
         }
         if (aura && aura->GetStackAmount() >= 5)
         {
-            if (dynamic_cast<CastTauntAction*>(action) || dynamic_cast<CastDarkCommandAction*>(action) ||
+            if (dynamic_cast<CastTauntAction*>(action) || /*dynamic_cast<CastDarkCommandAction*>(action) ||*/
                 dynamic_cast<CastHandOfReckoningAction*>(action) || dynamic_cast<CastGrowlAction*>(action))
             {
                 return 0.0f;

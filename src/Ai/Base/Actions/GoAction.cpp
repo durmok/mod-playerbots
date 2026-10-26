@@ -8,7 +8,7 @@
 #include "ChooseTravelTargetAction.h"
 #include "Event.h"
 #include "Formations.h"
-#include "PathGenerator.h"
+#include "PathFinder.h"
 #include "Playerbots.h"
 #include "PositionValue.h"
 #include "ServerFacade.h"
@@ -100,7 +100,7 @@ bool GoAction::Execute(Event event)
     for (ObjectGuid const guid : units)
     {
         if (Unit* unit = botAI->GetUnit(guid))
-            if (strstri(unit->GetName().c_str(), param.c_str()))
+            if (strstri(unit->GetName(), param.c_str()))
             {
                 std::ostringstream out;
                 out << "Moving to " << unit->GetName();
@@ -123,12 +123,12 @@ bool GoAction::Execute(Event event)
 
         if (botAI->HasStrategy("debug move", BOT_STATE_NON_COMBAT))
         {
-            PathGenerator path(bot);
+            PathFinder path(bot);
 
             path.CalculatePath(x, y, z, false);
 
-            Movement::Vector3 end = path.GetEndPosition();
-            Movement::Vector3 aend = path.GetActualEndPosition();
+            Movement::Vector3 end = path.getEndPosition();
+            Movement::Vector3 aend = path.getActualEndPosition();
 
             Movement::PointsArray const& points = path.GetPath();
             PathType type = path.GetPathType();
@@ -183,7 +183,7 @@ bool GoAction::Execute(Event event)
             return false;
         }
 
-        if (map->IsInWater(bot->GetPhaseMask(), x, y, z, bot->GetCollisionHeight()))
+        if (map->GetTerrain()->IsInWater(x, y, z))
         {
             botAI->TellError("It is in water");
             return false;

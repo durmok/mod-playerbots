@@ -6,7 +6,7 @@
 
 #include "EncounterHelpers.h"
 #include "CellImpl.h"
-#include "DKActions.h"
+// #include "DKActions.h"
 #include "DruidActions.h"
 #include "DruidBearActions.h"
 #include "DruidCatActions.h"
@@ -14,7 +14,7 @@
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "HunterActions.h"
-#include "InstanceScript.h"
+// #include "InstanceScript.h"
 #include "MageActions.h"
 #include "PaladinActions.h"
 #include "Playerbots.h"
@@ -44,8 +44,12 @@ bool IsEncounterInProgress(Player* bot, uint32 mapId)
     if (bot->GetMapId() != mapId)
         return false;
 
+    /*
     InstanceScript* instance = bot->GetInstanceScript();
     return instance && instance->IsEncounterInProgress();
+    */
+
+    return bot->GetMap()->GetId() == mapId;
 }
 
 // For validating ground and collision in connection with issuing incremental movement. The caller
@@ -58,7 +62,7 @@ bool CanTakeStepTowards(
 {
     constexpr float minMoveDistance = 0.5f;
 
-    float const distance = bot->GetExactDist2d(destinationX, destinationY);
+    float const distance = bot->GetPosition().GetExactDist2d(destinationX, destinationY);
     if (distance < minMoveDistance)
         return false;
 
@@ -69,7 +73,7 @@ bool CanTakeStepTowards(
     float const ratio = std::min(moveDist, distance) / distance;
     float candidateX = botX + (destinationX - botX) * ratio;
     float candidateY = botY + (destinationY - botY) * ratio;
-    float candidateZ = bot->GetMapWaterOrGroundLevel(candidateX, candidateY, botZ);
+    float candidateZ = bot->GetMap()->GetTerrain()->GetWaterOrGroundLevel(candidateX, candidateY, botZ);
 
     if (candidateZ <= INVALID_HEIGHT)
         candidateZ = botZ;
@@ -108,7 +112,7 @@ bool GetStepToPosition(
     Player* bot, Position const& position, float arrivalDist, Unit* facing, float& stepX,
     float& stepY, bool& backwards)
 {
-    float const distToPosition = bot->GetExactDist2d(position);
+    float const distToPosition = bot->GetPosition().GetExactDist2d(position);
     if (distToPosition <= arrivalDist)
         return false;
 
@@ -160,9 +164,9 @@ bool MarkTargetWithIcon(Player* bot, Unit* target, uint8 iconId)
         return false;
 
     ObjectGuid currentGuid = group->GetTargetIcon(iconId);
-    if (currentGuid != target->GetGUID())
+    if (currentGuid != target->GetObjectGuid())
     {
-        group->SetTargetIcon(iconId, bot->GetGUID(), target->GetGUID());
+        group->SetTargetIcon(iconId, bot->GetObjectGuid(), target->GetObjectGuid());
         return true;
     }
 
@@ -220,7 +224,7 @@ bool ClearTargetIcon(Player* bot, uint8 iconId)
     ObjectGuid currentGuid = group->GetTargetIcon(iconId);
     if (currentGuid != ObjectGuid::Empty)
     {
-        group->SetTargetIcon(iconId, bot->GetGUID(), ObjectGuid::Empty);
+        group->SetTargetIcon(iconId, bot->GetObjectGuid(), ObjectGuid::Empty);
         return true;
     }
 
@@ -274,7 +278,7 @@ Player* GetGroupMainTank(Player* bot)
     for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
     {
         Player* member = ref->GetSource();
-        if (member && member->IsAlive() && member->GetGUID() == mainTankGuid)
+        if (member && member->IsAlive() && member->GetObjectGuid() == mainTankGuid)
             return member;
     }
 
@@ -299,12 +303,12 @@ Player* GetGroupAssistTank(Player* bot, uint8 index)
     {
         Player* member = ref->GetSource();
         if (!member || !member->IsAlive() || !PlayerbotAI::IsTank(member) ||
-            member->GetGUID() == mainTankGuid)
+            member->GetObjectGuid() == mainTankGuid)
         {
             continue;
         }
 
-        if (group->IsAssistant(member->GetGUID()))
+        if (group->IsAssistant(member->GetObjectGuid()))
         {
             if (assistantCount == index)
                 return member;
@@ -357,7 +361,7 @@ Player* GetNearestPlayerInRadius(Player* bot, float radius)
         if (!member || !member->IsAlive() || member == bot)
             continue;
 
-        float distance = bot->GetExactDist2d(member);
+        float distance = bot->GetPosition().GetExactDist2d(member->GetPosition());
         if (distance < nearestDistance)
         {
             nearestDistance = distance;
@@ -372,10 +376,12 @@ Player* GetNearestPlayerInRadius(Player* bot, float radius)
 std::vector<Position> GetDynamicObjectPositions(Player* bot, float searchRadius, uint32 spellId)
 {
     std::list<WorldObject*> objs;
-    Acore::AllWorldObjectsInRange check(bot, searchRadius);
-    Acore::WorldObjectListSearcher<Acore::AllWorldObjectsInRange> searcher(
-        bot, objs, check, GRID_MAP_TYPE_MASK_DYNAMICOBJECT);
-    Cell::VisitObjects(bot, searcher, searchRadius);
+    MaNGOS::AllWorldObjectsInRange check(bot, searchRadius);
+    // MaNGOS::WorldObjectListSearcher<MaNGOS::AllWorldObjectsInRange> searcher(
+    //     bot, objs, check, GRID_MAP_TYPE_MASK_DYNAMICOBJECT);
+    MaNGOS::WorldObjectListSearcher<MaNGOS::AllWorldObjectsInRange> searcher(
+        objs, check);
+    Cell::VisitAllObjects(bot, searcher, searchRadius);
 
     std::vector<Position> dynObjs;
     for (WorldObject* obj : objs)
@@ -437,12 +443,14 @@ bool IsDpsCooldownAction(Player* bot, Action* action)
     bool isClassCooldown = false;
     switch (bot->getClass())
     {
+        /*
         case CLASS_DEATH_KNIGHT:
             isClassCooldown = dynamic_cast<CastSummonGargoyleAction*>(action) ||
                 dynamic_cast<CastDeathchillAction*>(action) ||
                 dynamic_cast<CastEmpowerRuneWeaponAction*>(action) ||
                 dynamic_cast<CastArmyOfTheDeadAction*>(action);
             break;
+        */
 
         case CLASS_DRUID:
             isClassCooldown = dynamic_cast<CastStarfallAction*>(action) ||
@@ -503,8 +511,10 @@ bool IsDpsCooldownAction(Player* bot, Action* action)
 
     switch (bot->getRace())
     {
+        /*
         case RACE_BLOODELF:
             return dynamic_cast<CastArcaneTorrentAction*>(action);
+        */
 
         case RACE_ORC:
             return dynamic_cast<CastBloodFuryAction*>(action);
@@ -524,9 +534,11 @@ bool IsTauntAction(Player* bot, Action* action)
 
     switch (bot->getClass())
     {
+        /*
         case CLASS_DEATH_KNIGHT:
             return dynamic_cast<CastDarkCommandAction*>(action) ||
                 dynamic_cast<CastDeathGripAction*>(action);
+        */
 
         case CLASS_DRUID:
             return dynamic_cast<CastGrowlAction*>(action) ||
@@ -553,10 +565,12 @@ bool IsAoeThreatAction(Player* bot, Action* action)
 
     switch (bot->getClass())
     {
+        /*
         case CLASS_DEATH_KNIGHT:
             return dynamic_cast<CastDeathAndDecayAction*>(action) ||
                 dynamic_cast<CastPestilenceAction*>(action) ||
                 dynamic_cast<CastBloodBoilAction*>(action);
+        */
 
         case CLASS_DRUID:
             return dynamic_cast<CastSwipeBearAction*>(action);

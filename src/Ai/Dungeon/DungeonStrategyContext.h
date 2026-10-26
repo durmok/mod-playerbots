@@ -7,6 +7,7 @@
 #ifndef PLAYERBOTS_DUNGEONSTRATEGYCONTEXT_H
 #define PLAYERBOTS_DUNGEONSTRATEGYCONTEXT_H
 
+/*
 #include "ACStrategy.h"
 #include "AKStrategy.h"
 #include "ANStrategy.h"
@@ -23,12 +24,15 @@
 #include "PoSStrategy.h"
 #include "RampStrategy.h"
 #include "SethStrategy.h"
+*/
 #include "Strategy.h"
+/*
 #include "TOCStrategy.h"
 #include "UBStrategy.h"
 #include "UKStrategy.h"
 #include "UPStrategy.h"
 #include "VHStrategy.h"
+*/
 
 class DungeonStrategyContext : public NamedObjectContext<Strategy>
 {
@@ -38,6 +42,7 @@ public:
         // Vanilla
         // ...
 
+        /*
         // Burning Crusade
         creators["tbc-ac"] = &DungeonStrategyContext::tbc_ac;           // Auchindoun: Auchenai Crypts
         creators["tbc-seth"] = &DungeonStrategyContext::tbc_seth;       // Auchindoun: Sethekk Halls
@@ -62,9 +67,11 @@ public:
         creators["wotlk-toc"] = &DungeonStrategyContext::wotlk_toc;     // Trial of the Champion
         creators["wotlk-pos"] = &DungeonStrategyContext::wotlk_pos;     // Pit of Saron
         creators["wotlk-fos"] = &DungeonStrategyContext::wotlk_fos;     // The Forge of Souls
+        */
     }
 
 private:
+    /*
     static Strategy* tbc_ac(PlayerbotAI* botAI) { return new TbcDungeonAuchenaiCryptsStrategy(botAI); }
     static Strategy* tbc_seth(PlayerbotAI* botAI) { return new TbcDungeonSethekkHallsStrategy(botAI); }
     static Strategy* tbc_mech(PlayerbotAI* botAI) { return new TbcDungeonMechanarStrategy(botAI); }
@@ -86,6 +93,7 @@ private:
     static Strategy* wotlk_fos(PlayerbotAI* botAI) { return new WotlkDungeonFoSStrategy(botAI); }
     static Strategy* wotlk_pos(PlayerbotAI* botAI) { return new WotlkDungeonPoSStrategy(botAI); }
     static Strategy* wotlk_toc(PlayerbotAI* botAI) { return new WotlkDungeonToCStrategy(botAI); }
+    */
 };
 
 #endif

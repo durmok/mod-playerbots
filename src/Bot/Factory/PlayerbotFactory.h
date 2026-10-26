@@ -63,6 +63,7 @@ public:
     static void Init();
     void Refresh();
     void Randomize(bool incremental);
+    void SyncLevel();
     static std::list<uint32> classQuestIds;
     void ClearEverything();
     void InitSkills();
@@ -72,24 +73,27 @@ public:
     uint32 InitTalentsTree(bool incremental = false, bool use_template = true, bool reset = false);
     static void InitTalentsBySpecNo(Player* bot, int specNo, bool reset);
     static void InitTalentsByParsedSpecLink(Player* bot, std::vector<std::vector<uint32>> parsedSpecLink, bool reset);
+    static std::string BuildTalentSpecLink(Player* player);
     void InitAvailableSpells();
+    void LearnTrainerSpells(TrainerSpellData const* tSpells);
     static bool IsTrainerSpellAllowedForBot(Player* bot, Trainer::Trainer const* trainer,
                                              Trainer::Spell const* trainerSpell);
     void InitClassSpells();
     void InitSpecialSpells();
     void InitEquipment(bool incremental, bool second_chance = false);
     void InitPet();
+    void InitPetSpells();
     void InitAmmo();
     static uint32 CalcMixedGearScore(uint32 gs, uint32 quality);
     static void DestroyEquippedGear(Player* bot);
     static void AutoGear(Player* bot, uint32 itemQuality, uint32 ilvl, bool incremental, bool secondChance = false,
                         bool applyFinishers = true);
-    void InitPetTalents();
+    // void InitPetTalents();
     void CleanupConsumables();
     void InitReagents();
     void InitConsumables();
     void InitPotions();
-    void InitGlyphs(bool increment = false);
+    // void InitGlyphs(bool increment = false);
     void InitFood();
     void InitMounts();
     void InitBags(bool destroyOld = true);
@@ -174,6 +178,8 @@ private:
     static std::vector<WeightedProfessionPair> GetClassProfessionPairs(Player* bot);
     static std::vector<WeightedProfessionPair> GetRandomProfessionPairs();
     static std::pair<uint16, uint16> ChooseProfessionPair(std::vector<WeightedProfessionPair> const& professionPairs);
+    static bool HasProfessionPair(std::vector<WeightedProfessionPair> const& professionPairs,
+                                  uint16 firstSkill, uint16 secondSkill);
     static uint16 ChooseComplementaryProfession(
         std::vector<WeightedProfessionPair> const& professionPairs, uint16 existingSkill);
     static uint16 ChooseSingleProfession(std::vector<WeightedProfessionPair> const& professionPairs);
@@ -200,7 +206,7 @@ private:
     void ClearAllItems();
     void ResetQuests();
 
-    std::vector<uint32> GetCurrentGemsCount();
+    // std::vector<uint32> GetCurrentGemsCount();
     bool CanEquipArmor(ItemTemplate const* proto);
     bool CanEquipWeapon(ItemTemplate const* proto);
     static void BuildCcBreakTrinketCache();
@@ -232,6 +238,7 @@ private:
     uint32 gearScoreLimit;
     static std::list<uint32> specialQuestIds;
     static std::unordered_map<uint32, std::vector<uint32>> trainerIdCache;
+    static std::unordered_map<uint32, std::vector<uint32>> trainerTemplateIdCache;
     static std::vector<uint32> enchantSpellIdCache;
     static std::vector<uint32> enchantGemIdCache;
     static std::vector<uint32> ccBreakTrinketCache;

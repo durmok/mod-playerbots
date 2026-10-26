@@ -8,9 +8,11 @@
 #include "AiObjectContext.h"
 #include "Event.h"
 #include "LastMovementValue.h"
+#include "Taxi.h"
 
 bool RememberTaxiAction::Execute(Event event)
 {
+    /*
     WorldPacket p(event.getPacket());
     p.rpos(0);
 
@@ -18,31 +20,38 @@ bool RememberTaxiAction::Execute(Event event)
     {
         case CMSG_ACTIVATETAXI:
         {
+    */
+        if (auto p = event.getClientPacket<WorldPackets::Taxi::ActivateTaxi>())
+        {
             LastMovement& movement = context->GetValue<LastMovement&>("last taxi")->Get();
             movement.taxiNodes.clear();
             movement.taxiNodes.resize(2);
 
-            p >> movement.taxiMaster >> movement.taxiNodes[0] >> movement.taxiNodes[1];
+            // p >> movement.taxiMaster >> movement.taxiNodes[0] >> movement.taxiNodes[1];
+            movement.taxiMaster = p->flightmasterGuid;
+            movement.taxiNodes[0] = p->node1;
+            movement.taxiNodes[1] = p->node2;
             return true;
         }
-        case CMSG_ACTIVATETAXIEXPRESS:
+        else if (auto p = event.getClientPacket<WorldPackets::Taxi::ActivateTaxiExpress>())
         {
-            ObjectGuid guid;
-            uint32 node_count;
-            p >> guid >> node_count;
+            ObjectGuid guid = p->flightmasterGuid;
+            uint32 node_count = p->nodes.size();
+            uint32 totalcost = p->totalcost;
+            // p >> guid >> totalcost >> node_count;
 
             LastMovement& movement = context->GetValue<LastMovement&>("last taxi")->Get();
             movement.taxiNodes.clear();
             for (uint32 i = 0; i < node_count; ++i)
             {
-                uint32 node;
-                p >> node;
+                uint32 node = p->nodes[i];
+                // p >> node;
                 movement.taxiNodes.push_back(node);
             }
 
             return true;
         }
-    }
+    // }
 
     return false;
 }

@@ -29,6 +29,7 @@
 #include "EmoteAction.h"
 #include "FishingAction.h"
 #include "FollowActions.h"
+#include "FollowMasterAction.h"
 #include "GenericSpellActions.h"
 #include "GiveItemAction.h"
 #include "GreetAction.h"
@@ -42,9 +43,10 @@
 #include "LootRollAction.h"
 #include "MoveToRpgTargetAction.h"
 #include "MoveToTravelTargetAction.h"
+#include "MoveCompleteAction.h"
 #include "MovementActions.h"
 #include "NewRpgAction.h"
-#include "NewRpgOutdoorPvP.h"
+// #include "NewRpgOutdoorPvP.h"
 #include "NonCombatActions.h"
 #include "OutfitAction.h"
 #include "PetsAction.h"
@@ -65,7 +67,7 @@
 #include "SuggestWhatToDoAction.h"
 #include "TravelAction.h"
 #include "UseItemAction.h"
-#include "VehicleActions.h"
+// #include "VehicleActions.h"
 #include "WaitForAttackAction.h"
 #include "WorldBuffAction.h"
 #include "XpGainAction.h"
@@ -102,10 +104,10 @@ public:
         creators["tank face"] = &ActionContext::tank_face;
         creators["rear flank"] = &ActionContext::rear_flank;
         creators["disperse set"] = &ActionContext::disperse_set;
-        creators["gift of the naaru"] = &ActionContext::gift_of_the_naaru;
+        // creators["gift of the naaru"] = &ActionContext::gift_of_the_naaru;
         creators["shoot"] = &ActionContext::shoot;
         creators["lifeblood"] = &ActionContext::lifeblood;
-        creators["arcane torrent"] = &ActionContext::arcane_torrent;
+        // creators["arcane torrent"] = &ActionContext::arcane_torrent;
         creators["pull my target"] = &ActionContext::pull_my_target;
         creators["pull rti target"] = &ActionContext::pull_rti_target;
         creators["pull start"] = &ActionContext::pull_start;
@@ -119,6 +121,7 @@ public:
         creators["mana potion"] = &ActionContext::mana_potion;
         creators["food"] = &ActionContext::food;
         creators["drink"] = &ActionContext::drink;
+        creators["eat drink"] = &ActionContext::eatDrink;
         creators["tank assist"] = &ActionContext::tank_assist;
         creators["dps assist"] = &ActionContext::dps_assist;
         creators["dps aoe"] = &ActionContext::dps_aoe;
@@ -151,6 +154,8 @@ public:
         creators["move out of enemy contact"] = &ActionContext::move_out_of_enemy_contact;
         creators["set facing"] = &ActionContext::set_facing;
         creators["set behind"] = &ActionContext::set_behind;
+        creators["move to los target"] = &ActionContext::move_to_los_target;
+        creators["move complete"] = &ActionContext::move_complete;
         creators["attack duel opponent"] = &ActionContext::attack_duel_opponent;
         creators["drop target"] = &ActionContext::drop_target;
         creators["check mail"] = &ActionContext::check_mail;
@@ -172,7 +177,7 @@ public:
         creators["war stomp"] = &ActionContext::war_stomp;
         creators["blood fury"] = &ActionContext::blood_fury;
         creators["berserking"] = &ActionContext::berserking;
-        creators["every man for himself"] = &ActionContext::every_man_for_himself;
+        // creators["every man for himself"] = &ActionContext::every_man_for_himself;
         creators["will of the forsaken"] = &ActionContext::will_of_the_forsaken;
         creators["stoneform"] = &ActionContext::stoneform;
         creators["escape artist"] = &ActionContext::escape_artist;
@@ -227,8 +232,8 @@ public:
         creators["bg check flag"] = &ActionContext::bg_check_flag;
 
         // Vehicles
-        creators["enter vehicle"] = &ActionContext::enter_vehicle;
-        creators["leave vehicle"] = &ActionContext::leave_vehicle;
+        // creators["enter vehicle"] = &ActionContext::enter_vehicle;
+        // creators["leave vehicle"] = &ActionContext::leave_vehicle;
         creators["hurl boulder"] = &ActionContext::hurl_boulder;
         creators["ram"] = &ActionContext::ram;
         creators["steam rush"] = &ActionContext::steam_rush;
@@ -275,7 +280,7 @@ public:
         creators["new rpg wander npc"] = &ActionContext::new_rpg_wander_npc;
         creators["new rpg do quest"] = &ActionContext::new_rpg_do_quest;
         creators["new rpg travel flight"] = &ActionContext::new_rpg_travel_flight;
-        creators["new rpg outdoor pvp"] = &ActionContext::new_rpg_outdoor_pvp;
+        // creators["new rpg outdoor pvp"] = &ActionContext::new_rpg_outdoor_pvp;
         creators["wait for attack keep safe distance"] = &ActionContext::wait_for_attack_keep_safe_distance;
     }
 
@@ -343,7 +348,7 @@ private:
     static Action* stay(PlayerbotAI* botAI) { return new StayAction(botAI); }
     static Action* sit(PlayerbotAI* botAI) { return new SitAction(botAI); }
     static Action* runaway(PlayerbotAI* botAI) { return new RunAwayAction(botAI); }
-    static Action* follow(PlayerbotAI* botAI) { return new FollowAction(botAI); }
+    static Action* follow(PlayerbotAI* botAI) { return new FollowMasterAction(botAI); }
     static Action* move_from_group(PlayerbotAI* botAI) { return new MoveFromGroupAction(botAI); }
     static Action* add_gathering_loot(PlayerbotAI* botAI) { return new AddGatheringLootAction(botAI); }
     static Action* add_loot(PlayerbotAI* botAI) { return new AddLootAction(botAI); }
@@ -356,12 +361,15 @@ private:
     static Action* tank_assist(PlayerbotAI* botAI) { return new TankAssistAction(botAI); }
     static Action* drink(PlayerbotAI* botAI) { return new DrinkAction(botAI); }
     static Action* food(PlayerbotAI* botAI) { return new EatAction(botAI); }
+    static Action* eatDrink(PlayerbotAI* botAI) { return new EatDrinkAction(botAI); }
     static Action* mana_potion(PlayerbotAI* botAI) { return new UseManaPotion(botAI); }
     static Action* healing_potion(PlayerbotAI* botAI) { return new UseHealingPotion(botAI); }
     static Action* healthstone(PlayerbotAI* botAI) { return new UseItemAction(botAI, "healthstone"); }
     static Action* move_out_of_enemy_contact(PlayerbotAI* botAI) { return new MoveOutOfEnemyContactAction(botAI); }
     static Action* set_facing(PlayerbotAI* botAI) { return new SetFacingTargetAction(botAI); }
     static Action* set_behind(PlayerbotAI* botAI) { return new SetBehindTargetAction(botAI); }
+    static Action* move_to_los_target(PlayerbotAI* botAI) { return new MoveToLOSTargetAction(botAI); }
+    static Action* move_complete(PlayerbotAI* botAI) { return new MoveCompleteAction(botAI); }
     static Action* say(PlayerbotAI* botAI) { return new SayAction(botAI); }
     static Action* reveal_gathering_item(PlayerbotAI* botAI) { return new RevealGatheringItemAction(botAI); }
     static Action* outfit(PlayerbotAI* botAI) { return new OutfitAction(botAI); }
@@ -431,8 +439,8 @@ private:
     static Action* bg_check_flag(PlayerbotAI* botAI) { return new BGTactics(botAI, "check flag"); }
 
     // Vehicles
-    static Action* enter_vehicle(PlayerbotAI* botAI) { return new EnterVehicleAction(botAI); }
-    static Action* leave_vehicle(PlayerbotAI* botAI) { return new LeaveVehicleAction(botAI); }
+    // static Action* enter_vehicle(PlayerbotAI* botAI) { return new EnterVehicleAction(botAI); }
+    // static Action* leave_vehicle(PlayerbotAI* botAI) { return new LeaveVehicleAction(botAI); }
     static Action* hurl_boulder(PlayerbotAI* botAI) { return new CastHurlBoulderAction(botAI); }
     static Action* ram(PlayerbotAI* botAI) { return new CastRamAction(botAI); }
     static Action* steam_blast(PlayerbotAI* botAI) { return new CastSteamBlastAction(botAI); }
@@ -479,7 +487,7 @@ private:
     static Action* new_rpg_wander_npc(PlayerbotAI* botAI) { return new NewRpgWanderNpcAction(botAI); }
     static Action* new_rpg_do_quest(PlayerbotAI* botAI) { return new NewRpgDoQuestAction(botAI); }
     static Action* new_rpg_travel_flight(PlayerbotAI* botAI) { return new NewRpgTravelFlightAction(botAI); }
-    static Action* new_rpg_outdoor_pvp(PlayerbotAI* botAI) { return new NewRpgOutdoorPvpAction(botAI); }
+    // static Action* new_rpg_outdoor_pvp(PlayerbotAI* botAI) { return new NewRpgOutdoorPvpAction(botAI); }
     static Action* wait_for_attack_keep_safe_distance(PlayerbotAI* botAI) { return new WaitForAttackKeepSafeDistanceAction(botAI); }
 };
 

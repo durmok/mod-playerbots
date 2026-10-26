@@ -7,4 +7,4 @@
 # `mysql` target here propagates those include directories to the module build.
 target_link_libraries(modules
   PRIVATE
-    mysql)
+    ${MYSQL_LIBRARY})

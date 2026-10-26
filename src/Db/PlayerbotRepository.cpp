@@ -7,10 +7,11 @@
 #include "PlayerbotRepository.h"
 #include "PlayerbotsDatabase.h"
 #include "AiObjectContext.h"
+#include "RandomPlayerbotMgr.h"
 
 void PlayerbotRepository::Load(PlayerbotAI* botAI)
 {
-    ObjectGuid::LowType guid = botAI->GetBot()->GetGUID().GetCounter();
+    ObjectGuid::LowType guid = botAI->GetBot()->GetObjectGuid().GetCounter();
 
     PlayerbotsDatabasePreparedStatement* stmt = PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_SEL_DB_STORE);
     stmt->SetData(0, guid);
@@ -19,7 +20,7 @@ void PlayerbotRepository::Load(PlayerbotAI* botAI)
         std::vector<std::string> values;
         do
         {
-            Field* fields = result->Fetch();
+            Field2* fields = result->Fetch();
             std::string const key = fields[0].Get<std::string>();
             std::string const value = fields[1].Get<std::string>();
 
@@ -49,7 +50,9 @@ void PlayerbotRepository::Load(PlayerbotAI* botAI)
 
 void PlayerbotRepository::Save(PlayerbotAI* botAI)
 {
-    ObjectGuid::LowType guid = botAI->GetBot()->GetGUID().GetCounter();
+    if (!botAI->IsAltBot())
+        return;
+    ObjectGuid::LowType guid = botAI->GetBot()->GetObjectGuid().GetCounter();
 
     PlayerbotsDatabaseTransaction trans = PlayerbotsDatabase.BeginTransaction();
 
@@ -83,7 +86,7 @@ std::string const PlayerbotRepository::FormatStrategies(std::string const /*type
 
 void PlayerbotRepository::Reset(PlayerbotAI* botAI)
 {
-    ObjectGuid::LowType guid = botAI->GetBot()->GetGUID().GetCounter();
+    ObjectGuid::LowType guid = botAI->GetBot()->GetObjectGuid().GetCounter();
 
     PlayerbotsDatabasePreparedStatement* stmt = PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_DEL_DB_STORE);
     stmt->SetData(0, guid);

@@ -6,23 +6,25 @@
 
 #include "HasTotemValue.h"
 #include "Playerbots.h"
+#include "Totem.h"
 
 char* strstri(char const* str1, char const* str2);
 
 bool HasTotemValue::Calculate()
 {
-    for (uint8 i = 0; i < MAX_SUMMON_SLOT; ++i)
+    for (uint8 i = 0; i < MAX_TOTEM_SLOT; ++i)
     {
-        if (!bot->m_SummonSlot[i])
+        Totem* totem = bot->GetTotem(TotemSlot(i));
+        if (!totem)
         {
             continue;
         }
 
-        if (Creature* OldTotem = bot->GetMap()->GetCreature(bot->m_SummonSlot[i]))
+        if (Creature* OldTotem = bot->GetMap()->GetCreature(totem->GetObjectGuid()))
         {
-            if (OldTotem->IsSummon() && OldTotem->GetDistance(bot) <= 30.0f)
+            if (/*OldTotem->IsSummon() && */OldTotem->GetDistance(bot) <= 30.0f)
             {
-                if (strstri(OldTotem->GetName().c_str(), qualifier.c_str()))
+                if (strstri(OldTotem->GetName(), qualifier.c_str()))
                     return true;
             }
         }

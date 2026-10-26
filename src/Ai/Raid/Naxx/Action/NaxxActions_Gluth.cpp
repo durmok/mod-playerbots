@@ -91,7 +91,8 @@ bool GluthPositionAction::Execute(Event /*event*/)
     if (!helper.UpdateBossAI())
         return false;
 
-    bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
+    // bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
+    bool raid25 = true;
     if (PlayerbotAI::IsMainTank(bot) || PlayerbotAI::IsAssistTankOfIndex(bot, 0))
     {
         if (AI_VALUE2(bool, "has aggro", "boss target"))
@@ -164,7 +165,8 @@ bool GluthSlowdownAction::Execute(Event /*event*/)
     if (!helper.UpdateBossAI())
         return false;
 
-    bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
+    // bool raid25 = bot->GetRaidDifficulty() == RAID_DIFFICULTY_25MAN_NORMAL;
+    bool raid25 = true;
     if (!raid25)
         return false;
 

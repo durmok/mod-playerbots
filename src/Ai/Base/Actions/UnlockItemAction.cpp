@@ -5,11 +5,11 @@
  */
 
 #include "UnlockItemAction.h"
-#include "ItemTemplate.h"
+// #include "ItemTemplate.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
-#include "SpellInfo.h"
+#include "SpellEntry.h"
 
 inline constexpr uint32_t PICK_LOCK_SPELL_ID = 1804;
 

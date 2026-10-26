@@ -42,7 +42,7 @@ public:
     float CalcThreatGap(Unit* attacker, ThreatManager* threatMgr)
     {
         Unit* victim = attacker->GetVictim();
-        return threatMgr->GetThreat(victim) - threatMgr->GetThreat(attacker);
+        return threatMgr->getThreat(victim) - threatMgr->getThreat(attacker);
     }
 
 protected:
@@ -64,7 +64,7 @@ public:
         if (Group* group = botAI->GetBot()->GetGroup())
         {
             ObjectGuid guid = group->GetTargetIcon(4);
-            if (guid && attacker->GetGUID() == guid)
+            if (guid && attacker->GetObjectGuid() == guid)
                 return;
         }
         if (!attacker->IsAlive())
@@ -146,7 +146,7 @@ public:
         if (Group* group = botAI->GetBot()->GetGroup())
         {
             ObjectGuid guid = group->GetTargetIcon(4);
-            if (guid && attacker->GetGUID() == guid)
+            if (guid && attacker->GetObjectGuid() == guid)
                 return;
         }
         if (!attacker->IsAlive())
@@ -216,7 +216,7 @@ public:
         if (Group* group = botAI->GetBot()->GetGroup())
         {
             ObjectGuid guid = group->GetTargetIcon(4);
-            if (guid && attacker->GetGUID() == guid)
+            if (guid && attacker->GetObjectGuid() == guid)
                 return;
         }
         if (!attacker->IsAlive())
@@ -254,8 +254,8 @@ public:
         Player* bot = botAI->GetBot();
         if (level == 10)
         {
-            Unit* combo_unit = bot->GetComboTarget();
-            if (new_unit == combo_unit)
+            ObjectGuid combo_unit = bot->GetComboTargetGuid();
+            if (new_unit->GetObjectGuid() == combo_unit)
                 return true;
 
             return new_time < old_time;
@@ -281,7 +281,7 @@ protected:
 Unit* DpsTargetValue::Calculate()
 {
     Unit* rti = RtiTargetValue::Calculate();
-    if (rti)
+    if (rti && rti->IsInCombat())
         return rti;
 
     float dps = AI_VALUE(float, "estimated group dps");
@@ -315,7 +315,7 @@ public:
         if (Group* group = botAI->GetBot()->GetGroup())
         {
             ObjectGuid guid = group->GetTargetIcon(4);
-            if (guid && attacker->GetGUID() == guid)
+            if (guid && attacker->GetObjectGuid() == guid)
                 return;
         }
 
@@ -330,7 +330,7 @@ protected:
 Unit* DpsAoeTargetValue::Calculate()
 {
     Unit* rti = RtiTargetValue::Calculate();
-    if (rti)
+    if (rti && rti->IsInCombat())
         return rti;
 
     FindMaxHpTargetStrategy strategy(botAI);

@@ -7,7 +7,7 @@
 #ifndef PLAYERBOTS_NAXXTRIGGERS_H
 #define PLAYERBOTS_NAXXTRIGGERS_H
 
-#include "EventMap.h"
+#include "Utilities/EventMap.h"
 #include "GenericTriggers.h"
 #include "NaxxBossHelper.h"
 #include "PlayerbotAIConfig.h"

@@ -12,7 +12,7 @@
 
 class Item;
 class PlayerbotAI;
-class SpellInfo;
+class SpellEntry;
 
 class ItemForSpellValue : public CalculatedValue<Item*>, public Qualified
 {
@@ -25,7 +25,7 @@ public:
     Item* Calculate() override;
 
 private:
-    Item* GetItemFitsToSpellRequirements(uint8 slot, SpellInfo const* spellInfo);
+    Item* GetItemFitsToSpellRequirements(uint8 slot, SpellEntry const* spellInfo);
 };
 
 #endif

@@ -64,7 +64,8 @@ bool GrobbulusCloudTrigger::IsActive()
 
     uint32 now = getMSTime();
     bool poison_cloud_casting = false;
-    if (boss->HasUnitState(UNIT_STATE_CASTING))
+    // if (boss->HasUnitState(UNIT_STATE_CASTING))
+    if (boss->IsNonMeleeSpellCasted())
     {
         Spell* spell = boss->GetCurrentSpell(CURRENT_GENERIC_SPELL);
         if (!spell)
@@ -93,7 +94,8 @@ bool HeiganRangedTrigger::IsActive()
 
 bool RazuviousTankTrigger::IsActive()
 {
-    Difficulty diff = bot->GetRaidDifficulty();
+    // Difficulty diff = bot->GetRaidDifficulty();
+    Difficulty diff = RAID_DIFFICULTY_25MAN_NORMAL;
     if (diff == RAID_DIFFICULTY_10MAN_NORMAL)
         return helper.UpdateBossAI() && PlayerbotAI::IsTank(bot);
 
@@ -102,7 +104,8 @@ bool RazuviousTankTrigger::IsActive()
 
 bool RazuviousNontankTrigger::IsActive()
 {
-    Difficulty diff = bot->GetRaidDifficulty();
+    // Difficulty diff = bot->GetRaidDifficulty();
+    Difficulty diff = RAID_DIFFICULTY_25MAN_NORMAL;
     if (diff == RAID_DIFFICULTY_10MAN_NORMAL)
         return helper.UpdateBossAI() && !(PlayerbotAI::IsTank(bot));
 
@@ -155,7 +158,7 @@ bool GluthMainTankMortalWoundTrigger::IsActive()
     if (!mt)
         return false;
 
-    Aura* aura = NaxxSpellIds::GetAnyAura(mt, {NaxxSpellIds::MortalWound10, NaxxSpellIds::MortalWound25});
+    Aura const* aura = NaxxSpellIds::GetAnyAura(mt, {NaxxSpellIds::MortalWound10, NaxxSpellIds::MortalWound25});
     if (!aura)
     {
         // Fallback to name for custom spell data.

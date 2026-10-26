@@ -50,12 +50,14 @@ bool PartyCommandAction::Execute(Event event)
 
 bool UninviteAction::Execute(Event event)
 {
-    WorldPacket& p = event.getPacket();
-    if (p.GetOpcode() == CMSG_GROUP_UNINVITE)
+    // WorldPacket& p = event.getPacket();
+    if (auto p = event.getClientPacket<WorldPackets::Group::GroupUninvite>())
     {
-        p.rpos(0);
-        std::string memberName;
-        p >> memberName;
+        // p.rpos(0);
+        // std::string memberName;
+        // p >> memberName;
+        std::string memberName = p->memberName;
+
 
         // player not found
         if (!normalizePlayerName(memberName))
@@ -67,13 +69,14 @@ bool UninviteAction::Execute(Event event)
             return Leave();
     }
 
-    if (p.GetOpcode() == CMSG_GROUP_UNINVITE_GUID)
+    if (auto p = event.getClientPacket<WorldPackets::Group::GroupUninviteGuid>())
     {
-        p.rpos(0);
-        ObjectGuid guid;
-        p >> guid;
+        // p.rpos(0);
+        // ObjectGuid guid;
+        // p >> guid;
+        ObjectGuid guid = p->guid;
 
-        if (bot->GetGUID() == guid)
+        if (bot->GetObjectGuid() == guid)
             return Leave();
     }
 

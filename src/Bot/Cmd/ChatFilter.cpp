@@ -187,14 +187,14 @@ public:
                 continue;
 
             ObjectGuid rtiTarget = group->GetTargetIcon(RtiTargetValue::GetRtiIndex(rti.substr(1)));
-            if (bot->GetGUID() == rtiTarget)
+            if (bot->GetObjectGuid() == rtiTarget)
                 return ChatFilter::Filter(message);
 
             Unit* target = *botAI->GetAiObjectContext()->GetValue<Unit*>("current target");
             if (!target)
                 return "";
 
-            if (target->GetGUID() != rtiTarget)
+            if (target->GetObjectGuid() != rtiTarget)
                 return "";
 
             found |= isRti;
@@ -567,7 +567,7 @@ public:
             if ((nameMatch || idMatch) && c->GetDistance2d(bot) <= radius)
             {
                 Unit* victim = c->GetVictim();
-                if (victim && victim->GetGUID() == bot->GetGUID())
+                if (victim && victim->GetObjectGuid() == bot->GetObjectGuid())
                 {
                     match = true;
                     break;

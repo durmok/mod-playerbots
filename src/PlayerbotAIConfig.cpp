@@ -5,8 +5,9 @@
  */
 
 #include "PlayerbotAIConfig.h"
+#include "BattlePlayerbotMgr.h"
 #include "BisListMgr.h"
-#include "Config.h"
+#include "Config/Config.h"
 #include "NewRpgInfo.h"
 #include "PlayerbotDungeonRepository.h"
 #include "PlayerbotFactory.h"
@@ -17,9 +18,12 @@
 #include "RandomPlayerbotMgr.h"
 #include "Talentspec.h"
 #include "TravelMgr.h"
+#include "World.h"
 #include <cctype>
 #include <iostream>
 #include <sstream>
+
+#define sConfigMgr (&sConfig)
 
 template <class T>
 void LoadList(std::string const value, T& list)
@@ -108,10 +112,10 @@ bool PlayerbotAIConfig::Initialize()
     FarDistance = sConfigMgr->GetOption<float>("Playerbots.FarDistance", 20.0f);
     SightDistance = sConfigMgr->GetOption<float>("Playerbots.SightDistance", 100.0f);
     SpellDistance = sConfigMgr->GetOption<float>("Playerbots.SpellDistance", 28.5f);
-    ShootDistance = sConfigMgr->GetOption<float>("Playerbots.ShootDistance", 5.0f);
+    ShootDistance = sConfigMgr->GetOption<float>("Playerbots.ShootDistance", 8.0f);
     HealDistance = sConfigMgr->GetOption<float>("Playerbots.HealDistance", 38.5f);
     LootDistance = sConfigMgr->GetOption<float>("Playerbots.LootDistance", 15.0f);
-    FleeDistance = sConfigMgr->GetOption<float>("Playerbots.FleeDistance", 5.0f);
+    FleeDistance = sConfigMgr->GetOption<float>("Playerbots.FleeDistance", 8.0f);
     AggroDistance = sConfigMgr->GetOption<float>("Playerbots.AggroDistance", 22.0f);
     TooCloseDistance = sConfigMgr->GetOption<float>("Playerbots.TooCloseDistance", 5.0f);
     MeleeDistance = sConfigMgr->GetOption<float>("Playerbots.MeleeDistance", 0.75f);
@@ -207,7 +211,7 @@ bool PlayerbotAIConfig::Initialize()
         sConfigMgr->GetOption<std::string>("Playerbots.RandomBotQuestItems",
                                            "5175,5176,5177,5178,6948,11000,12382,13704,16309"),
         RandomBotQuestItems);
-    LoadList<std::vector<uint32>>(sConfigMgr->GetOption<std::string>("Playerbots.RandomBotSpellIds", "54197"),
+    LoadList<std::vector<uint32>>(sConfigMgr->GetOption<std::string>("Playerbots.RandomBotSpellIds", ""),
                                   RandomBotSpellIds);
     LoadList<std::vector<uint32>>(
         sConfigMgr->GetOption<std::string>("Playerbots.PvpProhibitedZoneIds",
@@ -221,8 +225,7 @@ bool PlayerbotAIConfig::Initialize()
         PvpProhibitedAreaIds);
     FastReactInBG = sConfigMgr->GetOption<bool>("Playerbots.FastReactInBG", true);
     LoadList<std::vector<uint32>>(
-        sConfigMgr->GetOption<std::string>("Playerbots.RandomBotQuestIds", "3802,5505,6502,7761,7848,10277,10285,11492,"
-                                           "13188,13189,24499,24511,24710,24712"),
+        sConfigMgr->GetOption<std::string>("Playerbots.RandomBotQuestIds", "3802,5505,6502,7761,9378"),
         RandomBotQuestIds);
 
     LoadSet<std::set<uint32>>(
@@ -232,8 +235,7 @@ bool PlayerbotAIConfig::Initialize()
                                            "165739,165738,175245,175970,176325,176327,123329,2560"),
         DisallowedGameObjects);
     LoadSet<std::set<uint32>>(
-        sConfigMgr->GetOption<std::string>("Playerbots.AttunementQuests", "10279,10277,10282,10283,10284,10285,10296,"
-                                           "10297,10298,11481,11482,11488,11490,11492,10901,10888,10445,10985"),
+        sConfigMgr->GetOption<std::string>("Playerbots.AttunementQuests", ""),
         AttunementQuests);
 
     LoadSet<std::set<uint32>>(
@@ -409,8 +411,10 @@ bool PlayerbotAIConfig::Initialize()
     SummonAtInnkeepersEnabled = sConfigMgr->GetOption<bool>("Playerbots.SummonAtInnkeepersEnabled", true);
     RandomBotMinLevel = sConfigMgr->GetOption<int32>("Playerbots.RandomBotMinLevel", 1);
     RandomBotMaxLevel = sConfigMgr->GetOption<int32>("Playerbots.RandomBotMaxLevel", 80);
-    if (RandomBotMaxLevel > sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-        RandomBotMaxLevel = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
+    /*
+    if (RandomBotMaxLevel > sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL))
+        RandomBotMaxLevel = sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL);
+    */
 
     // Bracket defaults (below) derive from randomBotMaxLevel, so this must run after it is read.
     LoadRandomBotLevelConfig();
@@ -647,6 +651,7 @@ bool PlayerbotAIConfig::Initialize()
     AddClassCommand = sConfigMgr->GetOption<int32>("Playerbots.AddClassCommand", 1);
     AddClassAccountPoolSize = sConfigMgr->GetOption<int32>("Playerbots.AddClassAccountPoolSize", 50);
     AddClassRandomCharacter = sConfigMgr->GetOption<bool>("Playerbots.AddClassRandomCharacter", false);
+    BattleBotAccountCount = sConfigMgr->GetOption<int32>("Playerbots.BattleBotAccountCount", 0);
     MaintenanceCommand = sConfigMgr->GetOption<int32>("Playerbots.MaintenanceCommand", 1);
 
     AltMaintenanceAttunementQs = sConfigMgr->GetOption<bool>("Playerbots.AltMaintenanceAttunementQuests", true);
@@ -766,10 +771,11 @@ bool PlayerbotAIConfig::Initialize()
     if (sPlayerbotAIConfig.Enabled)
     {
         sRandomPlayerbotMgr.Init();
+        sBattlePlayerbotMgr.Init();
     }
 
     PlayerbotGuildMgr::instance().Init();
-    sRandomPlayerbotMgr.InitArenaTeams();
+    // sRandomPlayerbotMgr.InitArenaTeams();
     sRandomItemMgr.Init();
     sRandomItemMgr.InitAfterAhBot();
     sBisListMgr->LoadAll();
@@ -946,7 +952,8 @@ void PlayerbotAIConfig::LoadRandomBotLevelConfig()
 
 bool PlayerbotAIConfig::IsInRandomAccountList(uint32 id)
 {
-    return find(RandomBotAccounts.begin(), RandomBotAccounts.end(), id) != RandomBotAccounts.end();
+    // return find(RandomBotAccounts.begin(), RandomBotAccounts.end(), id) != RandomBotAccounts.end();
+    return  RandomBotAccountSet.contains(id);
 }
 
 bool PlayerbotAIConfig::IsInRandomQuestItemList(uint32 id)
@@ -1069,7 +1076,7 @@ void PlayerbotAIConfig::LoadWorldBuff()
 
         if (firstColon == std::string::npos || secondColon == std::string::npos)
         {
-            LOG_ERROR("playerbots", "Malformed entry: [{}]", entry);
+            LOG_ERROR("playerbots", "Malformed entry: [{}]", entry.c_str());
             continue;
         }
 
@@ -1084,14 +1091,14 @@ void PlayerbotAIConfig::LoadWorldBuff()
             try {
                 ids.push_back(static_cast<uint32>(std::stoi(token)));
             } catch (...) {
-                LOG_ERROR("playerbots", "Invalid meta token in [{}]", entry);
+                LOG_ERROR("playerbots", "Invalid meta token in [{}]", entry.c_str());
                 break;
             }
         }
 
         if (ids.size() != 5)
         {
-            LOG_ERROR("playerbots", "Entry [{}] has incomplete meta block", entry);
+            LOG_ERROR("playerbots", "Entry [{}] has incomplete meta block", entry.c_str());
             continue;
         }
 
@@ -1103,7 +1110,7 @@ void PlayerbotAIConfig::LoadWorldBuff()
                 WorldBuff wb = { spellId, ids[0], ids[1], ids[2], ids[3], ids[4] };
                 WorldBuffs.push_back(wb);
             } catch (...) {
-                LOG_ERROR("playerbots", "Invalid spell ID in [{}]", entry);
+                LOG_ERROR("playerbots", "Invalid spell ID in [{}]", entry.c_str());
             }
         }
     }
@@ -1151,7 +1158,12 @@ std::vector<std::vector<uint32>> PlayerbotAIConfig::ParseTempTalentsOrder(uint32
         if ((classMask & talentTabInfo->ClassMask) == 0)
             continue;
 
-        spells[talentTabInfo->tabpage].push_back(talentInfo);
+        uint32 tabpage = talentTabInfo->tabpage;
+        // fix dbc fire mage OrderIndex=0 error 
+        if (talentTabInfo->TalentTabID == 41)
+            tabpage = 1;
+
+        spells[tabpage].push_back(talentInfo);
     }
     for (int tab = 0; tab < 3; tab++)
     {
@@ -1171,6 +1183,14 @@ std::vector<std::vector<uint32>> PlayerbotAIConfig::ParseTempTalentsOrder(uint32
             int lvl = tab_links[tab][i] - '0';
             if (lvl == 0)
                 continue;
+
+            // check invalid talent rank
+            if (lvl > MAX_TALENT_RANK || spells[tab][i]->RankID[lvl - 1] == 0)
+            {
+                LOG_ERROR("playerbots", "Invalid PremadeSpecLink \"{}\" for Class {}", tab_link, cls);
+                return {};
+            }
+
             orders[tab].push_back({(uint32)tab, spells[tab][i]->Row, spells[tab][i]->Col, (uint32)lvl});
         }
     }
@@ -1199,8 +1219,10 @@ std::vector<std::vector<uint32>> PlayerbotAIConfig::ParseTempPetTalentsOrder(uin
         if (!talentTabInfo)
             continue;
 
+        /*
         if (!((1 << spec) & talentTabInfo->petTalentMask))
             continue;
+        */
         // skip some duplicate spells like dash/dive
         if (talentInfo->TalentID == 2201 || talentInfo->TalentID == 2208 || talentInfo->TalentID == 2219 ||
             talentInfo->TalentID == 2203)
@@ -1227,3 +1249,5 @@ std::vector<std::vector<uint32>> PlayerbotAIConfig::ParseTempPetTalentsOrder(uin
 
     return orders;
 }
+
+#undef sConfigMgr

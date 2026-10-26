@@ -6,7 +6,7 @@
 
 #include "OpenItemAction.h"
 #include "AiObjectContext.h"
-#include "ItemTemplate.h"
+#include "ItemPrototype.h"
 #include "LootObjectStack.h"
 #include "ObjectMgr.h"
 #include "Player.h"
@@ -32,12 +32,14 @@ bool OpenItemAction::Execute(Event /*event*/)
 
 void OpenItemAction::OpenItem(Item* item, uint8 bag, uint8 slot)
 {
-    ObjectGuid const itemGuid = item->GetGUID();
+    ObjectGuid const itemGuid = item->GetObjectGuid();
     std::ostringstream out;
     out << "Opened item: " << item->GetTemplate()->Name1;
 
-    WorldPacket packet(CMSG_OPEN_ITEM);
-    packet << bag << slot;
+    WorldPackets::Spell::OpenItem packet;
+    packet.bagIndex = bag;
+    packet.slot = slot;
+
     bot->GetSession()->HandleOpenItemOpcode(packet);
 
     // Store the item GUID as the loot target

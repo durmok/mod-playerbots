@@ -101,6 +101,10 @@ Playerbots.RandomBotAccountCount = 0
 # 10 bots (or 9 if WotLK is disabled), one bot for each class.
 Playerbots.AddClassAccountPoolSize = 50
 
+# Battlebot accounts
+# Default: 0
+Playerbots.BattleBotAccountCount = 0
+
 # Prefix for created bot accounts (of any type).
 # Do not change this prefix while there are existing bot accounts.
 Playerbots.RandomBotAccountPrefix = "rndbot"
@@ -666,7 +670,7 @@ Playerbots.BotCheats = "food,taxi,raid"
 # - 10445, The Vials of Eternity
 # Black Temple
 # - 10985, A Distraction for Akama
-Playerbots.AttunementQuests = 10279,10277,10282,10283,10284,10285,10296,10297,10298,11481,11482,11488,11490,11492,10901,10888,10445,10985
+Playerbots.AttunementQuests = ""
 
 #
 #
@@ -1796,29 +1800,17 @@ Playerbots.PermanentlyInWorldTime = 31104000
 #
 
 Playerbots.PremadeSpecName.1.0 = arms pve
-Playerbots.PremadeSpecGlyph.1.0 = 43418,43395,43423,43399,43397,43421
-Playerbots.PremadeSpecLink.1.0.60 = 3022032023335100002012211231241
-Playerbots.PremadeSpecLink.1.0.80 = 3022032023335100102012213231251-305-2033
+Playerbots.PremadeSpecLink.1.0.60 = 353253213521115531
 Playerbots.PremadeSpecName.1.1 = fury pve
-Playerbots.PremadeSpecGlyph.1.1 = 43418,43395,43414,43396,49084,43432
-Playerbots.PremadeSpecLink.1.1.60 = -305053000500310053120501351
-Playerbots.PremadeSpecLink.1.1.80 = 32002300233-305053000500310153120511351
+Playerbots.PremadeSpecLink.1.1.60 = -55503131525512251
 Playerbots.PremadeSpecName.1.2 = prot pve
-Playerbots.PremadeSpecGlyph.1.2 = 43429,43397,43425,43399,49084,45797
-Playerbots.PremadeSpecLink.1.2.60 = --053351225000210521030113321
-Playerbots.PremadeSpecLink.1.2.80 = 3500030023-301-053351225000210521030113321
+Playerbots.PremadeSpecLink.1.2.60 = --55253133533221251
 Playerbots.PremadeSpecName.1.3 = arms pvp
-Playerbots.PremadeSpecGlyph.1.3 = 43417,43397,43423,43396,49084,43421
-Playerbots.PremadeSpecLink.1.3.60 = 0320232023331100032212012221251
-Playerbots.PremadeSpecLink.1.3.80 = 0320332023335100232212013231251-3250001
+Playerbots.PremadeSpecLink.1.3.60 = 353253213521115531
 Playerbots.PremadeSpecName.1.4 = fury pvp
-Playerbots.PremadeSpecGlyph.1.4 = 43432,43397,43417,43395,43396,43418
-Playerbots.PremadeSpecLink.1.4.60 = -325000131500212250120511351
-Playerbots.PremadeSpecLink.1.4.80 = 03220300233-325000131500212250122511351
+Playerbots.PremadeSpecLink.1.4.60 = -55503131525512251
 Playerbots.PremadeSpecName.1.5 = prot pvp
-Playerbots.PremadeSpecGlyph.1.5 = 43425,43397,43415,43396,49084,45792
-Playerbots.PremadeSpecLink.1.5.60 = --250031220223012520332113321
-Playerbots.PremadeSpecLink.1.5.80 = 0502300123-3-250031220223012521332113321
+Playerbots.PremadeSpecLink.1.5.60 = --55253133533221251
 
 #
 #
@@ -1829,30 +1821,17 @@ Playerbots.PremadeSpecLink.1.5.80 = 0502300123-3-250031220223012521332113321
 #
 
 Playerbots.PremadeSpecName.2.0 = holy pve
-Playerbots.PremadeSpecGlyph.2.0 = 41106,43367,45741,43368,43365,41109
-Playerbots.PremadeSpecLink.2.0.60 = 50350151020013053100515221
-Playerbots.PremadeSpecLink.2.0.80 = 50350152100013053100515221-50320104203
+Playerbots.PremadeSpecLink.2.0.60 = 55553122521351-3-3
 Playerbots.PremadeSpecName.2.1 = prot pve
-Playerbots.PremadeSpecGlyph.2.1 = 41100,43367,43869,43368,43369,45745
-Playerbots.PremadeSpecLink.2.1.60 = -05005135203102311333112321
-Playerbots.PremadeSpecLink.2.1.80 = -05005135203102311333312321-502302012003
+Playerbots.PremadeSpecLink.2.1.60 = 4-553251305331551
 Playerbots.PremadeSpecName.2.2 = ret pve
-Playerbots.PremadeSpecGlyph.2.2 = 41092,43367,41099,43368,43340,43869
-Playerbots.PremadeSpecLink.2.2.60 = --05230051203331302133231131
-Playerbots.PremadeSpecLink.2.2.65 = -05-05230051203331302133231131
-Playerbots.PremadeSpecLink.2.2.80 = 050501-05-05232051203331302133231331
+Playerbots.PremadeSpecLink.2.2.60 = 5-1-552353512223151
 Playerbots.PremadeSpecName.2.3 = holy pvp
-Playerbots.PremadeSpecGlyph.2.3 = 41110,43367,45746,43369,43365,45747
-Playerbots.PremadeSpecLink.2.3.60 = 50332150300013050133215221
-Playerbots.PremadeSpecLink.2.3.80 = 50332150300013050133315221-5032013122
+Playerbots.PremadeSpecLink.2.3.60 = 55553122521351-3-3
 Playerbots.PremadeSpecName.2.4 = prot pvp
-Playerbots.PremadeSpecGlyph.2.4 = 41092,43367,41101,43369,43365,45745
-Playerbots.PremadeSpecLink.2.4.60 = -15320130223122311323311321
-Playerbots.PremadeSpecLink.2.4.80 = -15320130223122321333312321-052300502
+Playerbots.PremadeSpecLink.2.4.60 = 4-553251305331551
 Playerbots.PremadeSpecName.2.5 = ret pvp
-Playerbots.PremadeSpecGlyph.2.5 = 41095,43367,41102,43369,43365,45747
-Playerbots.PremadeSpecLink.2.5.60 = --05230250203331222133201321
-Playerbots.PremadeSpecLink.2.5.80 = -1532013022-05230250203331322133201321
+Playerbots.PremadeSpecLink.2.5.60 = 5-1-552353512223151
 
 #
 #
@@ -1863,43 +1842,17 @@ Playerbots.PremadeSpecLink.2.5.80 = -1532013022-05230250203331322133201321
 #
 
 Playerbots.PremadeSpecName.3.0 = bm pve
-Playerbots.PremadeSpecGlyph.3.0 = 42912,43350,42902,43351,43338,42914
-Playerbots.PremadeSpecLink.3.0.40 = 512002015051122301
-Playerbots.PremadeSpecLink.3.0.60 = 51200201505112233110531151
-Playerbots.PremadeSpecLink.3.0.80 = 51200201505112233111531351-0323031-5
+Playerbots.PremadeSpecLink.3.0.60 = 5525322152521251-12
 Playerbots.PremadeSpecName.3.1 = mm pve
-Playerbots.PremadeSpecGlyph.3.1 = 42912,43350,45625,43351,43338,42914
-Playerbots.PremadeSpecLink.3.1.60 = -035305101030013233115031151
-Playerbots.PremadeSpecLink.3.1.80 = 502-035305101230013233135031351-5000002
+Playerbots.PremadeSpecLink.3.1.60 = -55551525513351
 Playerbots.PremadeSpecName.3.2 = surv pve
-Playerbots.PremadeSpecGlyph.3.2 = 45733,43350,45731,43351,43338,45732
-Playerbots.PremadeSpecLink.3.2.60 = --5000032500033330502135201311
-Playerbots.PremadeSpecLink.3.2.80 = -005305101-5000032500033330532135301321
+Playerbots.PremadeSpecLink.3.2.60 = -21-3355252512323151
 Playerbots.PremadeSpecName.3.3 = bm pvp
-Playerbots.PremadeSpecGlyph.3.3 = 42897,42900,42902,43356,43338,42900
-Playerbots.PremadeSpecLink.3.3.60 = 05203201505012233100531151
-Playerbots.PremadeSpecLink.3.3.80 = 05203201505012233100531351-005305101-03
+Playerbots.PremadeSpecLink.3.3.60 = 5525322152521251-12
 Playerbots.PremadeSpecName.3.4 = mm pvp
-Playerbots.PremadeSpecGlyph.3.4 = 42912,43351,42897,43338,43356,42904
-Playerbots.PremadeSpecLink.3.4.60 = -034305101030213231135031051
-Playerbots.PremadeSpecLink.3.4.80 = -035305101030213233135031051-53013020102
+Playerbots.PremadeSpecLink.3.4.60 = -55551525513351
 Playerbots.PremadeSpecName.3.5 = surv pvp
-Playerbots.PremadeSpecGlyph.3.5 = 42912,43350,42904,43356,43338,45731
-Playerbots.PremadeSpecLink.3.5.60 = --2300302410233030533135001031
-Playerbots.PremadeSpecLink.3.5.80 = -005305201-2300302510233330533135001031
-
-
-# HUNTER PET
-#
-# Ferocity
-Playerbots.PremadeHunterPetLink.0.16 = 2100003130003010101
-Playerbots.PremadeHunterPetLink.0.20 = 2100003130103010122
-# Tenacity
-Playerbots.PremadeHunterPetLink.1.16 = 21103000300120101001
-Playerbots.PremadeHunterPetLink.1.20 = 21303010300120101002
-# Cunning
-Playerbots.PremadeHunterPetLink.2.16 = 2100020330000211001
-Playerbots.PremadeHunterPetLink.2.20 = 21000203300002110221
+Playerbots.PremadeSpecLink.3.5.60 = -21-3355252512323151
 
 #
 #
@@ -1910,29 +1863,17 @@ Playerbots.PremadeHunterPetLink.2.20 = 21000203300002110221
 #
 
 Playerbots.PremadeSpecName.4.0 = as pve
-Playerbots.PremadeSpecGlyph.4.0 = 45768,43379,45761,43380,43378,45766
-Playerbots.PremadeSpecLink.4.0.60 = 005303104352100520103331051
-Playerbots.PremadeSpecLink.4.0.80 = 005303005352100520103331051-005005003-502
+Playerbots.PremadeSpecLink.4.0.60 = 325323125551351-005
 Playerbots.PremadeSpecName.4.1 = combat pve
-Playerbots.PremadeSpecGlyph.4.1 = 42962,43379,45762,43380,43378,42969
-Playerbots.PremadeSpecLink.4.1.60 = -0252051000035015223100501251
-Playerbots.PremadeSpecLink.4.1.80 = 00532000523-0252051000035015223100501251
+Playerbots.PremadeSpecLink.4.1.60 = -3252550102450155231
 Playerbots.PremadeSpecName.4.2 = subtlety pve
-Playerbots.PremadeSpecGlyph.4.2 = 42967,43379,45764,43380,43378,45767
-Playerbots.PremadeSpecLink.4.2.60 = --5022012030321121350115031151
-Playerbots.PremadeSpecLink.4.2.80 = 30532010114--5022012030321121350115031151
+Playerbots.PremadeSpecLink.4.2.60 = -004-55225313333212151
 Playerbots.PremadeSpecName.4.3 = as pvp
-Playerbots.PremadeSpecGlyph.4.3 = 42974,43380,45768,43379,43376,42971
-Playerbots.PremadeSpecLink.4.3.60 = 005303103342102522103031--50002
-Playerbots.PremadeSpecLink.4.3.80 = 005303103342102522103031-004-532023203000012
+Playerbots.PremadeSpecLink.4.3.60 = 325323125551351-005
 Playerbots.PremadeSpecName.4.4 = combat pvp
-Playerbots.PremadeSpecGlyph.4.4 = 42972,43380,45762,43376,43378,42971
-Playerbots.PremadeSpecLink.4.4.60 = -3250002050225010223102321251
-Playerbots.PremadeSpecLink.4.4.80 = 305120105-3250002050235010223102521251
+Playerbots.PremadeSpecLink.4.4.60 = -3252550102450155231
 Playerbots.PremadeSpecName.4.5 = subtlety pvp
-Playerbots.PremadeSpecGlyph.4.5 = 42968,43376,45764,43380,43379,42971
-Playerbots.PremadeSpecLink.4.5.60 = --5120212030320121330133221251
-Playerbots.PremadeSpecLink.4.5.80 = 3023031-3-5120212030320121350135231251
+Playerbots.PremadeSpecLink.4.5.60 = -004-55225313333212151
 
 #
 #
@@ -1943,66 +1884,17 @@ Playerbots.PremadeSpecLink.4.5.80 = 3023031-3-5120212030320121350135231251
 #
 
 Playerbots.PremadeSpecName.5.0 = disc pve
-Playerbots.PremadeSpecGlyph.5.0 = 42408,43371,42400,43374,43342,45756
-Playerbots.PremadeSpecLink.5.0.60 = 0503203130300512301323131051
-Playerbots.PremadeSpecLink.5.0.80 = 0503203130300512331323231251-03520103
+Playerbots.PremadeSpecLink.5.0.60 = 555232133525151-12
 Playerbots.PremadeSpecName.5.1 = holy pve
-Playerbots.PremadeSpecGlyph.5.1 = 42408,43371,42400,43374,43342,42396
-Playerbots.PremadeSpecLink.5.1.60 = -035050031301152530000331331
-Playerbots.PremadeSpecLink.5.1.80 = 05032031-235050032302152530000331351
+Playerbots.PremadeSpecLink.5.1.60 = 3-2355513323221551
 Playerbots.PremadeSpecName.5.2 = shadow pve
-Playerbots.PremadeSpecGlyph.5.2 = 45753,43371,42407,43374,43370,42415
-Playerbots.PremadeSpecLink.5.2.60 = --325003041203010323150301351
-Playerbots.PremadeSpecLink.5.2.80 = 0503203--325023051223010323152301351
+Playerbots.PremadeSpecLink.5.2.60 = 3--5532525123511251
 Playerbots.PremadeSpecName.5.3 = disc pvp
-Playerbots.PremadeSpecGlyph.5.3 = 42408,43371,45760,43370,43374,45756
-Playerbots.PremadeSpecLink.5.3.60 = 5003203130320512201323031051
-Playerbots.PremadeSpecLink.5.3.80 = 5003203130322512331013231151-23050113
+Playerbots.PremadeSpecLink.5.3.60 = 555232133525151-12
 Playerbots.PremadeSpecName.5.4 = holy pvp
-Playerbots.PremadeSpecGlyph.5.4 = 42411,43371,42408,43370,43374,45755
-Playerbots.PremadeSpecLink.5.4.60 = -235501031000152430320031151
-Playerbots.PremadeSpecLink.5.4.80 = 500320313-235501031000152530320031351
+Playerbots.PremadeSpecLink.5.4.60 = 3-2355513323221551
 Playerbots.PremadeSpecName.5.5 = shadow pvp
-Playerbots.PremadeSpecGlyph.5.5 = 42407,43371,45753,43370,43374,42408
-Playerbots.PremadeSpecLink.5.5.60 = --005323241223112003102311351
-Playerbots.PremadeSpecLink.5.5.80 = 50332031003--005323241223112003102311351
-
-#
-#
-####################################################################################################
-
-####################################################################################################
-# DEATH KNIGHT
-#
-
-Playerbots.PremadeSpecName.6.0 = blood pve
-Playerbots.PremadeSpecGlyph.6.0 = 45805,43673,43538,43544,43672,43542
-Playerbots.PremadeSpecLink.6.0.60 = 035502150300331320102013111-005
-Playerbots.PremadeSpecLink.6.0.80 = 0055021533303310201020131-305020510002-00522
-Playerbots.PremadeSpecName.6.1 = frost pve
-Playerbots.PremadeSpecGlyph.6.1 = 45805,43673,43547,43544,43672,43543
-Playerbots.PremadeSpecLink.6.1.60 = -32003350332203012300023101351
-Playerbots.PremadeSpecLink.6.1.80 = -32002350352203012300033101351-230200305003
-Playerbots.PremadeSpecName.6.2 = unholy pve
-Playerbots.PremadeSpecGlyph.6.2 = 43542,43673,43546,43535,43672,43549
-Playerbots.PremadeSpecLink.6.2.60 = --2301303050032151000150013131151
-Playerbots.PremadeSpecLink.6.2.80 = 23050202--2302303350032152000150003133151
-Playerbots.PremadeSpecName.6.3 = double aura blood pve
-Playerbots.PremadeSpecGlyph.6.3 = 45805,43673,43538,43544,43672,43554
-Playerbots.PremadeSpecLink.6.3.60 = 005512153330030320102013-305
-Playerbots.PremadeSpecLink.6.3.80 = 005512153330030320102013-3050505002023001-002
-Playerbots.PremadeSpecName.6.4 = blood pvp
-Playerbots.PremadeSpecGlyph.6.4 = 43534,43535,45799,43673,43672,45805
-Playerbots.PremadeSpecLink.6.4.60 = 2305021503003313201222101351
-Playerbots.PremadeSpecLink.6.4.80 = 2305021503003313201222101351--032232300023
-Playerbots.PremadeSpecName.6.5 = frost pvp
-Playerbots.PremadeSpecGlyph.6.5 = 43543,43539,45800,43673,43672,45806
-Playerbots.PremadeSpecLink.6.5.60 = -32015351022203012001233101251
-Playerbots.PremadeSpecLink.6.5.80 = 0055-32015351052203012001233131351-03
-Playerbots.PremadeSpecName.6.6 = unholy pvp
-Playerbots.PremadeSpecGlyph.6.6 = 45804,43539,43549,43673,43672,45805
-Playerbots.PremadeSpecLink.6.6.60 = --2301323301002152230101203103151
-Playerbots.PremadeSpecLink.6.6.80 = -320050410002-2301323301002152230101203133151
+Playerbots.PremadeSpecLink.5.5.60 = 3--5532525123511251
 
 #
 #
@@ -2013,29 +1905,17 @@ Playerbots.PremadeSpecLink.6.6.80 = -320050410002-230132330100215223010120313315
 #
 
 Playerbots.PremadeSpecName.7.0 = ele pve
-Playerbots.PremadeSpecGlyph.7.0 = 41536,43385,41532,43386,44923,45776
-Playerbots.PremadeSpecLink.7.0.60 = 4530001520213351102301351
-Playerbots.PremadeSpecLink.7.0.80 = 4530001523213351302301351-00525003
+Playerbots.PremadeSpecLink.7.0.60 = 552331552332151-5
 Playerbots.PremadeSpecName.7.1 = enh pve
-Playerbots.PremadeSpecGlyph.7.1 = 41542,43385,41539,43386,43725,45771
-Playerbots.PremadeSpecLink.7.1.60 = -30305003105021333031121131051
-Playerbots.PremadeSpecLink.7.1.80 = 053030152-30305003105021333031131131051
+Playerbots.PremadeSpecLink.7.1.60 = -5425232155523151
 Playerbots.PremadeSpecName.7.2 = resto pve
-Playerbots.PremadeSpecGlyph.7.2 = 41527,43385,41517,43386,43725,45775
-Playerbots.PremadeSpecLink.7.2.60 = --50005301235310501102321251
-Playerbots.PremadeSpecLink.7.2.80 = -00502033-50005331335310501122331251
+Playerbots.PremadeSpecLink.7.2.60 = --551353513553151
 Playerbots.PremadeSpecName.7.3 = ele pvp
-Playerbots.PremadeSpecGlyph.7.3 = 45778,43388,45770,43725,43386,41524
-Playerbots.PremadeSpecLink.7.3.60 = 0533001503213051322301341
-Playerbots.PremadeSpecLink.7.3.80 = 0533051503213051322331351-023212001
+Playerbots.PremadeSpecLink.7.3.60 = 552331552332151-5
 Playerbots.PremadeSpecName.7.4 = enh pvp
-Playerbots.PremadeSpecGlyph.7.4 = 45778,43388,41526,43725,43344,45771
-Playerbots.PremadeSpecLink.7.4.60 = -02305203105001333201131131151
-Playerbots.PremadeSpecLink.7.4.80 = 0503351-02305203105001333211131231251
+Playerbots.PremadeSpecLink.7.4.60 = -5425232155523151
 Playerbots.PremadeSpecName.7.5 = resto pvp
-Playerbots.PremadeSpecGlyph.7.5 = 45778,43388,45775,43725,43344,41535
-Playerbots.PremadeSpecLink.7.5.60 = --05032331331013501120321251
-Playerbots.PremadeSpecLink.7.5.80 = -023222301004-05032331331013501120331251
+Playerbots.PremadeSpecLink.7.5.60 = --551353513553151
 
 #
 #
@@ -2046,33 +1926,17 @@ Playerbots.PremadeSpecLink.7.5.80 = -023222301004-05032331331013501120331251
 #
 
 Playerbots.PremadeSpecName.8.0 = arcane pve
-Playerbots.PremadeSpecGlyph.8.0 = 42735,43339,44955,43364,43361,42751
-Playerbots.PremadeSpecLink.8.0.60 = 230005231100330150323102500321
-Playerbots.PremadeSpecLink.8.0.80 = 230005231100330150323102505321-03-203303001
+Playerbots.PremadeSpecLink.8.0.60 = 2552552312231531-2-02
 Playerbots.PremadeSpecName.8.1 = fire pve
-Playerbots.PremadeSpecGlyph.8.1 = 42739,43339,45737,43364,44920,42751
-Playerbots.PremadeSpecLink.8.1.60 = -0055030011302231053120321341
-Playerbots.PremadeSpecLink.8.1.80 = 23000503110003-0055032012303330053120300351
+Playerbots.PremadeSpecLink.8.1.60 = 23-5552323123233151
 Playerbots.PremadeSpecName.8.2 = frost pve
-Playerbots.PremadeSpecGlyph.8.2 = 42742,43339,50045,43364,43361,42751
-Playerbots.PremadeSpecLink.8.2.60 = --0533030313203100030152231151
-Playerbots.PremadeSpecLink.8.2.80 = 23002303110003--0533030313203100030152231351
-Playerbots.PremadeSpecName.8.3 = frostfire pve
-Playerbots.PremadeSpecGlyph.8.3 = 44684,44920,42751,43339,43364,45737
-Playerbots.PremadeSpecLink.8.3.60 = -2305032012303331053120300051
-Playerbots.PremadeSpecLink.8.3.80 = -2305032012303331053120321351-023302031
-Playerbots.PremadeSpecName.8.4 = arcane pvp
-Playerbots.PremadeSpecGlyph.8.4 = 42735,43364,42738,43360,43357,42752
-Playerbots.PremadeSpecLink.8.4.60 = 205323200122032103303102015221
-Playerbots.PremadeSpecLink.8.4.80 = 205323200122032103303102015321-23002-303020301
-Playerbots.PremadeSpecName.8.5 = fire pvp
-Playerbots.PremadeSpecGlyph.8.5 = 42738,43364,42752,43360,43357,45737
-Playerbots.PremadeSpecLink.8.5.60 = -2305202312020031223122301351
-Playerbots.PremadeSpecLink.8.5.80 = 230321030122-2305212312020031223122301351
-Playerbots.PremadeSpecName.8.6 = frost pvp
-Playerbots.PremadeSpecGlyph.8.6 = 42738,43364,45740,43357,43360,42752
-Playerbots.PremadeSpecLink.8.6.60 = --3533203210203100232102231151
-Playerbots.PremadeSpecLink.8.6.80 = 23032103010203--3533203210203100232102231151
+Playerbots.PremadeSpecLink.8.2.60 = 2--25353233132351341
+Playerbots.PremadeSpecName.8.3 = arcane pvp
+Playerbots.PremadeSpecLink.8.3.60 = 2552552312231531-2-02
+Playerbots.PremadeSpecName.8.4 = fire pvp
+Playerbots.PremadeSpecLink.8.4.60 = 23-5552323123233151
+Playerbots.PremadeSpecName.8.5 = frost pvp
+Playerbots.PremadeSpecLink.8.5.60 = 2--25353233132351341
 
 #
 #
@@ -2083,31 +1947,17 @@ Playerbots.PremadeSpecLink.8.6.80 = 23032103010203--3533203210203100232102231151
 #
 
 Playerbots.PremadeSpecName.9.0 = affli pve
-Playerbots.PremadeSpecGlyph.9.0 = 45785,43390,50077,43394,43393,45779
-Playerbots.PremadeSpecLink.9.0.60 = 2350022001113510053500131151
-Playerbots.PremadeSpecLink.9.0.70 = 2350022001113510053500131151--55
-Playerbots.PremadeSpecLink.9.0.80 = 2350022001123510253500331151--55000005
+Playerbots.PremadeSpecLink.9.0.60 = 55322535122211451-2
 Playerbots.PremadeSpecName.9.1 = demo pve
-Playerbots.PremadeSpecGlyph.9.1 = 45785,43390,50077,43394,43393,42459
-Playerbots.PremadeSpecLink.9.1.60 = -003203301135112530135201051
-Playerbots.PremadeSpecLink.9.1.70 = -003203301135112530135201051-55
-Playerbots.PremadeSpecLink.9.1.80 = -003203301135112530135221351-55000005
+Playerbots.PremadeSpecLink.9.1.60 = -22523531525512512
 Playerbots.PremadeSpecName.9.2 = destro pve
-Playerbots.PremadeSpecGlyph.9.2 = 45785,43390,42454,43394,43393,42453
-Playerbots.PremadeSpecLink.9.2.60 = --05203215200231051305031151
-Playerbots.PremadeSpecLink.9.2.80 = 23-0302-05203215220331051335231351
+Playerbots.PremadeSpecLink.9.2.60 = --5553225122525151
 Playerbots.PremadeSpecName.9.3 = affli pvp
-Playerbots.PremadeSpecGlyph.9.3 = 50077,43392,42455,43390,43389,45783
-Playerbots.PremadeSpecLink.9.3.60 = 0350002231223011053502301151
-Playerbots.PremadeSpecLink.9.3.80 = 2350002231223111053502301151-2032003011302
+Playerbots.PremadeSpecLink.9.3.60 = 55322535122211451-2
 Playerbots.PremadeSpecName.9.4 = demo pvp
-Playerbots.PremadeSpecGlyph.9.4 = 42459,43392,45780,43390,43389,45783
-Playerbots.PremadeSpecLink.9.4.60 = -003203301135202530135001251
-Playerbots.PremadeSpecLink.9.4.80 = -003203301135202530135011351-052300152
+Playerbots.PremadeSpecLink.9.4.60 = -22523531525512512
 Playerbots.PremadeSpecName.9.5 = destro pvp
-Playerbots.PremadeSpecGlyph.9.5 = 42471,43392,42454,43390,43389,45783
-Playerbots.PremadeSpecLink.9.5.60 = --05230015220331351005031051
-Playerbots.PremadeSpecLink.9.5.80 = -2032003311302-05230015220331351005031051
+Playerbots.PremadeSpecLink.9.5.60 = --5553225122525151
 
 #
 #
@@ -2118,33 +1968,17 @@ Playerbots.PremadeSpecLink.9.5.80 = -2032003311302-05230015220331351005031051
 #
 
 Playerbots.PremadeSpecName.11.0 = balance pve
-Playerbots.PremadeSpecGlyph.11.0 = 40916,43331,40921,43335,44922,40919
-Playerbots.PremadeSpecLink.11.0.60 = 5032003125031003213304301231
-Playerbots.PremadeSpecLink.11.0.80 = 5032003125331303213305301231--205003012
-Playerbots.PremadeSpecName.11.1 = bear pve
-Playerbots.PremadeSpecGlyph.11.1 = 40897,43331,46372,43335,43332,40899
-Playerbots.PremadeSpecLink.11.1.60 = -503232132322010303120300013501
-Playerbots.PremadeSpecLink.11.1.80 = -503232132322010353120303013511-20350001
+Playerbots.PremadeSpecLink.11.0.60 = 5142553312551351
+Playerbots.PremadeSpecName.11.1 = feral pve
+Playerbots.PremadeSpecLink.11.1.60 = -5552521323222151-5
 Playerbots.PremadeSpecName.11.2 = resto pve
-Playerbots.PremadeSpecGlyph.11.2 = 40906,43331,45602,43335,43674,45603
-Playerbots.PremadeSpecLink.11.2.60 = --230033312031502331050313031
-Playerbots.PremadeSpecLink.11.2.80 = 05320031--230033312031502431053313051
-Playerbots.PremadeSpecName.11.3 = cat pve
-Playerbots.PremadeSpecGlyph.11.3 = 40902,43331,40901,43674,43335,45604
-Playerbots.PremadeSpecLink.11.3.60 = -552202032322010053100030310501
-Playerbots.PremadeSpecLink.11.3.80 = -553202032322010053120030310511-203503012
-Playerbots.PremadeSpecName.11.4 = balance pvp
-Playerbots.PremadeSpecGlyph.11.4 = 40921,43331,45622,43674,43335,45623
-Playerbots.PremadeSpecLink.11.4.60 = 5012203115331002213032311231
-Playerbots.PremadeSpecLink.11.4.80 = 5022203125331003213035311231--230033012
-Playerbots.PremadeSpecName.11.5 = cat pvp
-Playerbots.PremadeSpecGlyph.11.5 = 40902,43331,45601,43674,43335,40901
-Playerbots.PremadeSpecLink.11.5.60 = -513202032322010053103030310501
-Playerbots.PremadeSpecLink.11.5.80 = -523202032322010053103030310511-205503012
-Playerbots.PremadeSpecName.11.6 = resto pvp
-Playerbots.PremadeSpecGlyph.11.6 = 40913,43331,40906,43335,43674,45623
-Playerbots.PremadeSpecLink.11.6.60 = --230033312031500511350013051
-Playerbots.PremadeSpecLink.11.6.80 = 05320021--230033312031500531353013251
+Playerbots.PremadeSpecLink.11.2.60 = --535523155315251
+Playerbots.PremadeSpecName.11.3 = balance pvp
+Playerbots.PremadeSpecLink.11.3.60 = 5142553312551351
+Playerbots.PremadeSpecName.11.4 = feral pvp
+Playerbots.PremadeSpecLink.11.4.60 = -5552521323222151-5
+Playerbots.PremadeSpecName.11.5 = resto pvp
+Playerbots.PremadeSpecLink.11.5.60 = --535523155315251
 
 #
 #

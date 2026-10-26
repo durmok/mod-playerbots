@@ -13,6 +13,7 @@
 template<class T> inline
 T const& DUNGEON_MODE(Player* bot, T const& normal5, T const& heroic10)
 {
+    /*
     switch (bot->GetMap()->GetDifficulty())
     {
         case DUNGEON_DIFFICULTY_NORMAL:
@@ -24,6 +25,8 @@ T const& DUNGEON_MODE(Player* bot, T const& normal5, T const& heroic10)
     }
 
     return heroic10;
+    */
+    return normal5;
 }
 
 #endif

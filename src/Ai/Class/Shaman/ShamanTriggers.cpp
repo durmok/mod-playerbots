@@ -6,12 +6,13 @@
 
 #include "ShamanTriggers.h"
 #include "Creature.h"
-#include "InstanceScript.h"
-#include "ItemTemplate.h"
+// #include "InstanceScript.h"
+#include "ItemPrototype.h"
 #include "Player.h"
 #include "PlayerbotAI.h"
 #include "Playerbots.h"
 #include "TotemsShamanStrategy.h"
+#include "ItemPrototype.h"
 #include "Unit.h"
 #include <ctime>
 
@@ -112,6 +113,7 @@ bool SpiritWalkTrigger::IsActive()
     if ((now - lastSpiritWalkTime) < COOLDOWN_IN_SECONDS)
         return false;
 
+    /*
     for (Unit* unit : bot->m_Controlled)
     {
         Creature* wolf = dynamic_cast<Creature*>(unit);
@@ -124,6 +126,7 @@ bool SpiritWalkTrigger::IsActive()
             }
         }
     }
+    */
 
     return false;
 }
@@ -138,14 +141,16 @@ bool CallOfTheElementsTrigger::IsActive()
     }
 
     int emptyCount = 0;
-    static const uint8 slots[] = {
-        SUMMON_SLOT_TOTEM_EARTH, SUMMON_SLOT_TOTEM_FIRE,
-        SUMMON_SLOT_TOTEM_WATER, SUMMON_SLOT_TOTEM_AIR
+    static const TotemSlot slots[] = {
+        // SUMMON_SLOT_TOTEM_EARTH, SUMMON_SLOT_TOTEM_FIRE,
+        // SUMMON_SLOT_TOTEM_WATER, SUMMON_SLOT_TOTEM_AIR
+        TOTEM_SLOT_EARTH, TOTEM_SLOT_FIRE,
+        TOTEM_SLOT_WATER, TOTEM_SLOT_AIR
     };
 
-    for (uint8 slot : slots)
+    for (TotemSlot slot : slots)
     {
-        ObjectGuid guid = bot->m_SummonSlot[slot];
+        ObjectGuid guid = bot->m_totemSlot[slot];
         bool possibleEmpty = false;
 
         if (guid.IsEmpty())
@@ -166,10 +171,10 @@ bool CallOfTheElementsTrigger::IsActive()
             continue;
         }
 
-        if ((slot == SUMMON_SLOT_TOTEM_EARTH && bot->HasSpell(SPELL_STONESKIN_TOTEM_RANK_1)) ||
-            (slot == SUMMON_SLOT_TOTEM_FIRE && bot->HasSpell(SPELL_SEARING_TOTEM_RANK_1)) ||
-            (slot == SUMMON_SLOT_TOTEM_WATER && bot->HasSpell(SPELL_HEALING_STREAM_TOTEM_RANK_1)) ||
-            (slot == SUMMON_SLOT_TOTEM_AIR && bot->HasSpell(SPELL_NATURE_RESISTANCE_TOTEM_RANK_1)))
+        if ((slot == TOTEM_SLOT_EARTH && bot->HasSpell(SPELL_STONESKIN_TOTEM_RANK_1)) ||
+            (slot == TOTEM_SLOT_FIRE && bot->HasSpell(SPELL_SEARING_TOTEM_RANK_1)) ||
+            (slot == TOTEM_SLOT_WATER && bot->HasSpell(SPELL_HEALING_STREAM_TOTEM_RANK_1)) ||
+            (slot == TOTEM_SLOT_AIR && bot->HasSpell(SPELL_NATURE_RESISTANCE_TOTEM_RANK_1)))
         {
             emptyCount++;
         }
@@ -189,6 +194,7 @@ bool TotemicRecallTrigger::IsActive()
     if (!bot->HasSpell(SPELL_TOTEMIC_RECALL))
         return false;
 
+    /*
     Map* map = bot->GetMap();
     if (map && map->IsDungeon())
     {
@@ -202,6 +208,7 @@ bool TotemicRecallTrigger::IsActive()
             }
         }
     }
+    */
 
     Group* group = bot->GetGroup();
     if (group)
@@ -221,7 +228,7 @@ bool TotemicRecallTrigger::IsActive()
         }
     }
 
-    ObjectGuid guid = bot->m_SummonSlot[SUMMON_SLOT_TOTEM_WATER];
+    ObjectGuid guid = bot->m_totemSlot[TOTEM_SLOT_WATER];
     if (!guid.IsEmpty())
     {
         Creature* totem = bot->GetMap()->GetCreature(guid);
@@ -238,7 +245,7 @@ bool TotemicRecallTrigger::IsActive()
         }
     }
 
-    guid = bot->m_SummonSlot[SUMMON_SLOT_TOTEM_FIRE];
+    guid = bot->m_totemSlot[TOTEM_SLOT_FIRE];
     if (!guid.IsEmpty())
     {
         Creature* totem = bot->GetMap()->GetCreature(guid);
@@ -255,10 +262,10 @@ bool TotemicRecallTrigger::IsActive()
         }
     }
 
-    return !bot->m_SummonSlot[SUMMON_SLOT_TOTEM_EARTH].IsEmpty() ||
-           !bot->m_SummonSlot[SUMMON_SLOT_TOTEM_FIRE].IsEmpty() ||
-           !bot->m_SummonSlot[SUMMON_SLOT_TOTEM_WATER].IsEmpty() ||
-           !bot->m_SummonSlot[SUMMON_SLOT_TOTEM_AIR].IsEmpty();
+    return !bot->m_totemSlot[TOTEM_SLOT_EARTH].IsEmpty() ||
+           !bot->m_totemSlot[TOTEM_SLOT_FIRE].IsEmpty() ||
+           !bot->m_totemSlot[TOTEM_SLOT_WATER].IsEmpty() ||
+           !bot->m_totemSlot[TOTEM_SLOT_AIR].IsEmpty();
 }
 
 // Find the active totem strategy for this slot, and return the highest-rank spellId the bot knows for it
@@ -290,7 +297,7 @@ bool NoEarthTotemTrigger::IsActive()
     if (!bot->HasSpell(SPELL_STONESKIN_TOTEM_RANK_1))
         return false;
 
-    ObjectGuid guid = bot->m_SummonSlot[SUMMON_SLOT_TOTEM_EARTH];
+    ObjectGuid guid = bot->m_totemSlot[TOTEM_SLOT_EARTH];
     Creature* totem = nullptr;
     uint32 currentSpell = 0;
     if (!guid.IsEmpty())
@@ -331,7 +338,7 @@ bool NoFireTotemTrigger::IsActive()
     if (!bot->HasSpell(SPELL_SEARING_TOTEM_RANK_1))
         return false;
 
-    ObjectGuid guid = bot->m_SummonSlot[SUMMON_SLOT_TOTEM_FIRE];
+    ObjectGuid guid = bot->m_totemSlot[TOTEM_SLOT_FIRE];
     Creature* totem = nullptr;
     uint32 currentSpell = 0;
     if (!guid.IsEmpty())
@@ -373,7 +380,7 @@ bool NoWaterTotemTrigger::IsActive()
     if (!bot->HasSpell(SPELL_HEALING_STREAM_TOTEM_RANK_1))
         return false;
 
-    ObjectGuid guid = bot->m_SummonSlot[SUMMON_SLOT_TOTEM_WATER];
+    ObjectGuid guid = bot->m_totemSlot[TOTEM_SLOT_WATER];
     Creature* totem = nullptr;
     uint32 currentSpell = 0;
     if (!guid.IsEmpty())
@@ -416,7 +423,7 @@ bool NoAirTotemTrigger::IsActive()
     if (!bot->HasSpell(SPELL_NATURE_RESISTANCE_TOTEM_RANK_1))
         return false;
 
-    ObjectGuid guid = bot->m_SummonSlot[SUMMON_SLOT_TOTEM_AIR];
+    ObjectGuid guid = bot->m_totemSlot[TOTEM_SLOT_AIR];
     Creature* totem = nullptr;
     uint32 currentSpell = 0;
     if (!guid.IsEmpty())
@@ -462,7 +469,11 @@ bool SetTotemTrigger::IsActive()
    if (!highestKnownSpell)
        return false;
 
-   ActionButton const* button = bot->GetActionButton(actionButtonId);
+    MasterPlayer* mplayer = bot->GetSession()->GetMasterPlayer();
+    if (!mplayer)
+        return false;
+
+   ActionButton const* button = mplayer->GetActionButton(actionButtonId);
    if (!button || button->GetType() != ACTION_BUTTON_SPELL || button->GetAction() == 0)
        return true;
 

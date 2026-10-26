@@ -3,16 +3,17 @@
  * information; released under GNU GPL v2 license, redistribute/modify under version 2 of the License,
  * or (at your option) any later version.
  */
+/*
 
 #include "BattleGroundTactics.h"
-#include "Chat.h"
+#include "Chat/Chat.h"
 #include "GuildTaskMgr.h"
 #include "PerfMonitor.h"
 #include "PlayerbotMgr.h"
 #include "RandomPlayerbotMgr.h"
 #include "ScriptMgr.h"
 
-using namespace Acore::ChatCommands;
+using namespace MaNGOS::ChatCommands;
 
 class playerbots_commandscript : public CommandScript
 {
@@ -63,7 +64,7 @@ public:
         return GuildTaskMgr::HandleConsoleCommand(handler, args);
     }
 
-    static bool HandlePerfMonCommand(ChatHandler* /*handler*/, char const* args)
+    static bool HandlePerfMonCommand(ChatHandler* handler, char const* args)
     {
         if (!strcmp(args, "reset"))
         {
@@ -158,7 +159,7 @@ public:
         }
     }
 
-    static bool HandleViewLinkedAccountsCommand(ChatHandler* handler, char const* /*args*/)
+    static bool HandleViewLinkedAccountsCommand(ChatHandler* handler, char const* args)
     {
         Player* player = handler->GetSession()->GetPlayer();
 
@@ -204,3 +205,5 @@ public:
 };
 
 void AddPlayerbotsCommandscripts() { new playerbots_commandscript(); }
+
+*/

@@ -33,4 +33,11 @@ public:
     bool Execute(Event event) override;
 };
 
+class AcceptSummonAction : public Action
+{
+public:
+    AcceptSummonAction(PlayerbotAI* ai) : Action(ai, "accept summon") {}
+    bool Execute(Event event) override;
+};
+
 #endif

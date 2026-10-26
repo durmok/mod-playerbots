@@ -259,7 +259,7 @@ public:
 
     bool isPossible() override;
     bool Execute(Event event) override;
-    ActionThreatType getThreatType() override { return ActionThreatType::None; }
+    ActionThreatType getThreatType() override { return ActionThreatType::Single; }
 
 private:
     uint32 shootSpellId;
@@ -365,7 +365,7 @@ public:
 
     Value<Unit*>* GetTargetValue() override;
     std::string const getName() override { return spell + " on snare target"; }
-    ActionThreatType getThreatType() override { return ActionThreatType::None; }
+    ActionThreatType getThreatType() override { return ActionThreatType::Single; }
 };
 
 class CastCrowdControlSpellAction : public CastBuffSpellAction

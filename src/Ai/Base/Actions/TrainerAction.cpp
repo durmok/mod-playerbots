@@ -13,7 +13,7 @@
 #include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
 #include "ReputationMgr.h"
-#include "Trainer.h"
+// #include "Trainer.h"
 
 bool TrainerAction::Execute(Event event)
 {
@@ -23,8 +23,20 @@ bool TrainerAction::Execute(Event event)
     if (!target)
         return false;
 
-    Trainer::Trainer* trainer = sObjectMgr->GetTrainer(target->GetEntry());
+
+    /*
+    Trainer::Trainer* trainer = sObjectMgr.GetTrainer(target->GetEntry());
     if (!trainer)
+        return false;
+    */
+    CreatureTemplate const* cInfo = sObjectMgr.GetCreatureTemplate(target->GetEntry());
+    if (!(cInfo->npc_flags & UNIT_NPC_FLAG_TRAINER))
+        return false;
+    if (cInfo->trainer_type != TRAINER_TYPE_CLASS)
+        return false;
+    if (cInfo->trainer_class != bot->GetClass())
+        return false;
+    if (cInfo->trainer_race != bot->GetRace())
         return false;
 
     // NOTE: Original version uses SpellIds here, but occasionally only inserts
@@ -35,7 +47,7 @@ bool TrainerAction::Execute(Event event)
     bool learnSpells = param.find("learn") != std::string::npos || sRandomPlayerbotMgr.IsRandomBot(bot) ||
                        (sPlayerbotAIConfig.AllowLearnTrainerSpells &&
                         // TODO: Rewrite to only exclude start primary profession skills and make config dependent.
-                        (trainer->GetTrainerType() != Trainer::Type::Tradeskill || !IsRealPlayer(botAI->GetMaster())));
+                        (/*trainer->GetTrainerType() != Trainer::Type::Tradeskill || */!IsRealPlayer(botAI->GetMaster())));
 
     Iterate(target, learnSpells, spellId);
 
@@ -56,16 +68,30 @@ bool TrainerAction::isUseful()
 
 bool TrainerAction::isPossible()
 {
+    #ifdef false
     Creature* target = GetCreatureTarget();
     if (!target)
         return false;
 
-    Trainer::Trainer* trainer = sObjectMgr->GetTrainer(target->GetEntry());
+    /*
+    Trainer::Trainer* trainer = sObjectMgr.GetTrainer(target->GetEntry());
     if (!trainer)
         return false;
+    */
+    CreatureTemplate const* cInfo = sObjectMgr.GetCreatureTemplate(target->GetEntry());
+    if (!(cInfo->npc_flags & UNIT_NPC_FLAG_TRAINER))
+        return false;
+    if (cInfo->trainer_type != TRAINER_TYPE_CLASS)
+        return false;
+    if (cInfo->trainer_class != bot->GetClass())
+        return false;
+    if (cInfo->trainer_race != bot->GetRace())
+        return false;
 
+    /*
     if (!trainer->IsTrainerValidForPlayer(bot))
         return false;
+    */
 
     for (Trainer::Spell const& spell : trainer->GetSpells())
     {
@@ -80,6 +106,7 @@ bool TrainerAction::isPossible()
             return true;
     }
 
+    #endif
     return false;
 }
 
@@ -102,9 +129,10 @@ Creature* TrainerAction::GetCreatureTarget()
 
 void TrainerAction::Iterate(Creature* creature, bool learnSpells, uint32 spellId)
 {
+    /*
     TellHeader(creature);
 
-    Trainer::Trainer* trainer = sObjectMgr->GetTrainer(creature->GetEntry());
+    Trainer::Trainer* trainer = sObjectMgr.GetTrainer(creature->GetEntry());
     if (!trainer)
         return;
 
@@ -128,7 +156,7 @@ void TrainerAction::Iterate(Creature* creature, bool learnSpells, uint32 spellId
         if (spellId && trainerSpell->SpellId != spellId)
             continue;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(trainerSpell->SpellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(trainerSpell->SpellId);
         if (!spellInfo)
             continue;
 
@@ -145,6 +173,7 @@ void TrainerAction::Iterate(Creature* creature, bool learnSpells, uint32 spellId
     }
 
     TellFooter(totalCost);
+    */
 }
 
 void TrainerAction::Learn(SpellInfo const* spellInfo, uint32 cost, std::ostringstream& out)
@@ -185,7 +214,7 @@ void TrainerAction::TellFooter(uint32 totalCost)
     }
 }
 
-bool MaintenanceAction::Execute(Event /*event*/)
+bool MaintenanceAction::Execute(Event event)
 {
     if (!sPlayerbotAIConfig.MaintenanceCommand)
     {
@@ -207,20 +236,40 @@ bool MaintenanceAction::Execute(Event /*event*/)
         factory.InitPotions();
         factory.InitTalentsTree(true);
         factory.InitPet();
-        factory.InitPetTalents();
+        // factory.InitPetTalents();
         factory.InitSkills();
         factory.InitClassSpells();
         factory.InitAvailableSpells();
         factory.InitReputation();
         factory.InitSpecialSpells();
         factory.InitMounts();
-        factory.InitGlyphs(false);
+        // factory.InitGlyphs(false);
         factory.InitKeyring();
         if (bot->GetLevel() >= sPlayerbotAIConfig.MinEnchantingBotLevel)
             factory.ApplyEnchantAndGemsNew();
     }
     else
     {
+        if (sRandomPlayerbotMgr.IsAddclassBot(bot))
+        {
+            if (Player* master = GetMaster())
+            {
+                if (bot->GetLevel() < master->GetLevel() ||
+                    (bot->GetLevel() >= master->GetLevel() && event.getParam() == "force"))
+                {
+                    PlayerbotFactory factory(bot, master->GetLevel());
+                    factory.SyncLevel();
+                }
+            }
+        }
+        botAI->DoSpecificAction("equip upgrade destroy", Event(), true);
+        factory.InitAmmo();
+        factory.InitFood();
+        factory.InitReagents();
+        factory.InitConsumables();
+        factory.InitPotions();
+
+        /*
         if (sPlayerbotAIConfig.AltMaintenanceAttunementQs)
             factory.InitAttunementQuests();
 
@@ -278,10 +327,11 @@ bool MaintenanceAction::Execute(Event /*event*/)
         if (sPlayerbotAIConfig.AltMaintenanceGemsEnchants &&
             bot->GetLevel() >= sPlayerbotAIConfig.MinEnchantingBotLevel)
             factory.ApplyEnchantAndGemsNew();
+        */
     }
 
-    bot->DurabilityRepairAll(false, 1.0f, false);
-    bot->SendTalentsInfoData(false);
+    bot->DurabilityRepairAll(false, false);
+    // bot->SendTalentsInfoData(false);
 
     return true;
 }
@@ -334,7 +384,7 @@ bool BisGearAction::Execute(Event event)
         return false;
     }
 
-    if (sRandomPlayerbotMgr.IsSpecPvp(bot->GetGUID().GetCounter(), bot->getClass()))
+    if (sRandomPlayerbotMgr.IsSpecPvp(bot->GetObjectGuid().GetCounter(), bot->getClass()))
     {
         botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
             "bis_pvp_refused_error", "bis is PvE only, bot is configured as PvP.", {}));
@@ -471,14 +521,14 @@ bool BisGearAction::Execute(Event event)
     //    fails (class/race/skill/level), keep autogear's pick for that slot.
     for (auto const& kv : bisMap)
     {
-        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(kv.second);
+        ItemTemplate const* proto = sObjectMgr.GetItemTemplate(kv.second);
         if (!proto)
             continue;
 
         // Grant required reputation rank if the item gates on it.
         if (proto->RequiredReputationFaction && proto->RequiredReputationRank > 0)
         {
-            if (FactionEntry const* fac = sFactionStore.LookupEntry(proto->RequiredReputationFaction))
+            if (FactionEntry const* fac = sObjectMgr.GetFactionEntry(proto->RequiredReputationFaction))
             {
                 ReputationRank requiredRank = static_cast<ReputationRank>(proto->RequiredReputationRank);
                 if (bot->GetReputationRank(proto->RequiredReputationFaction) < requiredRank)
@@ -530,13 +580,14 @@ bool BisGearAction::Execute(Event event)
     if (bot->GetLevel() >= sPlayerbotAIConfig.MinEnchantingBotLevel)
         factory.ApplyEnchantAndGemsNew();
 
-    bot->DurabilityRepairAll(false, 1.0f, false);
+    bot->DurabilityRepairAll(false, false);
 
     botAI->TellMaster(PlayerbotTextMgr::instance().GetBotTextOrDefault(
         "bis_applied_msg", "BiS applied", {}));
     return true;
 }
 
+#ifdef false
 bool RemoveGlyphAction::Execute(Event /*event*/)
 {
     for (uint32 slotIndex = 0; slotIndex < MAX_GLYPH_SLOT_INDEX; ++slotIndex)
@@ -546,6 +597,7 @@ bool RemoveGlyphAction::Execute(Event /*event*/)
     bot->SendTalentsInfoData(false);
     return true;
 }
+#endif
 
 static uint32 GetWornItemLevelAverage(Player* player)
 {

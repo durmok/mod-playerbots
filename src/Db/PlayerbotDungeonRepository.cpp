@@ -7,9 +7,9 @@
 #include "PlayerbotDungeonRepository.h"
 #include "PlayerbotsDatabase.h"
 #include "DatabaseEnv.h"
-#include "Field.h"
+#include "Field2.h"
 #include "Log.h"
-#include "QueryResult.h"    // Required due to a poor implementation by AC
+#include "QueryResult2.h"    // Required due to a poor implementation by AC
 #include "Timer.h"
 #include "World.h"
 
@@ -25,15 +25,15 @@ void PlayerbotDungeonRepository::LoadDungeonSuggestions()
 
     uint32 count = 0;
     auto statement = PlayerbotsDatabase.GetPreparedStatement(PLAYERBOTS_SEL_DUNGEON_SUGGESTION);
-    uint8 const expansion = sWorld->getIntConfig(CONFIG_EXPANSION);
-    statement->SetData(0, expansion);
+    // uint8 const expansion = sWorld.getConfig(CONFIG_EXPANSION);
+    statement->SetData(0, 0);
 
     PreparedQueryResult result = PlayerbotsDatabase.Query(statement);
     if (result)
     {
         do
         {
-            Field* fields = result->Fetch();
+            Field2* fields = result->Fetch();
             std::string const name = fields[0].Get<std::string>();
             uint8 const difficulty = fields[1].Get<uint8>();
             uint8 const min_level = fields[2].Get<uint8>();

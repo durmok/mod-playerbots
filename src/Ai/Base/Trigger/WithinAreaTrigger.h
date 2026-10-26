@@ -11,7 +11,7 @@
 
 class PlayerbotAI;
 
-struct AreaTrigger;
+struct AreaTriggerEntry;
 
 class WithinAreaTrigger : public Trigger
 {
@@ -21,7 +21,7 @@ public:
     bool IsActive() override;
 
 private:
-    bool IsPointInAreaTriggerZone(AreaTrigger const* atEntry, uint32 mapid, float x, float y, float z, float delta);
+    bool IsPointInAreaTriggerZone(AreaTriggerEntry const* atEntry, uint32 mapid, float x, float y, float z, float delta);
 };
 
 #endif

@@ -5,11 +5,11 @@
  */
 
 #include "GenericSpellActions.h"
-#include "Chat.h"
+#include "Chat/Chat.h"
 #include "Event.h"
 #include "GenericBuffUtils.h"
 #include "Group.h"
-#include "ItemTemplate.h"
+// #include "ItemTemplate.h"
 #include "ObjectDefines.h"
 #include "Opcodes.h"
 #include "Player.h"
@@ -34,9 +34,11 @@ namespace
             std::unordered_set<uint32> onEquipSpellIds;
             std::unordered_set<uint32> mixedSpellIds;
 
-            auto const* itemTemplates = sObjectMgr->GetItemTemplateStore();
+            auto const& itemTemplates = sObjectMgr.GetItemPrototypeMap();
+            /*
             if (!itemTemplates)
                 return mixedSpellIds;
+            */
 
             auto const markSpellId = [&](int32 spellId, uint8 spellTrigger)
             {
@@ -59,7 +61,7 @@ namespace
                 }
             };
 
-            for (auto const& itr : *itemTemplates)
+            for (auto const& itr : itemTemplates)
             {
                 ItemTemplate const& proto = itr.second;
                 if (proto.InventoryType != INVTYPE_TRINKET)
@@ -103,6 +105,7 @@ namespace
         if (effectInfo.Effect != SPELL_EFFECT_APPLY_AURA)
             return false;
 
+        /*
         uint32 const tankRatingsMask =
             (1u << CR_DEFENSE_SKILL) |
             (1u << CR_DODGE) |
@@ -114,13 +117,16 @@ namespace
             (1u << CR_CRIT_TAKEN_MELEE) |
             (1u << CR_CRIT_TAKEN_RANGED) |
             (1u << CR_CRIT_TAKEN_SPELL);
+        */
 
         switch (effectInfo.ApplyAuraName)
         {
             case SPELL_AURA_MOD_RESISTANCE:
                 return (effectInfo.MiscValue & SPELL_SCHOOL_MASK_NORMAL) != 0;
+            /*
             case SPELL_AURA_MOD_RATING:
                 return (effectInfo.MiscValue & tankRatingsMask) != 0;
+            */
             case SPELL_AURA_MOD_INCREASE_HEALTH:
             case SPELL_AURA_MOD_INCREASE_HEALTH_PERCENT:
             case SPELL_AURA_MOD_PARRY_PERCENT:
@@ -151,7 +157,7 @@ bool CastSpellAction::Execute(Event /*event*/)
         {
             uint32 spellId = itr->first;
 
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+            SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
             if (!spellInfo)
                 continue;
 
@@ -162,11 +168,11 @@ bool CastSpellAction::Execute(Event /*event*/)
 
             wstrToLower(wnamepart);
 
-            if (!Utf8FitTo(spell, wnamepart) || spellInfo->Effects[0].Effect != SPELL_EFFECT_CREATE_ITEM)
+            if (!Utf8FitTo(spell, wnamepart) || spellInfo->Effect[0] != SPELL_EFFECT_CREATE_ITEM)
                 continue;
 
-            uint32 itemId = spellInfo->Effects[0].ItemType;
-            ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+            uint32 itemId = spellInfo->EffectItemType[0];
+            ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemId);
             if (!proto || bot->CanUseItem(proto) != EQUIP_ERR_OK)
                 continue;
 
@@ -268,7 +274,7 @@ bool CastAuraSpellAction::isUseful()
     if (!GetTarget() || !CastSpellAction::isUseful())
         return false;
 
-    Aura* aura = botAI->GetAura(spell, GetTarget(), isOwner, checkDuration);
+    Aura const* aura = botAI->GetAura(spell, GetTarget(), isOwner, checkDuration);
     return BuffBelowRefreshTarget(botAI, aura, beforeDuration);
 }
 
@@ -278,7 +284,7 @@ bool CastBuffSpellAction::isUseful()
     if (!target || !CastSpellAction::isUseful())
         return false;
 
-    Aura* aura = botAI->GetAura(spell, target, isOwner, checkDuration);
+    Aura const* aura = botAI->GetAura(spell, target, isOwner, checkDuration);
     return BuffBelowRefreshTarget(botAI, aura, beforeDuration);
 }
 
@@ -303,7 +309,7 @@ bool GroupBuffSpellAction::isUseful()
             return false;
     }
 
-    Aura* aura = botAI->GetAura(spell, target, isOwner, checkDuration);
+    Aura const* aura = botAI->GetAura(spell, target, isOwner, checkDuration);
     return BuffBelowRefreshTarget(botAI, aura, beforeDuration);
 }
 
@@ -410,15 +416,15 @@ CastShootAction::CastShootAction(
         {
             case ITEM_SUBCLASS_WEAPON_GUN:
                 spell += " gun";
-                shootSpellId = 3018;
+                shootSpellId = 7918;
                 break;
             case ITEM_SUBCLASS_WEAPON_BOW:
                 spell += " bow";
-                shootSpellId = 3018;
+                shootSpellId = 2480;
                 break;
             case ITEM_SUBCLASS_WEAPON_CROSSBOW:
                 spell += " crossbow";
-                shootSpellId = 3018;
+                shootSpellId = 7919;
                 break;
             case ITEM_SUBCLASS_WEAPON_THROWN:
                 spell = "throw";
@@ -528,7 +534,7 @@ bool UseTrinketAction::UseTrinket(Item* item)
     uint8 bagIndex = item->GetBagSlot();
     uint8 slot = item->GetSlot();
     uint8 cast_count = 1;
-    ObjectGuid item_guid = item->GetGUID();
+    ObjectGuid item_guid = item->GetObjectGuid();
     uint32 glyphIndex = 0;
     uint8 castFlags = 0;
     uint32 targetFlag = TARGET_FLAG_NONE;
@@ -536,6 +542,7 @@ bool UseTrinketAction::UseTrinket(Item* item)
     int32 itemSpellCooldown = 0;
     uint32 itemSpellCategory = 0;
     int32 itemSpellCategoryCooldown = 0;
+    uint8 spellSlot = 0;
 
     for (uint8 i = 0; i < MAX_ITEM_PROTO_SPELLS; ++i)
     {
@@ -573,7 +580,7 @@ bool UseTrinketAction::UseTrinket(Item* item)
                 }
             }
 
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+            SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
             if (!spellInfo || !spellInfo->IsPositive())
                 return false;
 
@@ -583,13 +590,16 @@ bool UseTrinketAction::UseTrinket(Item* item)
             bool defensiveTankEffect = false;
             for (int i = 0; i < MAX_SPELL_EFFECTS; i++)
             {
-                SpellEffectInfo const& effectInfo = spellInfo->Effects[i];
-                if (effectInfo.Effect == SPELL_EFFECT_APPLY_AURA)
+                auto effectInfo = spellInfo->GetEffect(i);
+                if (!effectInfo)
+                    continue;
+                // SpellEffectInfo const& effectInfo = spellInfo->GetEffect(i);
+                if (effectInfo->Effect == SPELL_EFFECT_APPLY_AURA)
                     applyAura = true;
 
-                restoresMana = restoresMana || IsManaRestoreEffect(effectInfo);
-                improvesManaEfficiency = improvesManaEfficiency || IsManaEfficiencyEffect(effectInfo);
-                defensiveTankEffect = defensiveTankEffect || IsDefensiveTankEffect(effectInfo);
+                restoresMana = restoresMana || IsManaRestoreEffect(*effectInfo);
+                improvesManaEfficiency = improvesManaEfficiency || IsManaEfficiencyEffect(*effectInfo);
+                defensiveTankEffect = defensiveTankEffect || IsDefensiveTankEffect(*effectInfo);
             }
 
             if (!applyAura && !restoresMana)
@@ -626,6 +636,7 @@ bool UseTrinketAction::UseTrinket(Item* item)
             if (!botAI->CanCastSpell(spellId, bot, false, nullptr, item))
                 return false;
 
+            spellSlot = i;
             break;
         }
     }
@@ -633,11 +644,20 @@ bool UseTrinketAction::UseTrinket(Item* item)
     if (!spellId)
         return false;
 
+    /*
     WorldPacket packet(CMSG_USE_ITEM);
     packet << bagIndex << slot << cast_count << spellId << item_guid << glyphIndex << castFlags;
 
     targetFlag = TARGET_FLAG_NONE;
     packet << targetFlag << bot->GetPackGUID();
+    */
+    WorldPackets::Spell::UseItem packet;
+    packet.bagIndex = bagIndex;
+    packet.slot = slot;
+    packet.spellSlot = spellSlot; // the position of the spell id on the item template
+    SpellCastTargets targets;
+    targets.SetUnitTarget(bot);
+    packet.targets = targets;
 
     // HandleUseItemOpcode can destroy the trinket on its last charge.
     uint32 const itemId = item->GetEntry();

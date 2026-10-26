@@ -45,6 +45,7 @@ public:
         creators["seldom"] = &TriggerContext::seldom;
         creators["often"] = &TriggerContext::often;
         creators["very often"] = &TriggerContext::very_often;
+        creators["often stable"] = &TriggerContext::often_stable;
 
         creators["force rebuff pending"] = &TriggerContext::force_rebuff_pending;
 
@@ -61,6 +62,8 @@ public:
         creators["high mana"] = &TriggerContext::HighMana;
         creators["almost full mana"] = &TriggerContext::AlmostFullMana;
         creators["enough mana"] = &TriggerContext::EnoughMana;
+
+        creators["eat drink"] = &TriggerContext::EatDrink;
 
         creators["party member critical health"] = &TriggerContext::PartyMemberCriticalHealth;
         creators["party member low health"] = &TriggerContext::PartyMemberLowHealth;
@@ -150,6 +153,7 @@ public:
 
         creators["behind target"] = &TriggerContext::behind_target;
         creators["not behind target"] = &TriggerContext::not_behind_target;
+        creators["not within los target"] = &TriggerContext::not_within_los_target;
         creators["not facing target"] = &TriggerContext::not_facing_target;
         creators["far from master"] = &TriggerContext::far_from_master;
         creators["far from loot target"] = &TriggerContext::far_from_loot_target;
@@ -211,6 +215,7 @@ public:
         creators["falling far"] = &TriggerContext::falling_far;
         creators["move stuck"] = &TriggerContext::move_stuck;
         creators["move long stuck"] = &TriggerContext::move_long_stuck;
+        creators["move complete"] = &TriggerContext::move_complete;
         creators["combat stuck"] = &TriggerContext::combat_stuck;
         creators["combat long stuck"] = &TriggerContext::combat_long_stuck;
 
@@ -301,6 +306,7 @@ private:
     static Trigger* behind_target(PlayerbotAI* botAI) { return new IsBehindTargetTrigger(botAI); }
     static Trigger* not_behind_target(PlayerbotAI* botAI) { return new IsNotBehindTargetTrigger(botAI); }
     static Trigger* not_facing_target(PlayerbotAI* botAI) { return new IsNotFacingTargetTrigger(botAI); }
+    static Trigger* not_within_los_target(PlayerbotAI* botAI) { return new IsNotWithinLOSTargetTrigger(botAI); }
     static Trigger* no_drink(PlayerbotAI* botAI) { return new NoDrinkTrigger(botAI); }
     static Trigger* no_food(PlayerbotAI* botAI) { return new NoFoodTrigger(botAI); }
     static Trigger* LightAoe(PlayerbotAI* botAI) { return new LightAoeTrigger(botAI); }
@@ -323,6 +329,7 @@ private:
     static Trigger* HighMana(PlayerbotAI* botAI) { return new HighManaTrigger(botAI); }
     static Trigger* AlmostFullMana(PlayerbotAI* botAI) { return new AlmostFullManaTrigger(botAI); }
     static Trigger* EnoughMana(PlayerbotAI* botAI) { return new EnoughManaTrigger(botAI); }
+    static Trigger* EatDrink(PlayerbotAI* botAI) { return new EatDrinkTrigger(botAI); }
     static Trigger* LightRageAvailable(PlayerbotAI* botAI) { return new LightRageAvailableTrigger(botAI); }
     static Trigger* MediumRageAvailable(PlayerbotAI* botAI) { return new MediumRageAvailableTrigger(botAI); }
     static Trigger* HighRageAvailable(PlayerbotAI* botAI) { return new HighRageAvailableTrigger(botAI); }
@@ -345,6 +352,7 @@ private:
     static Trigger* seldom(PlayerbotAI* botAI) { return new RandomTrigger(botAI, "seldom", 300); }
     static Trigger* often(PlayerbotAI* botAI) { return new RandomTrigger(botAI, "often", 5); }
     static Trigger* very_often(PlayerbotAI* botAI) { return new RandomTrigger(botAI, "often", 3); }
+    static Trigger* often_stable(PlayerbotAI* botAI) { return new MaxIntervalTrigger(botAI, "often stable", 5); }
     static Trigger* EnemyOutOfMelee(PlayerbotAI* botAI) { return new EnemyOutOfMeleeTrigger(botAI); }
     static Trigger* EnemyOutOfSpell(PlayerbotAI* botAI) { return new EnemyOutOfSpellRangeTrigger(botAI); }
     static Trigger* enemy_too_close_for_spell(PlayerbotAI* botAI) { return new EnemyTooCloseForSpellTrigger(botAI); }
@@ -424,6 +432,7 @@ private:
     static Trigger* falling_far(PlayerbotAI* botAI) { return new IsFallingFarTrigger(botAI); }
     static Trigger* move_stuck(PlayerbotAI* botAI) { return new MoveStuckTrigger(botAI); }
     static Trigger* move_long_stuck(PlayerbotAI* botAI) { return new MoveLongStuckTrigger(botAI); }
+    static Trigger* move_complete(PlayerbotAI* botAI) { return new MoveCompleteTrigger(botAI); }
     static Trigger* combat_stuck(PlayerbotAI* botAI) { return new CombatStuckTrigger(botAI); }
     static Trigger* combat_long_stuck(PlayerbotAI* botAI) { return new CombatLongStuckTrigger(botAI); }
     static Trigger* player_wants_in_bg(PlayerbotAI* botAI) { return new PlayerWantsInBattlegroundTrigger(botAI); }

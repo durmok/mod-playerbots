@@ -26,7 +26,7 @@ bool UseMeetingStoneAction::Execute(Event event)
     ObjectGuid guid;
     p >> guid;
 
-    if (master->GetTarget() && master->GetTarget() != bot->GetGUID())
+    if (master->GetTarget() && master->GetTarget() != bot->GetObjectGuid())
         return false;
 
     if (!master->GetTarget() && master->GetGroup() != bot->GetGroup())
@@ -51,7 +51,7 @@ bool UseMeetingStoneAction::Execute(Event event)
         return false;
 
     GameObjectTemplate const* goInfo = gameObject->GetGOInfo();
-    if (!goInfo || goInfo->entry != 179944)
+    if (!goInfo || goInfo->id != 179944)
         return false;
 
     return Teleport(master, bot, false);
@@ -94,8 +94,8 @@ bool SummonAction::SummonUsingGos(Player* summoner, Player* player, bool preserv
 {
     std::list<GameObject*> targets;
     AnyGameObjectInObjectRangeCheck u_check(summoner, sPlayerbotAIConfig.SightDistance);
-    Acore::GameObjectListSearcher<AnyGameObjectInObjectRangeCheck> searcher(summoner, targets, u_check);
-    Cell::VisitObjects(summoner, searcher, sPlayerbotAIConfig.SightDistance);
+    MaNGOS::GameObjectListSearcher<AnyGameObjectInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(summoner, searcher, sPlayerbotAIConfig.SightDistance);
 
     for (GameObject* go : targets)
     {
@@ -116,9 +116,9 @@ bool SummonAction::SummonUsingNpcs(Player* summoner, Player* player, bool preser
         return false;
 
     std::list<Unit*> targets;
-    Acore::AnyUnitInObjectRangeCheck u_check(summoner, sPlayerbotAIConfig.SightDistance);
-    Acore::UnitListSearcher<Acore::AnyUnitInObjectRangeCheck> searcher(summoner, targets, u_check);
-    Cell::VisitObjects(summoner, searcher, sPlayerbotAIConfig.SightDistance);
+    MaNGOS::AnyUnitInObjectRangeCheck u_check(summoner, sPlayerbotAIConfig.SightDistance);
+    MaNGOS::UnitListSearcher<MaNGOS::AnyUnitInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(summoner, searcher, sPlayerbotAIConfig.SightDistance);
 
     for (Unit* unit : targets)
     {
@@ -143,11 +143,11 @@ bool SummonAction::SummonUsingNpcs(Player* summoner, Player* player, bool preser
             }
 
             // Trigger cooldown
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(8690);
+            SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(8690);
             if (!spellInfo)
                 return false;
 
-            Spell spell(player, spellInfo, TRIGGERED_NONE);
+            Spell spell(player, spellInfo, false);
             spell.SendSpellCooldown();
 
             return Teleport(summoner, player, preserveAuras);
@@ -167,12 +167,14 @@ bool SummonAction::Teleport(Player* summoner, Player* player, bool preserveAuras
     if (!summoner || summoner == player)
         return false;
 
+    /*
     if (player->GetVehicle())
     {
         botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
             "meeting_stone_cannot_summon_vehicle", "You cannot summon me while I'm on a vehicle", {}));
         return false;
     }
+    */
 
     if (!summoner->IsBeingTeleported() && !player->IsBeingTeleported())
     {
@@ -187,7 +189,7 @@ bool SummonAction::Teleport(Player* summoner, Player* player, bool preserveAuras
             if (summoner->IsWithinLOS(x, y, z))
             {
                 if (sPlayerbotAIConfig.BotRepairWhenSummon)  // .conf option to repair bot gear when summoned 0 = off, 1 = on
-                    bot->DurabilityRepairAll(false, 1.0f, false);
+                    bot->DurabilityRepairAll(false, false);
 
                 if (summoner->IsInCombat() && !sPlayerbotAIConfig.AllowSummonInCombat)
                 {
@@ -239,8 +241,8 @@ bool SummonAction::Teleport(Player* summoner, Player* player, bool preserveAuras
                 player->TeleportTo(mapId, x, y, z, 0);
                 if (player->GetPet())
                     player->GetPet()->NearTeleportTo(x, y, z, player->GetOrientation());
-                if (player->GetGuardianPet())
-                    player->GetGuardianPet()->NearTeleportTo(x, y, z, player->GetOrientation());
+                if (player->GetMiniPet())
+                    player->GetMiniPet()->NearTeleportTo(x, y, z, player->GetOrientation());
                 if (botAI->HasStrategy("stay", botAI->GetState()))
                 {
                     PositionMap& posMap = AI_VALUE(PositionMap&, "position");
@@ -259,4 +261,18 @@ bool SummonAction::Teleport(Player* summoner, Player* player, bool preserveAuras
          botAI->TellError(PlayerbotTextMgr::instance().GetBotTextOrDefault(
              "meeting_stone_not_enough_space", "Not enough place to summon", {}));
     return false;
+}
+
+bool AcceptSummonAction::Execute(Event event)
+{
+    WorldPacket p(event.getPacket());
+    p.rpos(0);
+    ObjectGuid summonerGuid;
+    p >> summonerGuid;
+
+    WorldPackets::Misc::SummonResponse response;
+    response.summonerGuid = summonerGuid;
+    bot->GetSession()->HandleSummonResponseOpcode(response);
+    
+    return true;
 }

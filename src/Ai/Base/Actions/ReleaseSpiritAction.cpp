@@ -7,7 +7,7 @@
 #include "ReleaseSpiritAction.h"
 #include "Corpse.h"
 #include "Event.h"
-#include "GameGraveyard.h"
+// #include "GameGraveyard.h"
 #include "Log.h"
 #include "NearestNpcsValue.h"
 #include "ObjectDefines.h"
@@ -40,18 +40,22 @@ bool ReleaseSpiritAction::Execute(Event event)
         return false;
     }
 
-    WorldPacket const& packet = event.getPacket();
-    const std::string message = !packet.empty() && packet.GetOpcode() == CMSG_REPOP_REQUEST
+    if (botAI->GetMaster())
+        return false;
+
+    // WorldPacket const& packet = event.getPacket();
+    NullClientPacket const* packet = event.getClientPacket<NullClientPacket>();
+    const std::string message = packet && packet->GetOpcode() == CMSG_REPOP_REQUEST
         ? PlayerbotTextMgr::instance().GetBotTextOrDefault("release_spirit_releasing", "Releasing...", {})
         : PlayerbotTextMgr::instance().GetBotTextOrDefault("release_spirit_meet_graveyard", "Meet me at the graveyard", {});
     botAI->TellMasterNoFacing(message);
 
     IncrementDeathCount();
-    bot->DurabilityRepairAll(false, 1.0f, false);
+    bot->DurabilityRepairAll(false, false);
     LogRelease("released");
 
-    WorldPacket releasePacket(CMSG_REPOP_REQUEST);
-    releasePacket << uint8(0);
+    NullClientPacket releasePacket(CMSG_REPOP_REQUEST);
+    // releasePacket << uint8(0);
     bot->GetSession()->HandleRepopRequestOpcode(releasePacket);
 
     return true;
@@ -77,25 +81,25 @@ void ReleaseSpiritAction::LogRelease(std::string const& releaseMsg) const
     const std::string teamPrefix = bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H";
 
     LOG_DEBUG("playerbots", "Bot {} {}:{} <{}> {}",
-        bot->GetGUID().ToString().c_str(),
-        teamPrefix,
+        bot->GetObjectGuid().ToString().c_str(),
+        teamPrefix.c_str(),
         bot->GetLevel(),
-        bot->GetName().c_str(),
+        bot->GetName(),
         releaseMsg.c_str());
 }
 
 // AutoReleaseSpiritAction implementation
 bool AutoReleaseSpiritAction::Execute(Event /*event*/)
 {
-    IncrementDeathCount();
-    bot->DurabilityRepairAll(false, 1.0f, false);
-    LogRelease("auto released");
+        IncrementDeathCount();
+        bot->DurabilityRepairAll(false, false);
+        LogRelease("auto released");
 
-    WorldPacket packet(CMSG_REPOP_REQUEST);
-    packet << uint8(0);
-    bot->GetSession()->HandleRepopRequestOpcode(packet);
+        NullClientPacket packet(CMSG_REPOP_REQUEST);
+        // packet << uint8(0);
+        bot->GetSession()->HandleRepopRequestOpcode(packet);
 
-    LogRelease("releases spirit");
+        LogRelease("releases spirit");
 
     if (bot->InBattleground())
     {
@@ -115,6 +119,9 @@ bool AutoReleaseSpiritAction::isUseful()
         return ShouldDelayBattlegroundRelease();
 
     if (bot->HasPlayerFlag(PLAYER_FLAGS_GHOST))
+        return false;
+
+    if (!sRandomPlayerbotMgr.IsRandomBot(bot))
         return false;
 
     return ShouldAutoRelease();
@@ -160,8 +167,8 @@ bool AutoReleaseSpiritAction::HandleBattlegroundSpiritHealer()
     else if (!IsSelfBot(bot))
     {
         m_bgGossipTime = now;
-        WorldPacket packet(CMSG_GOSSIP_HELLO);
-        packet << spiritHealer->GetGUID();
+        WorldPackets::Npc::GossipHello packet;
+        packet.npcGuid = spiritHealer->GetObjectGuid();
         bot->GetSession()->HandleGossipHelloOpcode(packet);
     }
 
@@ -221,7 +228,7 @@ bool AutoReleaseSpiritAction::ShouldDelayBattlegroundRelease() const
 
 bool RepopAction::Execute(Event /*event*/)
 {
-    GraveyardStruct const* graveyard = GetGrave(
+    WorldSafeLocsEntry const* graveyard = GetGrave(
         AI_VALUE(uint32, "death count") > 10 ||
         CalculateDeadTime() > 30 * MINUTE
     );
@@ -246,10 +253,10 @@ int64 RepopAction::CalculateDeadTime() const
     return bot->isDead() ? 0 : 60 * MINUTE;
 }
 
-void RepopAction::PerformGraveyardTeleport(GraveyardStruct const* graveyard) const
+void RepopAction::PerformGraveyardTeleport(WorldSafeLocsEntry const* graveyard) const
 {
     bot->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_TELEPORTED | AURA_INTERRUPT_FLAG_CHANGE_MAP);
-    bot->TeleportTo(graveyard->Map, graveyard->x, graveyard->y, graveyard->z, 0.f);
+    bot->TeleportTo(graveyard->map_id, graveyard->x, graveyard->y, graveyard->z, 0.f);
     RESET_AI_VALUE(bool, "combat::self target");
     RESET_AI_VALUE(WorldPosition, "current position");
 }
@@ -259,7 +266,7 @@ bool SelfResurrectAction::Execute(Event /*event*/)
 {
     if (!bot->IsAlive() && bot->GetUInt32Value(PLAYER_SELF_RES_SPELL))
     {
-        WorldPacket packet(CMSG_SELF_RES);
+        NullClientPacket packet(CMSG_SELF_RES);
         bot->GetSession()->HandleSelfResOpcode(packet);
         return true;
     }

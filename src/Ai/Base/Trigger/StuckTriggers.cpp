@@ -6,9 +6,10 @@
 
 #include "StuckTriggers.h"
 #include "CellImpl.h"
-#include "MapCollisionData.h"
-#include "PathGenerator.h"
+// #include "MapCollisionData.h"
+#include "PathFinder.h"
 #include "Playerbots.h"
+#include "Object.h"
 
 bool MoveStuckTrigger::IsActive()
 {
@@ -26,7 +27,7 @@ bool MoveStuckTrigger::IsActive()
     if (posVal->LastChangeDelay() > 5 * MINUTE)
     {
         // LOG_INFO("playerbots", "Bot {} {}:{} <{}> was in the same position for {} seconds",
-        // bot->GetGUID().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
+        // bot->GetObjectGuid().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
         // bot->GetName(), posVal->LastChangeDelay());
 
         return true;
@@ -50,7 +51,7 @@ bool MoveStuckTrigger::IsActive()
     if (longLog)
     {
         // LOG_INFO("playerbots", "Bot {} {}:{} <{}> was in the same position for 10mins",
-        // bot->GetGUID().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
+        // bot->GetObjectGuid().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
         // bot->GetName(), posVal->LastChangeDelay());
     }
 
@@ -74,7 +75,7 @@ bool MoveLongStuckTrigger::IsActive()
     if (grid.x_coord >= MAX_NUMBER_OF_GRIDS)
     {
         // LOG_INFO("playerbots", "Bot {} {}:{} <{}> was in grid {},{} on map {}",
-        // bot->GetGUID().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
+        // bot->GetObjectGuid().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
         // bot->GetName(), grid.x_coord, grid.y_coord, botPos.getMapId());
 
         return true;
@@ -83,7 +84,7 @@ bool MoveLongStuckTrigger::IsActive()
     if (grid.y_coord >= MAX_NUMBER_OF_GRIDS)
     {
         // LOG_INFO("playerbots", "Bot {} {}:{} <{}> was in grid {},{} on map {}",
-        // bot->GetGUID().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
+        // bot->GetObjectGuid().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
         // bot->GetName(), grid.x_coord, grid.y_coord, botPos.getMapId());
 
         return true;
@@ -92,7 +93,7 @@ bool MoveLongStuckTrigger::IsActive()
     if (bot->GetMap()->IsGridCreated(GridCoord(cell.GridX(), cell.GridY())))
     {
         // LOG_INFO("playerbots", "Bot {} {}:{} <{}> was in unloaded grid {},{} on map {}",
-        // bot->GetGUID().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
+        // bot->GetObjectGuid().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
         // bot->GetName(), grid.x_coord, grid.y_coord, botPos.getMapId());
 
         return true;
@@ -104,7 +105,7 @@ bool MoveLongStuckTrigger::IsActive()
     if (posVal->LastChangeDelay() > 10 * MINUTE)
     {
         // LOG_INFO("playerbots", "Bot {} {}:{} <{}> was in the same position for {} seconds",
-        // bot->GetGUID().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
+        // bot->GetObjectGuid().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
         // bot->GetName(), posVal->LastChangeDelay());
 
         return true;
@@ -134,7 +135,7 @@ bool MoveLongStuckTrigger::IsActive()
     if (longLog)
     {
         // LOG_INFO("playerbots", "Bot {} {}:{} <{}> was in the same position for 15mins",
-        // bot->GetGUID().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
+        // bot->GetObjectGuid().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
         // bot->GetName(), posVal->LastChangeDelay());
     }
 
@@ -160,7 +161,7 @@ bool CombatStuckTrigger::IsActive()
     if (combatVal->LastChangeDelay() > 5 * MINUTE)
     {
         // LOG_INFO("playerbots", "Bot {} {}:{} <{}> was in combat for {} seconds",
-        // bot->GetGUID().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
+        // bot->GetObjectGuid().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
         // bot->GetName(), posVal->LastChangeDelay());
 
         return true;
@@ -188,7 +189,7 @@ bool CombatLongStuckTrigger::IsActive()
     if (combatVal->LastChangeDelay() > 15 * MINUTE)
     {
         // LOG_INFO("playerbots", "Bot {} {}:{} <{}> was in combat for {} seconds",
-        // bot->GetGUID().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
+        // bot->GetObjectGuid().ToString().c_str(), bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H", bot->GetLevel(),
         // bot->GetName(), posVal->LastChangeDelay());
 
         return true;

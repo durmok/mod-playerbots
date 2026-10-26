@@ -23,7 +23,7 @@ Item* ItemForSpellValue::Calculate()
     if (!spellid)
         return nullptr;
 
-    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellid);
+    SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellid);
     if (!spellInfo)
         return nullptr;
 
@@ -51,10 +51,10 @@ Item* ItemForSpellValue::Calculate()
     if (!(spellInfo->Targets & TARGET_FLAG_ITEM))
         return nullptr;
 
-    if (!strcmpi(spellInfo->SpellName[0], "disenchant"))
+    if (!strcmpi(spellInfo->SpellName[0].c_str(), "disenchant"))
         return nullptr;
 
-    if (!strcmpi(spellInfo->SpellName[0], "pick lock"))
+    if (!strcmpi(spellInfo->SpellName[0].c_str(), "pick lock"))
         return nullptr;
 
     for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; slot++)

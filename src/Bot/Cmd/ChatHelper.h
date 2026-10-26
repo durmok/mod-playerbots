@@ -17,10 +17,10 @@ class GameObject;
 class Quest;
 class Player;
 class PlayerbotAI;
-class SpellInfo;
+class SpellEntry;
 class WorldObject;
 
-struct ItemTemplate;
+struct ItemPrototype;
 
 typedef std::set<uint32> ItemIds;
 typedef std::set<uint32> SpellIds;
@@ -43,9 +43,9 @@ public:
     static std::string parseValue(std::string const& type, std::string const& text);
 
     static std::string const FormatQuest(Quest const* quest);
-    static std::string const FormatItem(ItemTemplate const* proto, uint32 count = 0, uint32 total = 0);
+    static std::string const FormatItem(ItemPrototype const* proto, uint32 count = 0, uint32 total = 0);
     static std::string const FormatQItem(uint32 itemId);
-    static std::string const FormatSpell(SpellInfo const* spellInfo);
+    static std::string const FormatSpell(SpellEntry const* spellInfo);
     static std::string const FormatGameobject(GameObject* go);
     static std::string const FormatWorldobject(WorldObject* wo);
     static std::string const FormatWorldEntry(int32 entry);

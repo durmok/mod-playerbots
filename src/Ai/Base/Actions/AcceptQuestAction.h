@@ -21,7 +21,7 @@ public:
     }
 
 protected:
-    bool ProcessQuest(Quest const* quest, Object* questGiver) override;
+    bool ProcessQuest(Quest const* quest, WorldObject* questGiver) override;
 };
 
 class AcceptQuestAction : public AcceptAllQuestsAction

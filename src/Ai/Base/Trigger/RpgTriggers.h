@@ -13,7 +13,7 @@ class Event;
 class GuidPosition;
 class PlayerbotAI;
 
-struct CreatureTemplate;
+struct CreatureInfo;
 
 class NoRpgTargetTrigger : public Trigger
 {

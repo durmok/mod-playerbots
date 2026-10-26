@@ -12,6 +12,7 @@
 #include "PlayerbotAI.h"
 #include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
+#include "PullStrategy.h"
 #include "ServerFacade.h"
 #include "Unit.h"
 #include "WaitForAttackStrategy.h"
@@ -86,7 +87,7 @@ bool AttackAction::Attack(Unit* target, bool /*with_pet*/ /*true*/)
 
     // Check if bot OR target is in prohibited zone/area (skip for duels)
     if ((target->IsPlayer() || target->IsPet()) &&
-        (!bot->duel || bot->duel->Opponent != target) &&
+        (!bot->IsInDuelWith(target->ToPlayer())) &&
         (sPlayerbotAIConfig.IsPvpProhibited(bot->GetZoneId(), bot->GetAreaId()) ||
         sPlayerbotAIConfig.IsPvpProhibited(target->GetZoneId(), target->GetAreaId())))
     {
@@ -121,6 +122,35 @@ bool AttackAction::Attack(Unit* target, bool /*with_pet*/ /*true*/)
         return false;
     }
 
+    // wait until pull end
+    if (!bot->IsInCombat() && !bot->InBattleGround())
+    {
+        if (Group* group = bot->GetGroup())
+        {
+            for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
+            {
+                Player* player = itr->GetSource();
+                if (!player)
+                    continue;
+                PlayerbotAI* botAI = sPlayerbotsMgr.GetPlayerbotAI(player);
+                if (!botAI)
+                    continue;
+                if (PullStrategy const* pull = PullStrategy::Get(botAI))
+                {
+                    if (pull->HasPullStarted() && !player->isDead())
+                    {
+                        if (verbose)
+                            botAI->TellError("I cannot attack if pull not end.");
+                        return false;
+                    }
+                }
+                else if (player->IsInCombat())
+                    break;
+            }
+        }
+    }
+
+    /*
     if (!bot->IsWithinLOSInMap(target))
     {
         if (verbose)
@@ -131,6 +161,7 @@ bool AttackAction::Attack(Unit* target, bool /*with_pet*/ /*true*/)
 
         return false;
     }
+    */
 
     // Infantry attacks are not allowed from vehicles drivers.
     // Check is needed to stop some auto-attack situations.
@@ -170,16 +201,16 @@ bool AttackAction::Attack(Unit* target, bool /*with_pet*/ /*true*/)
     //     bot->GetSession()->HandleCancelMountAuraOpcode(emptyPacket);
     // }
 
-    ObjectGuid guid = target->GetGUID();
-    bot->SetSelection(target->GetGUID());
+    ObjectGuid guid = target->GetObjectGuid();
+    bot->SetSelection(target->GetObjectGuid());
 
     context->GetValue<Unit*>("old target")->Set(oldTarget);
     context->GetValue<Unit*>("current target")->Set(target);
-    context->GetValue<LootObjectStack*>("available loot")->Get()->Add(guid);
+    // context->GetValue<LootObjectStack*>("available loot")->Get()->Add(guid);
 
     LastMovement& lastMovement = AI_VALUE(LastMovement&, "last movement");
-    bool moveControlled = bot->GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_CONTROLLED) != NULL_MOTION_TYPE;
-    if (lastMovement.priority < MovementPriority::MOVEMENT_COMBAT && bot->isMoving() && !moveControlled)
+    bool moveControlled = bot->IsControlled();
+    if (lastMovement.priority < MovementPriority::MOVEMENT_COMBAT && bot->GetMotionMaster()->GetCurrentMovementGeneratorType() != IDLE_MOTION_TYPE && !moveControlled)
     {
         AI_VALUE(LastMovement&, "last movement").clear();
         bot->GetMotionMaster()->Clear(false);
@@ -203,7 +234,7 @@ bool AttackAction::Attack(Unit* target, bool /*with_pet*/ /*true*/)
     //     if (with_pet)
     //     {
     //         pet->SetReactState(REACT_DEFENSIVE);
-    //         pet->SetTarget(target->GetGUID());
+    //         pet->SetTarget(target->GetObjectGuid());
     //         pet->GetCharmInfo()->SetIsCommandAttack(true);
     //         pet->AI()->AttackStart(target);
     //     }

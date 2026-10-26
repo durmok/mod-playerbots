@@ -6,14 +6,15 @@
 
 #include "StatsCollector.h"
 #include "DBCStores.h"
-#include "ItemTemplate.h"
+#include "ItemPrototype.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotAIAware.h"
 #include "SharedDefines.h"
 #include "SpellAuraDefines.h"
-#include "SpellInfo.h"
+#include "SpellEntry.h"
 #include "SpellMgr.h"
 #include "Util.h"
+#include "Vmangos.h"
 
 StatsCollector::StatsCollector(CollectorType type, int32 cls, int32 lvl) : type_(type), cls_(cls), lvl_(lvl)
 {
@@ -30,6 +31,7 @@ void StatsCollector::Reset()
 
 void StatsCollector::CollectItemStats(ItemTemplate const* proto)
 {
+    /*
     // Heirlooms and other scaling items hold their real stats in DBC, keyed by wearer level (Player::_ApplyItemBonuses)
     ScalingStatDistributionEntry const* ssd =
         proto->ScalingStatDistribution ? sScalingStatDistributionStore.LookupEntry(proto->ScalingStatDistribution)
@@ -42,28 +44,35 @@ void StatsCollector::CollectItemStats(ItemTemplate const* proto)
     // Without a wearer level (lvl_ -1) a scaling item keeps its template values.
     ScalingStatValuesEntry const* ssv =
         proto->ScalingStatValue && ssdLevel ? sScalingStatValuesStore.LookupEntry(ssdLevel) : nullptr;
+    */
 
-    CollectWeaponDamageStats(proto, ssv);
-    CollectItemStatValues(proto, ssd, ssv);
+    CollectWeaponDamageStats(proto);
+    CollectItemStatValues(proto);
 
+    /*
     if (ssv)
     {
         if (uint32 spellBonus = ssv->getSpellBonus(proto->ScalingStatValue))
             CollectByItemStatType(ITEM_MOD_SPELL_POWER, spellBonus);
     }
+    */
 
     uint32 armor = proto->Armor;
+    /*
     if (ssv)
     {
         // An ssv entry exists only for scaling items, so the scaled armor always replaces the template value.
         if (uint32 ssvArmor = ssv->getArmorMod(proto->ScalingStatValue))
             armor = ssvArmor;
     }
+    */
 
     stats[STATS_TYPE_ARMOR] += armor;
     stats[STATS_TYPE_BLOCK_VALUE] += proto->Block;
     for (uint8 j = 0; j < MAX_ITEM_PROTO_SPELLS; j++)
     {
+        if (!proto->Spells[j].SpellId)
+            continue;
         switch (proto->Spells[j].SpellTrigger)
         {
             case ITEM_SPELLTRIGGER_ON_USE:
@@ -86,19 +95,22 @@ void StatsCollector::CollectItemStats(ItemTemplate const* proto)
         }
     }
 
+    /*
     if (proto->socketBonus)
     {
         if (SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(proto->socketBonus))
             CollectEnchantStats(enchant);
     }
+    */
 }
 
-void StatsCollector::CollectWeaponDamageStats(ItemTemplate const* proto, ScalingStatValuesEntry const* ssv)
+void StatsCollector::CollectWeaponDamageStats(ItemTemplate const* proto)
 {
     if (!proto->IsWeapon() || proto->Delay == 0)
         return;
 
-    int32 extraDps = ssv ? ssv->getDPSMod(proto->ScalingStatValue) : 0;
+    // int32 extraDps = ssv ? ssv->getDPSMod(proto->ScalingStatValue) : 0;
+    int32 extraDps = 0;
     float dps = 0.0f;
 
     for (uint8 i = 0; i < MAX_ITEM_PROTO_DAMAGES; ++i)
@@ -110,7 +122,8 @@ void StatsCollector::CollectWeaponDamageStats(ItemTemplate const* proto, Scaling
         if (extraDps && i == 0)
         {
             float average = extraDps * proto->Delay / 1000.0f;
-            float mod = ssv->IsTwoHand(proto->ScalingStatValue) ? 0.2f : 0.3f;
+            // float mod = ssv->IsTwoHand(proto->ScalingStatValue) ? 0.2f : 0.3f;
+            float mod = 0.3f;
 
             minDamage = (1.0f - mod) * average;
             maxDamage = (1.0f + mod) * average;
@@ -126,14 +139,16 @@ void StatsCollector::CollectWeaponDamageStats(ItemTemplate const* proto, Scaling
     }
 
     stats[STATS_TYPE_MELEE_DPS] += dps;
+    /*
     // Feral forms convert weapon DPS into attack power, so treat it as attack power for Feral Druids.
     if (cls_ == CLASS_DRUID && (type_ & CollectorType::MELEE))
         stats[STATS_TYPE_ATTACK_POWER] += proto->getFeralBonus(extraDps);
+    */
 }
 
-void StatsCollector::CollectItemStatValues(ItemTemplate const* proto, ScalingStatDistributionEntry const* ssd,
-                                           ScalingStatValuesEntry const* ssv)
+void StatsCollector::CollectItemStatValues(ItemTemplate const* proto)
 {
+    /*
     if (ssv)
     {
         // A scaling item draws its stats from the distribution entry alone; its template stats are ignored, as in core.
@@ -150,17 +165,20 @@ void StatsCollector::CollectItemStatValues(ItemTemplate const* proto, ScalingSta
         }
         return;
     }
+    */
 
-    for (uint32 i = 0; i < proto->StatsCount; ++i)
+    for (uint32 i = 0; i < MAX_ITEM_PROTO_STATS; ++i)
     {
         _ItemStat const& stat = proto->ItemStat[i];
+        if (!stat.ItemStatType)
+            continue;
         CollectByItemStatType(stat.ItemStatType, stat.ItemStatValue);
     }
 }
 
 void StatsCollector::CollectSpellStats(uint32 spellId, float multiplier, Milliseconds spellCooldown)
 {
-    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
 
     if (!spellInfo)
         return;
@@ -172,23 +190,23 @@ void StatsCollector::CollectSpellStats(uint32 spellId, float multiplier, Millise
     if (spellInfo->Stances && cls_ != CLASS_DRUID)
         return;
 
-    SpellProcEntry const* eventEntry = sSpellMgr->GetSpellProcEntry(spellInfo->Id);
+    SpellProcEventEntry const* eventEntry = sSpellMgr.GetSpellProcEvent(spellInfo->Id);
 
-    Milliseconds triggerCooldown = eventEntry ? eventEntry->Cooldown : 0ms;
+    Milliseconds triggerCooldown = eventEntry ? Milliseconds(eventEntry->cooldown): 0ms;
 
     bool canNextTrigger = true;
 
     uint32 procFlags;
     uint32 procChance;
-    if (eventEntry && eventEntry->ProcFlags)
-        procFlags = eventEntry->ProcFlags;
+    if (eventEntry && eventEntry->procFlags)
+        procFlags = eventEntry->procFlags;
     else
-        procFlags = spellInfo->ProcFlags;
+        procFlags = spellInfo->procFlags;
 
-    if (eventEntry && eventEntry->Chance)
-        procChance = eventEntry->Chance;
+    if (eventEntry && eventEntry->customChance)
+        procChance = eventEntry->customChance;
     else
-        procChance = spellInfo->ProcChance;
+        procChance = spellInfo->procChance;
     bool lowChance = procChance <= 5;
 
     if (lowChance || (procFlags && !CanBeTriggeredByType(spellInfo, procFlags)))
@@ -211,7 +229,7 @@ void StatsCollector::CollectSpellStats(uint32 spellId, float multiplier, Millise
 
     for (int i = 0; i < MAX_SPELL_EFFECTS; i++)
     {
-        SpellEffectInfo const& effectInfo = spellInfo->Effects[i];
+        SpellEffectInfo const& effectInfo = *spellInfo->GetEffect(i);
         if (!effectInfo.Effect)
             continue;
         switch (effectInfo.Effect)
@@ -221,7 +239,7 @@ void StatsCollector::CollectSpellStats(uint32 spellId, float multiplier, Millise
                 if (spellInfo->SpellFamilyName && /*effectInfo.ApplyAuraName != SPELL_AURA_DUMMY &&*/
                     effectInfo.ApplyAuraName != SPELL_AURA_PROC_TRIGGER_SPELL)
                 {
-                    if (!CheckSpellValidation(spellInfo->SpellFamilyName, effectInfo.SpellClassMask))
+                    if (!CheckSpellValidation(spellInfo))
                         return;
 
                     // Some dummy effects cannot be recognized, make some bonus to identify
@@ -443,15 +461,15 @@ bool StatsCollector::SpecialEnchantFilter(uint32 enchantSpellId)
 
 bool StatsCollector::CanBeTriggeredByType(SpellInfo const* spellInfo, uint32 procFlags, bool strict)
 {
-    SpellProcEntry const* eventEntry = sSpellMgr->GetSpellProcEntry(spellInfo->Id);
+    SpellProcEventEntry const* eventEntry = sSpellMgr.GetSpellProcEvent(spellInfo->Id);
     uint32 spellFamilyName = 0;
     if (eventEntry)
     {
-        spellFamilyName = eventEntry->SpellFamilyName;
-        flag96 spellFamilyMask = eventEntry->SpellFamilyMask;
+        spellFamilyName = eventEntry->spellFamilyName;
+        // flag96 spellFamilyMask = eventEntry->spellFamilyMask;
         if (spellFamilyName != 0)
         {
-            if (!CheckSpellValidation(spellFamilyName, spellFamilyMask, strict))
+            if (!CheckSpellValidation(spellInfo, strict))
                 return false;
         }
     }
@@ -542,6 +560,7 @@ void StatsCollector::CollectByItemStatType(uint32 itemStatType, int32 val)
         case ITEM_MOD_STAMINA:
             stats[STATS_TYPE_STAMINA] += val;
             break;
+        /*
         case ITEM_MOD_DEFENSE_SKILL_RATING:
             stats[STATS_TYPE_DEFENSE] += val;
             break;
@@ -633,6 +652,7 @@ void StatsCollector::CollectByItemStatType(uint32 itemStatType, int32 val)
             break;
         case ITEM_MOD_SPELL_HEALING_DONE:  // deprecated
         case ITEM_MOD_SPELL_DAMAGE_DONE:   // deprecated
+        */
         default:
             break;
     }
@@ -722,6 +742,7 @@ void StatsCollector::HandleApplyAura(SpellEffectInfo const& effectInfo, float mu
         }
         case SPELL_AURA_MOD_RATING:
         {
+            /*
             for (uint32 rating = CR_WEAPON_SKILL; rating < MAX_COMBAT_RATING; ++rating)
             {
                 if (effectInfo.MiscValue & (1 << rating))
@@ -787,6 +808,7 @@ void StatsCollector::HandleApplyAura(SpellEffectInfo const& effectInfo, float mu
                     }
                 }
             }
+            */
             break;
         }
         case SPELL_AURA_MOD_POWER_REGEN:
@@ -856,12 +878,13 @@ float StatsCollector::AverageValue(SpellEffectInfo const& effectInfo)
     return basePoints;
 }
 
-bool StatsCollector::CheckSpellValidation(uint32 spellFamilyName, flag96 spelFalimyFlags, bool strict)
+bool StatsCollector::CheckSpellValidation(SpellInfo const* spellInfo, bool strict)
 {
+    uint32 spellFamilyName = spellInfo->SpellFamilyName;
     if (PlayerbotAI::Class2SpellFamilyName(cls_) != spellFamilyName)
         return false;
 
-    bool isHealingSpell = PlayerbotAI::IsHealingSpell(spellFamilyName, spelFalimyFlags);
+    bool isHealingSpell = PlayerbotAI::IsHealingSpell(spellInfo);
     // strict to healer
     if (strict && (type_ & CollectorType::SPELL_HEAL))
     {
@@ -871,6 +894,7 @@ bool StatsCollector::CheckSpellValidation(uint32 spellFamilyName, flag96 spelFal
     if (!(type_ & CollectorType::SPELL_HEAL) && isHealingSpell)
         return false;
 
+    /*
     // spells for caster/melee/tank are ambiguous
     if (cls_ == CLASS_DRUID && spellFamilyName == SPELLFAMILY_DRUID && (type_ & CollectorType::MELEE))
     {
@@ -921,6 +945,7 @@ bool StatsCollector::CheckSpellValidation(uint32 spellFamilyName, flag96 spelFal
         if (spelFalimyFlags & invalidFlags)
             return false;
     }
+    */
 
     return true;
 }

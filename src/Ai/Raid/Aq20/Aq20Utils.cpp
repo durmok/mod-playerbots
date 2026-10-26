@@ -23,6 +23,7 @@ int32 RaidAq20Utils::GetOssirianDebuffTimeRemaining(Unit* ossirian)
     {
         for (uint32 debuff : OSSIRIAN_DEBUFFS)
         {
+            /*
             if (AuraApplication* auraApplication = ossirian->GetAuraApplication(debuff))
             {
                 if (Aura* aura = auraApplication->GetBase())
@@ -31,6 +32,13 @@ int32 RaidAq20Utils::GetOssirianDebuffTimeRemaining(Unit* ossirian)
                     if (retVal > duration)
                         retVal = duration;
                 }
+            }
+            */
+            if (Aura const* auraApplication = ossirian->GetAura(debuff))
+            {
+                int32 duration = auraApplication->GetAuraDuration();
+                if (retVal > duration)
+                    retVal = duration;
             }
         }
     }

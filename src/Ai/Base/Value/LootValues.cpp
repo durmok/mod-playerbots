@@ -7,6 +7,7 @@
 #include "LootValues.h"
 #include "Playerbots.h"
 #include "SharedValueContext.h"
+#include "ObjectMgr.h"
 
 LootTemplateAccess const* DropMapValue::GetLootTemplate(ObjectGuid guid, LootType type)
 {
@@ -14,21 +15,21 @@ LootTemplateAccess const* DropMapValue::GetLootTemplate(ObjectGuid guid, LootTyp
 
     if (guid.IsCreature())
     {
-        CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(guid.GetEntry());
+        CreatureTemplate const* info = sObjectMgr.GetCreatureTemplate(guid.GetEntry());
 
         if (info)
         {
             if (type == LOOT_CORPSE)
-                lTemplate = LootTemplates_Creature.GetLootFor(info->lootid);
-            else if (type == LOOT_PICKPOCKETING && info->pickpocketLootId)
-                lTemplate = LootTemplates_Pickpocketing.GetLootFor(info->pickpocketLootId);
-            else if (type == LOOT_SKINNING && info->SkinLootId)
-                lTemplate = LootTemplates_Skinning.GetLootFor(info->SkinLootId);
+                lTemplate = LootTemplates_Creature.GetLootFor(info->loot_id);
+            else if (type == LOOT_PICKPOCKETING && info->pickpocket_loot_id)
+                lTemplate = LootTemplates_Pickpocketing.GetLootFor(info->pickpocket_loot_id);
+            else if (type == LOOT_SKINNING && info->skinning_loot_id)
+                lTemplate = LootTemplates_Skinning.GetLootFor(info->skinning_loot_id);
         }
     }
     else if (guid.IsGameObject())
     {
-        GameObjectTemplate const* info = sObjectMgr->GetGameObjectTemplate(guid.GetEntry());
+        GameObjectTemplate const* info = sObjectMgr.GetGameObjectTemplate(guid.GetEntry());
         if (info && info->GetLootId() != 0)
         {
             if (type == LOOT_CORPSE)
@@ -39,7 +40,7 @@ LootTemplateAccess const* DropMapValue::GetLootTemplate(ObjectGuid guid, LootTyp
     }
     else if (guid.IsItem())
     {
-        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(guid.GetEntry());
+        ItemTemplate const* proto = sObjectMgr.GetItemTemplate(guid.GetEntry());
 
         if (proto)
         {
@@ -47,10 +48,12 @@ LootTemplateAccess const* DropMapValue::GetLootTemplate(ObjectGuid guid, LootTyp
                 lTemplate = LootTemplates_Item.GetLootFor(proto->ItemId);
             else if (type == LOOT_DISENCHANTING && proto->DisenchantID)
                 lTemplate = LootTemplates_Disenchant.GetLootFor(proto->DisenchantID);
+            /*
             if (type == LOOT_MILLING)
                 lTemplate = LootTemplates_Milling.GetLootFor(proto->ItemId);
             if (type == LOOT_PROSPECTING)
                 lTemplate = LootTemplates_Prospecting.GetLootFor(proto->ItemId);
+            */
         }
     }
 
@@ -65,31 +68,33 @@ DropMap* DropMapValue::Calculate()
 
     int32 sEntry = 0;
 
-    if (CreatureTemplateContainer const* creatures = sObjectMgr->GetCreatureTemplates())
-    {
-        for (CreatureTemplateContainer::const_iterator itr = creatures->begin(); itr != creatures->end(); ++itr)
+    CreatureInfoMap const& creatures = sObjectMgr.GetCreatureInfoMap();
+    // if (CreatureInfoMap const& creatures = sObjectMgr.GetCreatureInfoMap())
+    // {
+        for (CreatureInfoMap::const_iterator itr = creatures.begin(); itr != creatures.end(); ++itr)
         {
             sEntry = itr->first;
 
             if (LootTemplateAccess const* lTemplateA =
-                    GetLootTemplate(ObjectGuid::Create<HighGuid::Unit>(sEntry, uint32(1)), LOOT_CORPSE))
+                    GetLootTemplate(ObjectGuid(HighGuid::HIGHGUID_UNIT, sEntry, uint32(1)), LOOT_CORPSE))
                 for (auto const& lItem : lTemplateA->Entries)
-                    dropMap->insert(std::make_pair(lItem->itemid, sEntry));
+                    dropMap->insert(std::make_pair(lItem.itemid, sEntry));
         }
-    }
+    // }
 
-    if (GameObjectTemplateContainer const* gameobjects = sObjectMgr->GetGameObjectTemplates())
-    {
-        for (auto const& itr : *gameobjects)
+    GameObjectInfoMap const& gameobjects = sObjectMgr.GetGameObjectInfoMap();
+    // if (GameObjectTemplateContainer const* gameobjects = sObjectMgr.GetGameObjectTemplates())
+    // {
+        for (auto const& itr : gameobjects)
         {
             sEntry = itr.first;
 
             if (LootTemplateAccess const* lTemplateA =
-                    GetLootTemplate(ObjectGuid::Create<HighGuid::GameObject>(sEntry, uint32(1)), LOOT_CORPSE))
+                    GetLootTemplate(ObjectGuid(HighGuid::HIGHGUID_GAMEOBJECT, sEntry, uint32(1)), LOOT_CORPSE))
                 for (auto const& lItem : lTemplateA->Entries)
-                    dropMap->insert(std::make_pair(lItem->itemid, -sEntry));
+                    dropMap->insert(std::make_pair(lItem.itemid, -sEntry));
         }
-    }
+    // }
 
     return dropMap;
 }
@@ -121,14 +126,14 @@ std::vector<uint32> EntryLootListValue::Calculate()
     LootTemplateAccess const* lTemplateA;
 
     if (entry > 0)
-        lTemplateA = DropMapValue::GetLootTemplate(ObjectGuid::Create<HighGuid::Unit>(entry, uint32(1)), LOOT_CORPSE);
+        lTemplateA = DropMapValue::GetLootTemplate(ObjectGuid(HighGuid::HIGHGUID_UNIT, entry, uint32(1)), LOOT_CORPSE);
     else
         lTemplateA =
-            DropMapValue::GetLootTemplate(ObjectGuid::Create<HighGuid::GameObject>(entry, uint32(1)), LOOT_CORPSE);
+            DropMapValue::GetLootTemplate(ObjectGuid(HighGuid::HIGHGUID_GAMEOBJECT, entry, uint32(1)), LOOT_CORPSE);
 
     if (lTemplateA)
         for (auto const& lItem : lTemplateA->Entries)
-            items.push_back(lItem->itemid);
+            items.push_back(lItem.itemid);
 
     return items;
 }

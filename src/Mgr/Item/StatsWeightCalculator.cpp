@@ -8,7 +8,7 @@
 #include "AiFactory.h"
 #include "DBCStores.h"
 #include "ItemEnchantmentMgr.h"
-#include "ItemTemplate.h"
+#include "ItemPrototype.h"
 #include "ObjectMgr.h"
 #include "PlayerbotAI.h"
 #include "PlayerbotFactory.h"
@@ -89,7 +89,7 @@ void StatsWeightCalculator::Reset()
 
 float StatsWeightCalculator::CalculateItem(uint32 itemId, int32 randomPropertyIds, int32 slot)
 {
-    ItemTemplate const* proto = &sObjectMgr->GetItemTemplateStore()->at(itemId);
+    ItemTemplate const* proto = sObjectMgr.GetItemPrototype(itemId);
 
     if (!proto)
         return 0.0f;
@@ -115,7 +115,7 @@ float StatsWeightCalculator::CalculateItem(uint32 itemId, int32 randomPropertyId
     if (enable_item_set_bonus_)
         CalculateItemSetMod(player_, proto);
 
-    CalculateSocketBonus(player_, proto);
+    // CalculateSocketBonus(player_, proto);
 
     // Apply weapon speed governance if slot is provided and this is a weapon
     if (sPlayerbotAIConfig.PreferredSpecWeapons && slot >= 0 && proto->Class == ITEM_CLASS_WEAPON)
@@ -159,7 +159,7 @@ void StatsWeightCalculator::CalculateRandomProperty(int32 randomPropertyId, uint
 
         for (uint32 i = PROP_ENCHANTMENT_SLOT_0; i < MAX_ENCHANTMENT_SLOT; ++i)
         {
-            uint32 enchantId = item_rand->Enchantment[i - PROP_ENCHANTMENT_SLOT_0];
+            uint32 enchantId = item_rand->enchant_id[i - PROP_ENCHANTMENT_SLOT_0];
             SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(enchantId);
             if (enchant)
                 collector_->CollectEnchantStats(enchant);
@@ -167,6 +167,7 @@ void StatsWeightCalculator::CalculateRandomProperty(int32 randomPropertyId, uint
     }
     else
     {
+        /*
         ItemRandomSuffixEntry const* item_rand = sItemRandomSuffixStore.LookupEntry(-randomPropertyId);
         if (!item_rand)
         {
@@ -191,17 +192,19 @@ void StatsWeightCalculator::CalculateRandomProperty(int32 randomPropertyId, uint
             if (enchant)
                 collector_->CollectEnchantStats(enchant, enchant_amount);
         }
+        */
     }
 }
 
 int32 StatsWeightCalculator::PickBestRandomPropertyId(uint32 itemId)
 {
-    ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+    ItemTemplate const* proto = sObjectMgr.GetItemPrototype(itemId);
     if (!proto)
         return 0;
 
     bool isSuffix = false;
     uint32 poolEntry = proto->RandomProperty;
+    /*
     if (!poolEntry)
     {
         poolEntry = proto->RandomSuffix;
@@ -210,6 +213,7 @@ int32 StatsWeightCalculator::PickBestRandomPropertyId(uint32 itemId)
     if (!poolEntry)
         return 0;
 
+    */
     std::vector<uint32> const& pool = sRandomItemMgr.GetEnchantmentPool(poolEntry);
     if (pool.empty())
         return 0;
@@ -558,13 +562,15 @@ void StatsWeightCalculator::CalculateItemSetMod(Player* player, ItemTemplate con
 
     float multiplier = 1.0f;
     size_t i = 0;
-    for (i = 0; i < player->ItemSetEff.size(); i++)
+    // for (i = 0; i < player->ItemSetEffectCount(); i++)
+    std::map<uint32, ItemSetEffect> const& itemSetEffets = player->GetItemSetEffectMap();
+    for (auto itr = itemSetEffets.begin(); itr != player->GetItemSetEffectMap().end(); itr++, i++)
     {
-        if (player->ItemSetEff[i])
-        {
-            ItemSetEffect* eff = player->ItemSetEff[i];
+        // if (player->GetItemSetEffect(i))
+        // {
+            const ItemSetEffect & eff = itr->second;
 
-            uint32 setId = eff->setid;
+            uint32 setId = itr->first;
             if (itemSet != setId)
                 continue;
 
@@ -572,7 +578,7 @@ void StatsWeightCalculator::CalculateItemSetMod(Player* player, ItemTemplate con
             if (!setEntry)
                 continue;
 
-            uint32 itemCount = eff->item_count;
+            uint32 itemCount = eff.item_count;
             uint32 max_items = 0;
             for (size_t j = 0; j < MAX_ITEM_SET_SPELLS; j++)
                 max_items = std::max(max_items, setEntry->items_to_triggerspell[j]);
@@ -585,16 +591,17 @@ void StatsWeightCalculator::CalculateItemSetMod(Player* player, ItemTemplate con
                 multiplier = 1.0f;  // All item set effect has been triggerred
             }
             break;
-        }
+        // }
     }
 
-    if (i == player->ItemSetEff.size())
+    if (i == itemSetEffets.size())
         multiplier = 1.05f;  // this is the first item in the item set
 
     weight_ *= multiplier;
 }
 
-void StatsWeightCalculator::CalculateSocketBonus(Player* /*player*/, ItemTemplate const* proto)
+/*
+void StatsWeightCalculator::CalculateSocketBonus(Player* player, ItemTemplate const* proto)
 {
     uint32 socketNum = 0;
     for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT + MAX_GEM_SOCKETS;
@@ -612,6 +619,7 @@ void StatsWeightCalculator::CalculateSocketBonus(Player* /*player*/, ItemTemplat
 
     weight_ *= multiplier;
 }
+*/
 
 void StatsWeightCalculator::CalculateItemTypePenalty(ItemTemplate const* proto)
 {
@@ -733,9 +741,11 @@ void StatsWeightCalculator::ApplyOverflowPenalty(Player* player)
         if (hitOverflowType_ & CollectorType::SPELL)
         {
             hit_current = player->GetTotalAuraModifier(SPELL_AURA_MOD_SPELL_HIT_CHANCE);
+            /*
             hit_current +=
                 player->GetTotalAuraModifier(SPELL_AURA_MOD_INCREASES_SPELL_PCT_TO_HIT);  // suppression (18176)
             hit_current += player->GetRatingBonusValue(CR_HIT_SPELL);
+            */
 
             if (cls == CLASS_PRIEST && tab == PRIEST_TAB_SHADOW && player->HasAura(SPELL_SHADOW_FOCUS))
                 hit_current += 3;
@@ -744,27 +754,30 @@ void StatsWeightCalculator::ApplyOverflowPenalty(Player* player)
 
             hit_overflow = SPELL_HIT_OVERFLOW;
             if (hit_overflow > hit_current)
-                validPoints = (hit_overflow - hit_current) / player->GetRatingMultiplier(CR_HIT_SPELL);
+                // validPoints = (hit_overflow - hit_current) / player->GetRatingMultiplier(CR_HIT_SPELL);
+                validPoints = (hit_overflow - hit_current);
             else
                 validPoints = 0;
         }
         else if (hitOverflowType_ & CollectorType::MELEE)
         {
             hit_current = player->GetTotalAuraModifier(SPELL_AURA_MOD_HIT_CHANCE);
-            hit_current += player->GetRatingBonusValue(CR_HIT_MELEE);
+            // hit_current += player->GetRatingBonusValue(CR_HIT_MELEE);
             hit_overflow = MELEE_HIT_OVERFLOW;
             if (hit_overflow > hit_current)
-                validPoints = (hit_overflow - hit_current) / player->GetRatingMultiplier(CR_HIT_MELEE);
+                // validPoints = (hit_overflow - hit_current) / player->GetRatingMultiplier(CR_HIT_MELEE);
+                validPoints = (hit_overflow - hit_current);
             else
                 validPoints = 0;
         }
         else
         {
             hit_current = player->GetTotalAuraModifier(SPELL_AURA_MOD_HIT_CHANCE);
-            hit_current += player->GetRatingBonusValue(CR_HIT_RANGED);
+            // hit_current += player->GetRatingBonusValue(CR_HIT_RANGED);
             hit_overflow = RANGED_HIT_OVERFLOW;
             if (hit_overflow > hit_current)
-                validPoints = (hit_overflow - hit_current) / player->GetRatingMultiplier(CR_HIT_RANGED);
+                // validPoints = (hit_overflow - hit_current) / player->GetRatingMultiplier(CR_HIT_RANGED);
+                validPoints = (hit_overflow - hit_current);
             else
                 validPoints = 0;
         }
@@ -775,13 +788,14 @@ void StatsWeightCalculator::ApplyOverflowPenalty(Player* player)
         if (type_ & CollectorType::MELEE)
         {
             float expertise_current, expertise_overflow;
-            expertise_current = player->GetUInt32Value(PLAYER_EXPERTISE);
-            expertise_current += player->GetRatingBonusValue(CR_EXPERTISE);
+            // expertise_current = player->GetUInt32Value(PLAYER_EXPERTISE);
+            // expertise_current += player->GetRatingBonusValue(CR_EXPERTISE);
             expertise_overflow = EXPERTISE_OVERFLOW;
 
             float validPoints;
             if (expertise_overflow > expertise_current)
-                validPoints = (expertise_overflow - expertise_current) / player->GetRatingMultiplier(CR_EXPERTISE);
+                // validPoints = (expertise_overflow - expertise_current) / player->GetRatingMultiplier(CR_EXPERTISE);
+                validPoints = (expertise_overflow - expertise_current);
             else
                 validPoints = 0;
 
@@ -793,12 +807,13 @@ void StatsWeightCalculator::ApplyOverflowPenalty(Player* player)
         if (type_ & CollectorType::MELEE)
         {
             float defense_current, defense_overflow;
-            defense_current = player->GetRatingBonusValue(CR_DEFENSE_SKILL);
+            // defense_current = player->GetRatingBonusValue(CR_DEFENSE_SKILL);
             defense_overflow = DEFENSE_OVERFLOW;
 
             float validPoints;
             if (defense_overflow > defense_current)
-                validPoints = (defense_overflow - defense_current) / player->GetRatingMultiplier(CR_DEFENSE_SKILL);
+                // validPoints = (defense_overflow - defense_current) / player->GetRatingMultiplier(CR_DEFENSE_SKILL);
+                validPoints = (defense_overflow - defense_current);
             else
                 validPoints = 0;
 
@@ -810,13 +825,16 @@ void StatsWeightCalculator::ApplyOverflowPenalty(Player* player)
         if (type_ & (CollectorType::MELEE | CollectorType::RANGED))
         {
             float armor_penetration_current, armor_penetration_overflow;
-            armor_penetration_current = player->GetRatingBonusValue(CR_ARMOR_PENETRATION);
+            // armor_penetration_current = player->GetRatingBonusValue(CR_ARMOR_PENETRATION);
             armor_penetration_overflow = ARMOR_PENETRATION_OVERFLOW;
 
             float validPoints;
             if (armor_penetration_overflow > armor_penetration_current)
+                /*
                 validPoints = (armor_penetration_overflow - armor_penetration_current) /
                               player->GetRatingMultiplier(CR_ARMOR_PENETRATION);
+                */
+                validPoints = armor_penetration_overflow - armor_penetration_current;
             else
                 validPoints = 0;
 
@@ -832,9 +850,11 @@ void StatsWeightCalculator::ApplyWeightFinetune(Player* player)
         if (type_ & (CollectorType::MELEE | CollectorType::RANGED))
         {
             float armor_penetration_current /*, armor_penetration_overflow*/;  // not used, line marked for removal.
+            /*
             armor_penetration_current = player->GetRatingBonusValue(CR_ARMOR_PENETRATION);
             if (armor_penetration_current > 50)
                 stats_weights_[STATS_TYPE_ARMOR_PENETRATION] *= 1.2f;
+            */
         }
     }
 }

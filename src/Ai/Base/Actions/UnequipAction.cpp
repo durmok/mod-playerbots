@@ -7,7 +7,7 @@
 #include "UnequipAction.h"
 #include "Event.h"
 #include "ItemCountValue.h"
-#include "ItemPackets.h"
+// #include "ItemPackets.h"
 #include "Playerbots.h"
 #include "WorldSession.h"
 
@@ -73,11 +73,17 @@ void UnequipAction::UnequipItem(Item* item)
     std::ostringstream out;
     out << chat->FormatItem(item->GetTemplate()) << " unequipped";
 
+    /*
     WorldPacket packet(CMSG_AUTOSTORE_BAG_ITEM, 3);
     packet << bagIndex << slot << dstBag;
     WorldPackets::Item::AutoStoreBagItem nicePacket(std::move(packet));
     nicePacket.Read();
-    bot->GetSession()->HandleAutoStoreBagItemOpcode(nicePacket);
+    */
+    WorldPackets::Item::AutoStoreBagItem p;
+    p.srcbag = bagIndex;
+    p.srcslot = slot;
+    p.dstbag = dstBag;
+    bot->GetSession()->HandleAutoStoreBagItemOpcode(p);
 
     botAI->TellMaster(out);
 }

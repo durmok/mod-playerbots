@@ -75,7 +75,7 @@ bool PullStrategy::HasTarget() const { return GetTarget() != nullptr; }
 
 void PullStrategy::SetTarget(Unit* target)
 {
-    botAI->GetAiObjectContext()->GetValue<ObjectGuid>("pull strategy target")->Set(target ? target->GetGUID() : ObjectGuid::Empty);
+    botAI->GetAiObjectContext()->GetValue<ObjectGuid>("pull strategy target")->Set(target ? target->GetObjectGuid() : ObjectGuid::Empty);
 }
 
 std::string PullStrategy::GetPullActionName() const
@@ -120,7 +120,7 @@ float PullStrategy::GetRange() const
     if (bot && !spellName.empty())
     {
         uint32 const spellId = botAI->GetAiObjectContext()->GetValue<uint32>("spell id", spellName)->Get();
-        if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId))
+        if (SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId))
             return bot->GetSpellMaxRangeForTarget(GetTarget(), spellInfo) - CONTACT_DISTANCE;
     }
 
@@ -179,6 +179,9 @@ float PullMultiplier::GetValue(Action* action)
     if (!strategy || !strategy->HasTarget() || !action)
         return 1.0f;
 
+    if (action->getName() == "follow")
+        return 0.0f;
+
     if (!strategy->IsPullPendingToStart() && !strategy->HasPullStarted())
         return 1.0f;
 
@@ -190,7 +193,7 @@ float PullMultiplier::GetValue(Action* action)
         actionName == "pull action" ||
         actionName == "return to pull position" ||
         actionName == "pull end" ||
-        actionName == "follow" ||
+        // actionName == "follow" ||
         actionName == "set facing")
         return 1.0f;
 

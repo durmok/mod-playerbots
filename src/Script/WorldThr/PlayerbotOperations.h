@@ -7,8 +7,9 @@
 #ifndef PLAYERBOTS_PLAYERBOTOPERATIONS_H
 #define PLAYERBOTS_PLAYERBOTOPERATIONS_H
 
+#include "BattlePlayerbotMgr.h"
 #include "Group.h"
-#include "GroupMgr.h"
+// #include "GroupMgr.h"
 #include "GuildMgr.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
@@ -22,7 +23,7 @@
 #include "RandomPlayerbotMgr.h"
 #include "UseMeetingStoneAction.h"
 #include "WorldSession.h"
-#include "WorldSessionMgr.h"
+// #include "WorldSessionMgr.h"
 
 // Group invite operation
 class GroupInviteOperation : public PlayerbotOperation
@@ -57,13 +58,13 @@ public:
         if (!group)
         {
             group = new Group;
-            if (!group->Create(bot))
+            if (!group->Create(bot->GetObjectGuid(), bot->GetName()))
             {
                 delete group;
                 LOG_ERROR("playerbots", "GroupInviteOperation: Failed to create group for bot {}", bot->GetName());
                 return false;
             }
-            sGroupMgr->AddGroup(group);
+            sObjectMgr.AddGroup(group);
             LOG_DEBUG("playerbots", "GroupInviteOperation: Created new group for bot {}", bot->GetName());
         }
 
@@ -75,7 +76,7 @@ public:
         }
 
         // Add member to group
-        if (group->AddMember(target))
+        if (group->AddMember(target->GetObjectGuid(), target->GetName()))
         {
             LOG_DEBUG("playerbots", "GroupInviteOperation: Successfully added {} to group", target->GetName());
             if (sPlayerbotAIConfig.SummonWhenGroup && target->GetDistance(bot) > sPlayerbotAIConfig.SightDistance)
@@ -139,13 +140,13 @@ public:
             return false;
         }
 
-        if (!group->IsMember(target->GetGUID()))
+        if (!group->IsMember(target->GetObjectGuid()))
         {
             LOG_DEBUG("playerbots", "GroupRemoveMemberOperation: Target is not in bot's group");
             return false;
         }
 
-        group->RemoveMember(target->GetGUID());
+        group->RemoveMember(target->GetObjectGuid(), 0);
         LOG_DEBUG("playerbots", "GroupRemoveMemberOperation: Removed {} from group", target->GetName());
         return true;
     }
@@ -237,13 +238,13 @@ public:
             return false;
         }
 
-        if (!group->IsMember(newLeader->GetGUID()))
+        if (!group->IsMember(newLeader->GetObjectGuid()))
         {
             LOG_DEBUG("playerbots", "GroupSetLeaderOperation: New leader is not in the group");
             return false;
         }
 
-        group->ChangeLeader(newLeader->GetGUID());
+        group->ChangeLeader(newLeader->GetObjectGuid());
         group->SendUpdate();
         LOG_DEBUG("playerbots", "GroupSetLeaderOperation: Changed leader to {}", newLeader->GetName());
         return true;
@@ -267,6 +268,7 @@ private:
     ObjectGuid m_newLeaderGuid;
 };
 
+#ifdef false
 // Form arena group
 class ArenaGroupFormationOperation : public PlayerbotOperation
 {
@@ -297,7 +299,7 @@ public:
             Group* memberGroup = member->GetGroup();
             if (memberGroup)
             {
-                memberGroup->RemoveMember(memberGuid);
+                memberGroup->RemoveMember(memberGuid, 0);
                 LOG_DEBUG("playerbots", "ArenaGroupFormationOperation: Removed {} from their existing group",
                          member->GetName());
             }
@@ -313,7 +315,7 @@ public:
 
         // Step 3: Create new group with leader
         Group* newGroup = new Group();
-        if (!newGroup->Create(leader))
+        if (!newGroup->Create(leader->GetObjectGuid(), leader->GetName()))
         {
             delete newGroup;
             LOG_ERROR("playerbots", "ArenaGroupFormationOperation: Failed to create arena group for leader {}",
@@ -321,7 +323,7 @@ public:
             return false;
         }
 
-        sGroupMgr->AddGroup(newGroup);
+        sObjectMgr->AddGroup(newGroup);
         LOG_DEBUG("playerbots", "ArenaGroupFormationOperation: Created new arena group with leader {}",
                  leader->GetName());
 
@@ -333,7 +335,7 @@ public:
             if (!member)
             {
                 LOG_DEBUG("playerbots", "ArenaGroupFormationOperation: Member {} not found, skipping",
-                         memberGuid.ToString());
+                         memberGuid.ToString().c_str());
                 continue;
             }
 
@@ -344,7 +346,7 @@ public:
                 continue;
             }
 
-            if (newGroup->AddMember(member))
+            if (newGroup->AddMember(member->GetObjectGuid(), member->GetName()))
             {
                 addedMembers++;
                 LOG_DEBUG("playerbots", "ArenaGroupFormationOperation: Added {} to arena group",
@@ -413,6 +415,7 @@ private:
     uint32 m_arenaTeamId;
     std::string m_arenaTeamName;
 };
+#endif
 
 // Bot logout group cleanup operation
 class BotLogoutGroupCleanupOperation : public PlayerbotOperation
@@ -430,8 +433,8 @@ public:
         if (!botAI)
             return false;
 
-        Group* group = bot->GetGroup();
-        if (group && !bot->InBattleground() && !bot->InBattlegroundQueue() && IsRealPlayer(botAI->GetMaster()))
+        // Group* group = bot->GetGroup();
+        if (!bot->InBattleground() && !bot->InBattlegroundQueue() && IsRealPlayer(botAI->GetMaster()))
             PlayerbotRepository::instance().Save(botAI);
 
         return true;
@@ -497,10 +500,15 @@ public:
         if (!bot)
             return false;
 
+
         PlayerbotHolder* holder = &RandomPlayerbotMgr::instance();
+
+        if (sRandomPlayerbotMgr.IsBattleBot(bot))
+            holder = &sBattlePlayerbotMgr;
+
         if (m_masterAccountId)
         {
-            WorldSession* masterSession = sWorldSessionMgr->FindSession(m_masterAccountId);
+            WorldSession* masterSession = sWorld.FindSession(m_masterAccountId);
             Player* masterPlayer = masterSession ? masterSession->GetPlayer() : nullptr;
             if (masterPlayer)
                 holder = PlayerbotsMgr::instance().GetPlayerbotMgr(masterPlayer);
@@ -524,6 +532,7 @@ private:
     uint32 m_masterAccountId = 0;
 };
 
+#ifdef false
 class ArenaTeamAssignOperation : public PlayerbotOperation
 {
 public:
@@ -548,5 +557,6 @@ public:
 private:
     ObjectGuid m_botGuid;
 };
+#endif
 
 #endif

@@ -5,20 +5,22 @@
  */
 
 #include "PvpValues.h"
-#include "BattlegroundEY.h"
-#include "BattlegroundMgr.h"
-#include "BattlegroundWS.h"
+// #include "BattlegroundEY.h"
+#include "BattleGroundMgr.h"
+#include "BattleGroundWS.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
 
 namespace
 {
 // a game from the random queue records BATTLEGROUND_RB as the player's type: use the rolled map
-BattlegroundTypeId RealBgType(Player* bot)
+BattleGroundTypeId RealBgType(Player* bot)
 {
-    BattlegroundTypeId bgType = bot->GetBattlegroundTypeId();
+    BattleGroundTypeId bgType = bot->GetBattlegroundTypeId();
+    /*
     if (bgType == BATTLEGROUND_RB && bot->GetBattleground())
         bgType = bot->GetBattleground()->GetBgTypeID(true);
+    */
     return bgType;
 }
 }  // namespace
@@ -29,9 +31,9 @@ Unit* FlagCarrierValue::Calculate()
 
     if (botAI->GetBot()->InBattleground())
     {
-        if (RealBgType(botAI->GetBot()) == BattlegroundTypeId::BATTLEGROUND_WS)
+        if (RealBgType(botAI->GetBot()) == BattleGroundTypeId::BATTLEGROUND_WS)
         {
-            BattlegroundWS* bg = (BattlegroundWS*)botAI->GetBot()->GetBattleground();
+            BattleGroundWS* bg = (BattleGroundWS*)botAI->GetBot()->GetBattleground();
 
             if (!bg)
                 return nullptr;
@@ -55,6 +57,7 @@ Unit* FlagCarrierValue::Calculate()
             }
         }
 
+        /*
         if (RealBgType(botAI->GetBot()) == BATTLEGROUND_EY)
         {
             BattlegroundEY* bg = (BattlegroundEY*)botAI->GetBot()->GetBattleground();
@@ -85,6 +88,7 @@ Unit* FlagCarrierValue::Calculate()
                     return nullptr;
             }
         }
+        */
     }
 
     return carrier;
@@ -92,10 +96,10 @@ Unit* FlagCarrierValue::Calculate()
 
 std::vector<CreatureData const*> BgMastersValue::Calculate()
 {
-    BattlegroundTypeId bgTypeId = (BattlegroundTypeId)stoi(qualifier);
+    BattleGroundTypeId bgTypeId = (BattleGroundTypeId)stoi(qualifier);
 
     std::vector<uint32> entries;
-    std::map<TeamId, std::map<BattlegroundTypeId, std::vector<uint32>>> battleMastersCache =
+    std::map<TeamId, std::map<BattleGroundTypeId, std::vector<uint32>>> battleMastersCache =
         sRandomPlayerbotMgr.getBattleMastersCache();
     entries.insert(entries.end(), battleMastersCache[TEAM_NEUTRAL][bgTypeId].begin(),
                    battleMastersCache[TEAM_NEUTRAL][bgTypeId].end());
@@ -140,7 +144,7 @@ CreatureData const* BgMasterValue::NearestBm(bool allowDead)
         if (!bmPair)
             continue;
 
-        WorldPosition bmPos(bmPair->mapid, bmPair->posX, bmPair->posY, bmPair->posZ, bmPair->orientation);
+        WorldPosition bmPos(bmPair->position.mapId, bmPair->position.x, bmPair->position.y, bmPair->position.z, bmPair->position.o);
 
         float dist = botPos.distance(bmPos);  // This is the aproximate travel distance.
 
@@ -148,11 +152,11 @@ CreatureData const* BgMasterValue::NearestBm(bool allowDead)
         if (rbmPair && rDist <= dist)
             continue;
 
-        CreatureTemplate const* bmTemplate = sObjectMgr->GetCreatureTemplate(bmPair->id);
+        CreatureTemplate const* bmTemplate = sObjectMgr.GetCreatureTemplate(bmPair->creature_id[0]);
         if (!bmTemplate)
             continue;
 
-        FactionTemplateEntry const* bmFactionEntry = sFactionTemplateStore.LookupEntry(bmTemplate->faction);
+        FactionTemplateEntry const* bmFactionEntry = sObjectMgr.GetFactionTemplateEntry(bmTemplate->faction);
 
         // Is the unit hostile?
         if (Unit::GetFactionReactionTo(bot->GetFactionTemplateEntry(), bmFactionEntry) < REP_NEUTRAL)
@@ -164,9 +168,9 @@ CreatureData const* BgMasterValue::NearestBm(bool allowDead)
             continue;
 
         // Is the area hostile?
-        if (area->team == 4 && bot->GetTeamId() == TEAM_ALLIANCE)
+        if (area->Team == 4 && bot->GetTeamId() == TEAM_ALLIANCE)
             continue;
-        if (area->team == 2 && bot->GetTeamId() == TEAM_HORDE)
+        if (area->Team == 2 && bot->GetTeamId() == TEAM_HORDE)
             continue;
 
         if (!allowDead)
@@ -177,7 +181,7 @@ CreatureData const* BgMasterValue::NearestBm(bool allowDead)
                 continue;
 
             // Is the unit dead?
-            if (unit->getDeathState() == DeathState::Dead)
+            if (unit->getDeathState() == DeathState::DEAD)
                 continue;
         }
 
@@ -188,18 +192,18 @@ CreatureData const* BgMasterValue::NearestBm(bool allowDead)
     return rbmPair;
 }
 
-BattlegroundTypeId RpgBgTypeValue::Calculate()
+BattleGroundTypeId RpgBgTypeValue::Calculate()
 {
     GuidPosition guidPosition = AI_VALUE(GuidPosition, "rpg target");
 
     if (guidPosition)
         for (uint32 i = 1; i < MAX_BATTLEGROUND_QUEUE_TYPES; i++)
         {
-            BattlegroundQueueTypeId queueTypeId = (BattlegroundQueueTypeId)i;
+            BattleGroundQueueTypeId queueTypeId = (BattleGroundQueueTypeId)i;
 
-            BattlegroundTypeId bgTypeId = sBattlegroundMgr->BGTemplateId(queueTypeId);
+            BattleGroundTypeId bgTypeId = sBattlegroundMgr->BGTemplateId(queueTypeId);
 
-            Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(bgTypeId);
+            BattleGround* bg = sBattlegroundMgr->GetBattlegroundTemplate(bgTypeId);
             if (!bg)
                 continue;
 
@@ -210,7 +214,7 @@ BattlegroundTypeId RpgBgTypeValue::Calculate()
             if (bot->InBattlegroundQueueForBattlegroundQueueType(queueTypeId))
                 continue;
 
-            std::map<TeamId, std::map<BattlegroundTypeId, std::vector<uint32>>> battleMastersCache =
+            std::map<TeamId, std::map<BattleGroundTypeId, std::vector<uint32>>> battleMastersCache =
                 sRandomPlayerbotMgr.getBattleMastersCache();
 
             for (auto& entry : battleMastersCache[TEAM_NEUTRAL][bgTypeId])

@@ -7,8 +7,9 @@
 #ifndef PLAYERBOTS_ENCOUNTERHELPERS_H
 #define PLAYERBOTS_ENCOUNTERHELPERS_H
 
+#include "SharedDefines.h"
 #include "Common.h"
-#include "Position.h"
+// #include "Position.h"
 #include <string>
 #include <vector>
 

@@ -19,9 +19,9 @@ bool CollisionValue::Calculate()
 
     std::list<Unit*> targets;
     float range = sPlayerbotAIConfig.ContactDistance;
-    Acore::AnyUnitInObjectRangeCheck u_check(bot, range);
-    Acore::UnitListSearcher<Acore::AnyUnitInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, range);
+    MaNGOS::AnyUnitInObjectRangeCheck u_check(bot, range);
+    MaNGOS::UnitListSearcher<MaNGOS::AnyUnitInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, range);
 
     for (Unit* target : targets)
     {

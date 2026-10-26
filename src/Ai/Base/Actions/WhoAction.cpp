@@ -43,9 +43,9 @@ bool WhoAction::Execute(Event event)
 
     if (!out.str().empty())
     {
-        if (AreaTableEntry const* areaEntry = sAreaTableStore.LookupEntry(bot->GetAreaId()))
+        if (AreaTableEntry const* areaEntry = sAreaTableStore.LookupEntry<AreaEntry>(bot->GetAreaId()))
         {
-            out << ", (|cffb04040" << areaEntry->area_name[0] << "|r)";
+            out << ", (|cffb04040" << areaEntry->Name << "|r)";
         }
     }
 
@@ -96,8 +96,8 @@ std::string const WhoAction::QuerySkill(std::string const text)
     std::string const skillName = chat->FormatSkill(skill);
     uint32 spellId = AI_VALUE2(uint32, "spell id", skillName);
     uint16 value = bot->GetSkillValue(skill);
-    uint16 maxSkill = bot->GetMaxSkillValue(skill);
-    ObjectGuid guid = bot->GetGUID();
+    uint16 maxSkill = bot->GetSkillMaxPure(skill);
+    ObjectGuid guid = bot->GetObjectGuid();
 
     std::string const data = "0";
     out << "|cFFFFFF00|Htrade:" << spellId << ":" << value << ":" << maxSkill << ":" << std::hex << std::uppercase

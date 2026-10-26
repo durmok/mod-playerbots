@@ -26,7 +26,7 @@ bool TellItemCountAction::Execute(Event event)
     botAI->TellMaster("=== Inventory ===");
     for (std::map<uint32, uint32>::iterator i = itemMap.begin(); i != itemMap.end(); ++i)
     {
-        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(i->first);
+        ItemTemplate const* proto = sObjectMgr.GetItemTemplate(i->first);
         TellItem(proto, i->second, soulbound[i->first]);
     }
 

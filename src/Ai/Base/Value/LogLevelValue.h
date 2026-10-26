@@ -7,7 +7,7 @@
 #ifndef PLAYERBOTS_LOGLEVELVALUE_H
 #define PLAYERBOTS_LOGLEVELVALUE_H
 
-#include "LogCommon.h"
+#include "Log.h"
 #include "Value.h"
 
 class PlayerbotAI;
@@ -16,7 +16,7 @@ class LogLevelValue : public ManualSetValue<LogLevel>
 {
 public:
     LogLevelValue(PlayerbotAI* botAI, std::string const name = "log level")
-        : ManualSetValue<LogLevel>(botAI, LOG_LEVEL_DEBUG, name)
+        : ManualSetValue<LogLevel>(botAI, LOG_LVL_DEBUG, name)
     {
     }
 };

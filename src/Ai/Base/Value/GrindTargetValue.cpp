@@ -64,14 +64,14 @@ Unit* GrindTargetValue::FindTargetForGrinding(uint32 assistCount)
         if (!unit->IsInWorld() || unit->IsDuringRemoveFromWorld())
             continue;
 
-        if (unit->ToCreature() && !unit->ToCreature()->GetCreatureTemplate()->lootid &&
+        if (unit->ToCreature() && !unit->ToCreature()->GetCreatureTemplate()->loot_id &&
             bot->GetReactionTo(unit) >= REP_NEUTRAL)
             continue;
 
         if (!bot->IsHostileTo(unit) && unit->GetNpcFlags() != UNIT_NPC_FLAG_NONE)
             continue;
 
-        if (!bot->isHonorOrXPTarget(unit))
+        if (!bot->IsHonorOrXPTarget(unit))
             continue;
 
         if (abs(bot->GetPositionZ() - unit->GetPositionZ()) > INTERACTION_DISTANCE)
@@ -92,7 +92,7 @@ Unit* GrindTargetValue::FindTargetForGrinding(uint32 assistCount)
             continue;
         }
 
-        if (!bot->InBattleground() && (int)unit->GetLevel() - (int)bot->GetLevel() > 4 && !unit->GetGUID().IsPlayer())
+        if (!bot->InBattleground() && (int)unit->GetLevel() - (int)bot->GetLevel() > 4 && !unit->GetObjectGuid().IsPlayer())
             continue;
 
         if (Creature* creature = unit->ToCreature())
@@ -108,8 +108,8 @@ Unit* GrindTargetValue::FindTargetForGrinding(uint32 assistCount)
         bool inactiveGrindStatus = botAI->rpgInfo.GetStatus() != RPG_WANDER_RANDOM && botAI->rpgInfo.GetStatus() != RPG_IDLE;
 
         float aggroRange = 30.0f;
-        if (unit->ToCreature())
-            aggroRange = std::min(30.0f, unit->ToCreature()->GetAggroRange(bot) + 10.0f);
+        // if (unit->ToCreature())
+        //     aggroRange = std::min(30.0f, unit->ToCreature()->GetAggroRange(bot) + 10.0f);
         bool outOfAggro = unit->ToCreature() && bot->GetDistance(unit) > aggroRange;
         if (inactiveGrindStatus && outOfAggro)
         {
@@ -156,7 +156,7 @@ bool GrindTargetValue::needForQuest(Unit* target)
     QuestStatusMap& questMap = bot->getQuestStatusMap();
     for (auto& quest : questMap)
     {
-        Quest const* questTemplate = sObjectMgr->GetQuestTemplate(quest.first);
+        Quest const* questTemplate = sObjectMgr.GetQuestTemplate(quest.first);
         if (!questTemplate)
             continue;
 
@@ -175,12 +175,12 @@ bool GrindTargetValue::needForQuest(Unit* target)
 
             for (int j = 0; j < QUEST_OBJECTIVES_COUNT; j++)
             {
-                int32 entry = questTemplate->RequiredNpcOrGo[j];
+                int32 entry = questTemplate->ReqCreatureOrGOId[j];
 
                 if (entry && entry > 0)
                 {
-                    int required = questTemplate->RequiredNpcOrGoCount[j];
-                    int available = questStatus->CreatureOrGOCount[j];
+                    int required = questTemplate->ReqCreatureOrGOCount[j];
+                    int available = questStatus->m_creatureOrGOcount[j];
 
                     if (required && available < required && target->GetEntry() == uint32(entry))
                         return true;
@@ -189,9 +189,9 @@ bool GrindTargetValue::needForQuest(Unit* target)
         }
     }
 
-    if (CreatureTemplate const* data = sObjectMgr->GetCreatureTemplate(target->GetEntry()))
+    if (CreatureTemplate const* data = sObjectMgr.GetCreatureTemplate(target->GetEntry()))
     {
-        if (uint32 lootId = data->lootid)
+        if (uint32 lootId = data->loot_id)
         {
             if (LootTemplates_Creature.HaveQuestLootForPlayer(lootId, bot))
             {
@@ -219,7 +219,7 @@ uint32 GrindTargetValue::GetTargetingPlayerCount(Unit* unit)
 
         PlayerbotAI* botAI = GET_PLAYERBOT_AI(member);
         if ((botAI && *botAI->GetAiObjectContext()->GetValue<Unit*>("current target") == unit) ||
-            (!botAI && member->GetTarget() == unit->GetGUID()))
+            (!botAI && member->GetTarget() == unit->GetObjectGuid()))
             ++count;
     }
 

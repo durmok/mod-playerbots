@@ -40,7 +40,7 @@ bool VigilanceTrigger::IsActive()
 
         // The action casts Vigilance on dps, but the trigger fails if any party member has
         // Vigilance from the bot (so the player can have a bot cast Vigilance on any group member).
-        if (member->HasAura(SPELL_VIGILANCE, bot->GetGUID()))
+        if (member->HasAura(SPELL_VIGILANCE))
             return false;
     }
 
@@ -81,16 +81,16 @@ bool BattleShoutTrigger::IsActive()
     if (!battleShoutSpellId)
         return false;
 
-    SpellInfo const* bsInfo = sSpellMgr->GetSpellInfo(battleShoutSpellId);
+    SpellInfo const* bsInfo = sSpellMgr.GetSpellInfo(battleShoutSpellId);
     if (!bsInfo)
         return false;
 
     int32 bsApValue = 0;
     for (uint8 eff = 0; eff < MAX_SPELL_EFFECTS; ++eff)
     {
-        if (bsInfo->Effects[eff].ApplyAuraName == SPELL_AURA_MOD_ATTACK_POWER)
+        if (bsInfo->EffectApplyAuraName[eff] == SPELL_AURA_MOD_ATTACK_POWER)
         {
-            bsApValue = bsInfo->Effects[eff].BasePoints + 1;
+            bsApValue = bsInfo->EffectBasePoints[eff] + 1;
             break;
         }
     }
@@ -116,7 +116,7 @@ bool BattleShoutTrigger::IsActive()
     };
     for (int i = 0; blessingNames[i] != nullptr; ++i)
     {
-        Aura* bom = botAI->GetAura(blessingNames[i], bot);
+        Aura const* bom = botAI->GetAura(blessingNames[i], bot);
         if (!bom)
             continue;
 
@@ -126,9 +126,9 @@ bool BattleShoutTrigger::IsActive()
 
         for (uint8 eff = 0; eff < MAX_SPELL_EFFECTS; ++eff)
         {
-            if (bomInfo->Effects[eff].ApplyAuraName == SPELL_AURA_MOD_ATTACK_POWER)
+            if (bomInfo->EffectApplyAuraName[eff] == SPELL_AURA_MOD_ATTACK_POWER)
             {
-                int32 bomApValue = bomInfo->Effects[eff].BasePoints + 1;
+                int32 bomApValue = bomInfo->EffectBasePoints[eff] + 1;
                 if (bomApValue >= effectiveBsAp)
                     return false;
                 break;

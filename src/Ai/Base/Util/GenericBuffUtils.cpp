@@ -33,13 +33,13 @@ namespace ai::buff
         }
     }
 
-    bool BuffBelowRefreshTarget(PlayerbotAI* botAI, Aura* aura, uint32 baseBeforeDuration)
+    bool BuffBelowRefreshTarget(PlayerbotAI* botAI, Aura const* aura, uint32 baseBeforeDuration)
     {
         if (!aura)
             return true;
 
         return botAI->forceRebuff.BuffBelowRefreshTarget(
-            aura->GetDuration(), aura->GetMaxDuration(), baseBeforeDuration);
+            aura->GetAuraDuration(), aura->GetAuraMaxDuration(), baseBeforeDuration);
     }
 
     static bool HasEnoughSameMapMissingPlayersForGroupVariant(
@@ -198,7 +198,7 @@ namespace ai::buff
         if (!spellId)
             return false;
 
-        if (SpellInfo const* info = sSpellMgr->GetSpellInfo(spellId))
+        if (SpellInfo const* info = sSpellMgr.GetSpellInfo(spellId))
         {
             for (int i = 0; i < MAX_SPELL_REAGENTS; ++i)
             {
@@ -314,17 +314,17 @@ namespace ai::spell
         if (bot->HasSpellCooldown(spellId))
             return true;
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (!spellInfo)
             return false;
 
-        uint32 category = spellInfo->GetCategory();
+        uint32 category = spellInfo->Category;
         if (!category)
             return false;
 
         for (auto const& [cooldownSpellId, cooldown] : bot->GetSpellCooldownMap())
         {
-            if (cooldown.category == category && bot->GetSpellCooldownDelay(cooldownSpellId) > 0)
+            if (cooldown->GetCategory() == category && bot->HasSpellCooldown(cooldownSpellId))
                 return true;
         }
 

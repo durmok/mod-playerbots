@@ -21,13 +21,17 @@ public:
 
     using Trigger::ExternalEvent;  // keep the std::string overload visible
     void ExternalEvent(WorldPacket& packet, Player* owner = nullptr) override;
+    void ExternalEvent(std::shared_ptr<ClientPacket const> packet, Player* owner = nullptr) override;
     Event Check() override;
     void Reset() override;
 
 private:
     WorldPacket packet;
+    std::shared_ptr<ClientPacket const> clientPacket = nullptr;
     bool triggered;
     Player* owner;
+    std::vector<std::pair<WorldPacket, Player*>> allPackets;
+    std::vector<std::pair<std::shared_ptr<ClientPacket const>, Player*>> allClientPackets;
 };
 
 #endif

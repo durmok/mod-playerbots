@@ -8,7 +8,7 @@
 #define PLAYERBOTS_LOGLEVELACTION_H
 
 #include "Action.h"
-#include "LogCommon.h"
+#include "Log.h"
 
 class PlayerbotAI;
 

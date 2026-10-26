@@ -29,7 +29,7 @@ protected:
     void LearnSpells(std::ostringstream* out);
     void LearnTrainerSpells(std::ostringstream* out);
     void LearnQuestSpells(std::ostringstream* out);
-    std::string const FormatSpell(SpellInfo const* sInfo);
+    std::string const FormatSpell(SpellEntry const* sInfo);
 };
 
 #endif

@@ -29,13 +29,15 @@ bool RazuviousUseObedienceCrystalAction::Execute(Event /*event*/)
         if (!target)
             return false;
 
-        if (charm->GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_ACTIVE) == NULL_MOTION_TYPE)
+        // if (charm->GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_ACTIVE) == NULL_MOTION_TYPE)
+        if (charm->GetMotionMaster()->GetCurrentMovementGeneratorType() == IDLE_MOTION_TYPE)
         {
             charm->GetMotionMaster()->Clear();
             charm->GetMotionMaster()->MoveChase(target);
-            charm->GetAI()->AttackStart(target);
+            // charm->GetAI()->AttackStart(target);
+            charm->Attack(target, true);
         }
-        Aura* forceObedience = botAI->GetAura("force obedience", charm);
+        Aura const* forceObedience = botAI->GetAura("force obedience", charm);
         uint32 duration_time;
         if (!forceObedience)
         {
@@ -52,17 +54,17 @@ bool RazuviousUseObedienceCrystalAction::Execute(Event /*event*/)
         {
             // taunt
             bool tauntUseful = true;
-            if (forceObedience->GetDuration() <= int32(duration_time - 5000))
+            if (forceObedience->GetAuraDuration() <= int32(duration_time - 5000))
             {
                 Unit* victim = target->GetVictim();
                 if (victim && victim->HasAura(SPELL_BONE_BARRIER))
                     tauntUseful = false;
 
-                if (forceObedience->GetDuration() <= 3000)
+                if (forceObedience->GetAuraDuration() <= 3000)
                     tauntUseful = false;
 
             }
-            if (forceObedience->GetDuration() >= int32(duration_time - 500))
+            if (forceObedience->GetAuraDuration() >= int32(duration_time - 500))
                 tauntUseful = false;
 
             if (tauntUseful && !charm->HasSpellCooldown(29060))
@@ -73,7 +75,7 @@ bool RazuviousUseObedienceCrystalAction::Execute(Event /*event*/)
                     charm->CastSpell(charm, SPELL_BONE_BARRIER, true);
                     charm->AddSpellCooldown(SPELL_BONE_BARRIER, 0, 30 * IN_MILLISECONDS);
                 }
-                charm->CastSpell(target, SPELL_UNDERSTUDY_TAUNT, true);
+                    charm->CastSpell(target, SPELL_UNDERSTUDY_TAUNT, true);
                 charm->AddSpellCooldown(SPELL_UNDERSTUDY_TAUNT, 0, 20 * IN_MILLISECONDS);
             }
             // strike
@@ -86,7 +88,8 @@ bool RazuviousUseObedienceCrystalAction::Execute(Event /*event*/)
     }
     else
     {
-        Difficulty diff = bot->GetRaidDifficulty();
+        // Difficulty diff = bot->GetRaidDifficulty();
+        Difficulty diff = RAID_DIFFICULTY_25MAN_HEROIC;
         if (diff == RAID_DIFFICULTY_10MAN_NORMAL)
         {
             GuidVector npcs = AI_VALUE(GuidVector, "nearest npcs");
@@ -105,11 +108,13 @@ bool RazuviousUseObedienceCrystalAction::Execute(Event /*event*/)
                 if (MoveTo(unit, 0.0f, MovementPriority::MOVEMENT_COMBAT))
                     return true;
 
+                /*
                 Creature* creature = bot->GetNPCIfCanInteractWith(*i, UNIT_NPC_FLAG_SPELLCLICK);
                 if (!creature)
                     continue;
 
                 creature->HandleSpellClick(bot);
+                */
                 return true;
             }
         }

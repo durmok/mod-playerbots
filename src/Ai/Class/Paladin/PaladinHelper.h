@@ -27,7 +27,7 @@ inline bool HasHandFromCaster(Unit* target, Player* caster, std::initializer_lis
 
     for (uint32 spellId : spellIds)
     {
-        if (target->HasAura(spellId, caster->GetGUID()))
+        if (target->HasAura(spellId))
             return true;
     }
 

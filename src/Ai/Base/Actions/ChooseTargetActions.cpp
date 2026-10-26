@@ -40,13 +40,13 @@ bool AggressiveTargetAction::isUseful()
 
 bool DropTargetAction::Execute(Event /*event*/)
 {
-    Unit* target = context->GetValue<Unit*>("current target")->Get();
-    if (target && target->isDead())
-    {
-        ObjectGuid guid = target->GetGUID();
-        if (guid)
-            context->GetValue<LootObjectStack*>("available loot")->Get()->Add(guid);
-    }
+    // Unit* target = context->GetValue<Unit*>("current target")->Get();
+    // if (target && target->isDead())
+    // {
+    //     ObjectGuid guid = target->GetObjectGuid();
+    //     if (guid)
+    //         context->GetValue<LootObjectStack*>("available loot")->Get()->Add(guid);
+    // }
 
     // ObjectGuid pullTarget = context->GetValue<ObjectGuid>("pull target")->Get();
     // GuidVector possible = botAI->GetAiObjectContext()->GetValue<GuidVector>("possible targets no los")->Get();
@@ -92,7 +92,7 @@ bool TargetRequesterAction::Execute(Event event)
     if (!requester)
         return false;
 
-    bot->SetSelection(requester->GetGUID());
+    bot->SetSelection(requester->GetObjectGuid());
 
     botAI->TellMasterNoFacing(
         PlayerbotTextMgr::instance().GetBotTextOrDefault(
@@ -110,7 +110,7 @@ bool AttackAnythingAction::Execute(Event event)
     {
         if (Unit* grindTarget = GetTarget())
         {
-            context->GetValue<ObjectGuid>("pull target")->Set(grindTarget->GetGUID());
+            context->GetValue<ObjectGuid>("pull target")->Set(grindTarget->GetObjectGuid());
             bot->GetMotionMaster()->Clear();
             // bot->StopMoving();
         }
@@ -183,11 +183,11 @@ bool AttackRtiTargetAction::Execute(Event /*event*/)
 
     if (rtiTarget && rtiTarget->IsInWorld() && rtiTarget->GetMapId() == bot->GetMapId())
     {
-        botAI->GetAiObjectContext()->GetValue<GuidVector>("prioritized targets")->Set({rtiTarget->GetGUID()});
-        bool result = Attack(botAI->GetUnit(rtiTarget->GetGUID()));
+        botAI->GetAiObjectContext()->GetValue<GuidVector>("prioritized targets")->Set({rtiTarget->GetObjectGuid()});
+        bool result = Attack(botAI->GetUnit(rtiTarget->GetObjectGuid()));
         if (result)
         {
-            context->GetValue<ObjectGuid>("pull target")->Set(rtiTarget->GetGUID());
+            context->GetValue<ObjectGuid>("pull target")->Set(rtiTarget->GetObjectGuid());
             return true;
         }
     }

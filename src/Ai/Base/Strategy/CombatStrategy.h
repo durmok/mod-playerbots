@@ -17,6 +17,7 @@ public:
     CombatStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
 
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
     uint32 GetType() const override { return STRATEGY_TYPE_COMBAT; }
 };
 

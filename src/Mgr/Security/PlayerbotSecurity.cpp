@@ -8,11 +8,12 @@
 #include "LFGMgr.h"
 #include "PlayerbotAIConfig.h"
 #include "Playerbots.h"
+#include "World.h"
 
 PlayerbotSecurity::PlayerbotSecurity(Player* const bot) : bot(bot)
 {
     if (bot)
-        account = sCharacterCache->GetCharacterAccountIdByGuid(bot->GetGUID());
+        account = sObjectMgr.GetPlayerAccountIdByGUID(bot->GetObjectGuid());
 }
 
 PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from, DenyReason* reason, bool ignoreGroup)
@@ -101,7 +102,7 @@ PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from, DenyReason* rea
         if (sPlayerbotAIConfig.GearScoreCheck && botGS && bot->GetLevel() > 15 && botGS > fromGS)
         {
             uint32 diffPct = uint32(100 * (botGS - fromGS) / botGS);
-            uint32 reqPct = uint32(12 * sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL) / from->GetLevel());
+            uint32 reqPct = uint32(12 * sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL) / from->GetLevel());
 
             if (diffPct >= reqPct)
             {
@@ -141,7 +142,7 @@ PlayerbotSecurityLevel PlayerbotSecurity::LevelFor(Player* from, DenyReason* rea
             return PLAYERBOT_SECURITY_TALK;
         }
 
-        if (!ignoreGroup && botGroup->GetLeaderGUID() != bot->GetGUID())
+        if (!ignoreGroup && botGroup->GetLeaderGuid() != bot->GetObjectGuid())
         {
             if (reason)
                 *reason = PLAYERBOT_DENY_NOT_LEADER;
@@ -213,7 +214,7 @@ bool PlayerbotSecurity::CheckLevelFor(PlayerbotSecurityLevel level, bool silent,
                     int botGS = int(botAI->GetEquipGearScore(bot));
                     int fromGS = int(botAI->GetEquipGearScore(from));
                     int diff = (100 * (botGS - fromGS) / botGS);
-                    int req = 12 * sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL) / from->GetLevel();
+                    int req = 12 * sWorld.getConfig(CONFIG_MAX_PLAYER_LEVEL) / from->GetLevel();
 
                     out << "Your gearscore is too low: |cffff0000" << fromGS << "|cffffffff/|cff00ff00" << botGS
                         << " |cffff0000" << diff << "%|cffffffff/|cff00ff00" << req << "%";
@@ -237,8 +238,8 @@ bool PlayerbotSecurity::CheckLevelFor(PlayerbotSecurityLevel level, bool silent,
                 case PLAYERBOT_DENY_FAR:
                 {
                     out << "You must be closer to invite me to your group. I am in ";
-                    if (AreaTableEntry const* entry = sAreaTableStore.LookupEntry(bot->GetAreaId()))
-                        out << " |cffffffff(|cffff0000" << entry->area_name[0] << "|cffffffff)";
+                    if (AreaTableEntry const* entry = sAreaStorage.LookupEntry<AreaEntry>(bot->GetAreaId()))
+                        out << " |cffffffff(|cffff0000" << entry->Name << "|cffffffff)";
                     break;
                 }
                 case PLAYERBOT_DENY_FULL_GROUP:
@@ -273,7 +274,7 @@ bool PlayerbotSecurity::CheckLevelFor(PlayerbotSecurityLevel level, bool silent,
     }
 
     std::string const text = out.str();
-    ObjectGuid guid = from->GetGUID();
+    ObjectGuid guid = from->GetObjectGuid();
     time_t lastSaid = whispers[guid][text];
 
     if (!lastSaid || (time(nullptr) - lastSaid) >= sPlayerbotAIConfig.RepeatDelay / 1000)

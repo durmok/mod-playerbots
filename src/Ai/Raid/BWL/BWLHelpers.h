@@ -57,7 +57,7 @@ namespace BlackwingLairHelpers
     bool IsActiveSuppressionDeviceInRange(GameObject const* go, Player const* bot);
     bool AreRazorgoreEggsAlive(PlayerbotAI* botAI);
     bool IsRazorgoreOffTank(Player* bot);
-    bool IsNonBABotNearPosition(Player const* bot, Position const& position, float distance);
+    bool IsNonBABotNearPosition(Player * bot, Position const& position, float distance);
     bool IsCorruptedWhelp(Unit const* unit);
 }
 

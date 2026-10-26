@@ -5,7 +5,7 @@
  */
 
 #include "PlayerbotCommandServer.h"
-#include "IoContext.h"
+#include "AsioContext.h"
 #include "RandomPlayerbotMgr.h"
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -57,7 +57,7 @@ void session(socket_ptr sock)
     }
 }
 
-void server(Acore::Asio::IoContext& io_service, short port)
+void server(MaNGOS::Asio::IoContext& io_service, short port)
 {
     tcp::acceptor a(io_service, tcp::endpoint(tcp::v4(), port));
     for (;;)
@@ -81,7 +81,7 @@ void Run()
 
     try
     {
-        Acore::Asio::IoContext io_service;
+        MaNGOS::Asio::IoContext io_service;
         server(io_service, sPlayerbotAIConfig.CommandServerPort);
     }
 

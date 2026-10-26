@@ -6,20 +6,22 @@
 
 #include "PvpTriggers.h"
 #include "BattleGroundTactics.h"
-#include "BattlegroundEY.h"
-#include "BattlegroundMgr.h"
-#include "BattlegroundWS.h"
+// #include "BattlegroundEY.h"
+#include "BattleGroundMgr.h"
+#include "BattleGroundWS.h"
 #include "Playerbots.h"
 #include "ServerFacade.h"
 
 namespace
 {
 // a game from the random queue records BATTLEGROUND_RB as the player's type: use the rolled map
-BattlegroundTypeId RealBgType(Player* bot)
+BattleGroundTypeId RealBgType(Player* bot)
 {
-    BattlegroundTypeId bgType = bot->GetBattlegroundTypeId();
+    BattleGroundTypeId bgType = bot->GetBattlegroundTypeId();
+    /*
     if (bgType == BATTLEGROUND_RB && bot->GetBattleground())
         bgType = bot->GetBattleground()->GetBgTypeID(true);
+    */
     return bgType;
 }
 }  // namespace
@@ -30,14 +32,14 @@ bool PlayerHasNoFlag::IsActive()
 {
     if (botAI->GetBot()->InBattleground())
     {
-        if (RealBgType(botAI->GetBot()) == BattlegroundTypeId::BATTLEGROUND_WS)
+        if (RealBgType(botAI->GetBot()) == BattleGroundTypeId::BATTLEGROUND_WS)
         {
-            BattlegroundWS* bg = (BattlegroundWS*)botAI->GetBot()->GetBattleground();
-            if (!(bg->GetFlagState(bg->GetOtherTeamId(bot->GetTeamId())) == BG_WS_FLAG_STATE_ON_PLAYER))
+            BattleGroundWS* bg = (BattleGroundWS*)botAI->GetBot()->GetBattleground();
+            if (!(bg->GetFlagState(bg->GetOtherTeam(bot->GetTeam())) == BG_WS_FLAG_STATE_ON_PLAYER))
                 return true;
 
-            if (bot->GetGUID() == bg->GetFlagPickerGUID(TEAM_ALLIANCE) ||
-                bot->GetGUID() == bg->GetFlagPickerGUID(TEAM_HORDE))
+            if (bot->GetObjectGuid() == bg->GetFlagPickerGUID(TEAM_ALLIANCE) ||
+                bot->GetObjectGuid() == bg->GetFlagPickerGUID(TEAM_HORDE))
             {
                 return false;
             }
@@ -82,19 +84,19 @@ bool BgInviteActiveTrigger::IsActive()
 
     for (uint8 i = 0; i < PLAYER_MAX_BATTLEGROUND_QUEUES; ++i)
     {
-        BattlegroundQueueTypeId queueTypeId = bot->GetBattlegroundQueueTypeId(i);
+        BattleGroundQueueTypeId queueTypeId = bot->GetBattlegroundQueueTypeId(i);
         if (queueTypeId == BATTLEGROUND_QUEUE_NONE)
             continue;
 
         BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(queueTypeId);
 
         GroupQueueInfo ginfo;
-        if (bgQueue.GetPlayerGroupInfoData(bot->GetGUID(), &ginfo))
+        if (bgQueue.GetPlayerGroupInfoData(bot->GetObjectGuid(), &ginfo))
         {
-            if (ginfo.IsInvitedToBGInstanceGUID && ginfo.RemoveInviteTime)
+            if (ginfo.isInvitedToBgInstanceGuid && ginfo.removeInviteTime)
             {
                 LOG_INFO("playerbots", "Bot {} <{}> ({} {}) : Invited to BG but not in BG",
-                         bot->GetGUID().ToString().c_str(), bot->GetName(), bot->GetLevel(),
+                         bot->GetObjectGuid().ToString().c_str(), bot->GetName(), bot->GetLevel(),
                          bot->GetTeamId() == TEAM_ALLIANCE ? "A" : "H");
                 return true;
             }
@@ -110,14 +112,14 @@ bool PlayerIsInBattlegroundWithoutFlag::IsActive()
 {
     if (botAI->GetBot()->InBattleground())
     {
-        if (RealBgType(botAI->GetBot()) == BattlegroundTypeId::BATTLEGROUND_WS)
+        if (RealBgType(botAI->GetBot()) == BattleGroundTypeId::BATTLEGROUND_WS)
         {
-            BattlegroundWS* bg = (BattlegroundWS*)botAI->GetBot()->GetBattleground();
-            if (!(bg->GetFlagState(bg->GetOtherTeamId(bot->GetTeamId())) == BG_WS_FLAG_STATE_ON_PLAYER))
+            BattleGroundWS* bg = (BattleGroundWS*)botAI->GetBot()->GetBattleground();
+            if (!(bg->GetFlagState(bg->GetOtherTeam(bot->GetTeam())) == BG_WS_FLAG_STATE_ON_PLAYER))
                 return true;
 
-            if (bot->GetGUID() == bg->GetFlagPickerGUID(TEAM_ALLIANCE) ||
-                bot->GetGUID() == bg->GetFlagPickerGUID(TEAM_HORDE))
+            if (bot->GetObjectGuid() == bg->GetFlagPickerGUID(TEAM_ALLIANCE) ||
+                bot->GetObjectGuid() == bg->GetFlagPickerGUID(TEAM_HORDE))
             {
                 return false;
             }
@@ -140,13 +142,15 @@ bool PlayerHasFlag::IsCapturingFlag(Player* bot)
     {
         if (RealBgType(bot) == BATTLEGROUND_WS)
         {
-            BattlegroundWS* bg = (BattlegroundWS*)bot->GetBattleground();
+            BattleGroundWS* bg = (BattleGroundWS*)bot->GetBattleground();
             // bot is horde and has ally flag
-            if (bot->GetGUID() == bg->GetFlagPickerGUID(TEAM_ALLIANCE))
+            if (bot->GetObjectGuid() == bg->GetFlagPickerGUID(TEAM_ALLIANCE))
             {
                 if (bg->GetFlagPickerGUID(TEAM_HORDE))  // enemy has flag too
                 {
-                    if (GameObject* go = bg->GetBGObject(BG_WS_OBJECT_H_FLAG))
+                    ObjectGuid goGuid = bg->GetSingleGameObjectGuid(WS_EVENT_FLAG_H, 0);
+                    // if (GameObject* go = bg->GetBGObject(BG_WS_OBJECT_H_FLAG))
+                    if (GameObject* go = !goGuid.IsEmpty() ? bg->GetBgMap()->GetGameObject(goGuid) : nullptr)
                     {
                         // only indicate capturing if signicant distance from own flag
                         // (otherwise allow bot to defend itself)
@@ -156,11 +160,13 @@ bool PlayerHasFlag::IsCapturingFlag(Player* bot)
                 return true;  // enemy doesnt have flag so we can cap immediately
             }
             // bot is ally and has horde flag
-            if (bot->GetGUID() == bg->GetFlagPickerGUID(TEAM_HORDE))
+            if (bot->GetObjectGuid() == bg->GetFlagPickerGUID(TEAM_HORDE))
             {
                 if (bg->GetFlagPickerGUID(TEAM_ALLIANCE))  // enemy has flag too
                 {
-                    if (GameObject* go = bg->GetBGObject(BG_WS_OBJECT_A_FLAG))
+                    ObjectGuid goGuid = bg->GetSingleGameObjectGuid(WS_EVENT_FLAG_A, 0);
+                    // if (GameObject* go = bg->GetBGObject(BG_WS_OBJECT_A_FLAG))
+                    if (GameObject* go = !goGuid.IsEmpty() ? bg->GetBgMap()->GetGameObject(goGuid) : nullptr)
                     {
                         // only indicate capturing if signicant distance from own flag
                         // (otherwise allow bot to defend itself)
@@ -172,12 +178,13 @@ bool PlayerHasFlag::IsCapturingFlag(Player* bot)
             return false;  // bot doesn't have flag
         }
 
+        /*
         if (RealBgType(bot) == BATTLEGROUND_EY)
         {
             BattlegroundEY* bg = (BattlegroundEY*)bot->GetBattleground();
 
             // Check if bot has the flag
-            if (bot->GetGUID() == bg->GetFlagPickerGUID())
+            if (bot->GetObjectGuid() == bg->GetFlagPickerGUID())
             {
                 // Count how many bases the bot's team owns
                 uint32 controlledBases = 0;
@@ -192,9 +199,10 @@ bool PlayerHasFlag::IsCapturingFlag(Player* bot)
                     return false; // bot has flag but no place to take it
 
                 // Otherwise, return false and stay defensive / move to base
-                return bot->GetGUID() == bg->GetFlagPickerGUID();
+                return bot->GetObjectGuid() == bg->GetFlagPickerGUID();
             }
         }
+        */
 
         return false;
     }
@@ -207,22 +215,24 @@ bool TeamHasFlag::IsActive()
     if (!botAI->GetBot()->InBattleground())
         return false;
 
-    if (RealBgType(botAI->GetBot()) != BattlegroundTypeId::BATTLEGROUND_WS)
+    if (RealBgType(botAI->GetBot()) != BattleGroundTypeId::BATTLEGROUND_WS)
         return false;
 
-    BattlegroundWS* bg = (BattlegroundWS*)botAI->GetBot()->GetBattleground();
+    BattleGroundWS* bg = (BattleGroundWS*)botAI->GetBot()->GetBattleground();
 
-    ObjectGuid botGuid = bot->GetGUID();
-    TeamId teamId = bot->GetTeamId();
-    TeamId enemyTeamId = bg->GetOtherTeamId(teamId);
+    ObjectGuid botGuid = bot->GetObjectGuid();
+    // TeamId teamId = bot->GetTeamId();
+    // TeamId enemyTeamId = bg->GetOtherTeamId(teamId);
+    Team team = bot->GetTeam();
+    Team enemyTeam = bg->GetOtherTeam(team);
 
     // If the bot is carrying any flag, don't activate
     if (botGuid == bg->GetFlagPickerGUID(TEAM_ALLIANCE) || botGuid == bg->GetFlagPickerGUID(TEAM_HORDE))
         return false;
 
     // Check: Own team has enemy flag, enemy team does NOT have your flag
-    bool ownTeamHasFlag = bg->GetFlagState(enemyTeamId) == BG_WS_FLAG_STATE_ON_PLAYER;
-    bool enemyTeamHasFlag = bg->GetFlagState(teamId) == BG_WS_FLAG_STATE_ON_PLAYER;
+    bool ownTeamHasFlag = bg->GetFlagState(enemyTeam) == BG_WS_FLAG_STATE_ON_PLAYER;
+    bool enemyTeamHasFlag = bg->GetFlagState(team) == BG_WS_FLAG_STATE_ON_PLAYER;
 
     return ownTeamHasFlag && !enemyTeamHasFlag;
 }
@@ -231,9 +241,9 @@ bool EnemyTeamHasFlag::IsActive()
 {
     if (botAI->GetBot()->InBattleground())
     {
-        if (RealBgType(botAI->GetBot()) == BattlegroundTypeId::BATTLEGROUND_WS)
+        if (RealBgType(botAI->GetBot()) == BattleGroundTypeId::BATTLEGROUND_WS)
         {
-            BattlegroundWS* bg = (BattlegroundWS*)botAI->GetBot()->GetBattleground();
+            BattleGroundWS* bg = (BattleGroundWS*)botAI->GetBot()->GetBattleground();
 
             if (bot->GetTeamId() == TEAM_HORDE)
             {
@@ -280,12 +290,12 @@ bool TeamFlagCarrierNear::IsActive()
 {
     if (RealBgType(bot) == BATTLEGROUND_WS)
     {
-        BattlegroundWS* bg = dynamic_cast<BattlegroundWS*>(bot->GetBattleground());
+        BattleGroundWS* bg = dynamic_cast<BattleGroundWS*>(bot->GetBattleground());
         if (bg)
         {
             bool bothFlagsNotAtBase =
-                bg->GetFlagState(TEAM_ALLIANCE) != BG_WS_FLAG_STATE_ON_BASE &&
-                bg->GetFlagState(TEAM_HORDE) != BG_WS_FLAG_STATE_ON_BASE;
+                bg->GetFlagState(ALLIANCE) != BG_WS_FLAG_STATE_ON_BASE &&
+                bg->GetFlagState(HORDE) != BG_WS_FLAG_STATE_ON_BASE;
 
             if (bothFlagsNotAtBase)
                 return false;
@@ -308,7 +318,8 @@ bool PlayerWantsInBattlegroundTrigger::IsActive()
         return false;
 
     if (bot->IsDeserter())
-        return false;
+        // return false;
+        bot->RemoveAura(26013);
 
     return true;
 }

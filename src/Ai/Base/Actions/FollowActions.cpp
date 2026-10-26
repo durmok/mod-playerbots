@@ -20,6 +20,7 @@
 
 namespace
 {
+    #ifdef false
     Transport* GetTransportForPosTolerant(Map* map, WorldObject* ref, uint32 phaseMask, float x, float y, float z)
     {
         if (!map || !ref)
@@ -94,6 +95,7 @@ namespace
         outZ = masterZ; // keep deck-level Z to encourage stepping onto the platform/boat
         return true;
     }
+    #endif
 }
 
 bool FollowAction::Execute(Event /*event*/)
@@ -101,6 +103,7 @@ bool FollowAction::Execute(Event /*event*/)
     Formation* formation = AI_VALUE(Formation*, "formation");
     std::string const target = formation->GetTargetName();
 
+    #ifdef false
     // Transport handling for moving transports only (boats/zeppelins).
     Player* master = botAI->GetMaster();
     if (master && master->IsInWorld() && bot->IsInWorld() && bot->GetMapId() == master->GetMapId())
@@ -204,6 +207,7 @@ bool FollowAction::Execute(Event /*event*/)
         }
     }
     // end unified transport handling
+    #endif
 
     bool moved = false;
     if (!target.empty())
@@ -267,7 +271,7 @@ bool FollowAction::isUseful()
         if (!CanDeadFollow(fTarget))
             return false;
 
-        if (fTarget->GetGUID() == bot->GetGUID())
+        if (fTarget->GetObjectGuid() == bot->GetObjectGuid())
             return false;
     }
 

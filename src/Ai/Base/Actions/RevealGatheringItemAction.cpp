@@ -21,8 +21,8 @@ bool RevealGatheringItemAction::Execute(Event /*event*/)
 
     std::list<GameObject*> targets;
     AnyGameObjectInObjectRangeCheck u_check(bot, sPlayerbotAIConfig.GrindDistance);
-    Acore::GameObjectListSearcher<AnyGameObjectInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, sPlayerbotAIConfig.ReactDistance);
+    MaNGOS::GameObjectListSearcher<AnyGameObjectInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, sPlayerbotAIConfig.ReactDistance);
 
     std::vector<GameObject*> result;
     for (GameObject* go : targets)

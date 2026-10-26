@@ -317,7 +317,7 @@ bool CastBlessingOfWisdomOnPartyAction::Execute(Event /*event*/)
     Player* targetPlayer = target->ToPlayer();
 
     if (Group* group = bot->GetGroup())
-        if (targetPlayer && !group->IsMember(targetPlayer->GetGUID()))
+        if (targetPlayer && !group->IsMember(targetPlayer->GetObjectGuid()))
             return false;
 
     if (botAI->HasStrategy("bwisdom", BOT_STATE_NON_COMBAT) &&
@@ -360,7 +360,7 @@ bool CastBlessingOfSanctuaryOnPartyAction::Execute(Event /*event*/)
 
     if (Group* group = bot->GetGroup())
     {
-        if (targetPlayer && !group->IsMember(targetPlayer->GetGUID()))
+        if (targetPlayer && !group->IsMember(targetPlayer->GetObjectGuid()))
         {
             target = bot;
             targetPlayer = bot->ToPlayer();
@@ -501,12 +501,12 @@ bool CastBlessingOfKingsOnPartyAction::Execute(Event /*event*/)
     if (botAI->HasStrategy("bkings", BOT_STATE_NON_COMBAT) &&
         IsOnlyPaladinInGroup(bot))
     {
-        if (target->GetGUID() == bot->GetGUID())
+        if (target->GetObjectGuid() == bot->GetObjectGuid())
             return false;
     }
 
     Player* targetPlayer = target->ToPlayer();
-    if (targetPlayer && !group->IsMember(targetPlayer->GetGUID()))
+    if (targetPlayer && !group->IsMember(targetPlayer->GetObjectGuid()))
         return false;
 
     const bool hasBwisdom = botAI->HasStrategy("bwisdom", BOT_STATE_NON_COMBAT);
@@ -519,8 +519,8 @@ bool CastBlessingOfKingsOnPartyAction::Execute(Event /*event*/)
     {
         const bool isTank = IsTankRole(targetPlayer);
         const bool hasSanctFromMe =
-            target->HasAura(ai::paladin::SPELL_BLESSING_OF_SANCTUARY, bot->GetGUID()) ||
-            target->HasAura(ai::paladin::SPELL_GREATER_BLESSING_OF_SANCTUARY, bot->GetGUID());
+            target->HasAura(ai::paladin::SPELL_BLESSING_OF_SANCTUARY) ||
+            target->HasAura(ai::paladin::SPELL_GREATER_BLESSING_OF_SANCTUARY);
         const bool hasSanctAny =
             botAI->HasAura("blessing of sanctuary", target) ||
             botAI->HasAura("greater blessing of sanctuary", target);

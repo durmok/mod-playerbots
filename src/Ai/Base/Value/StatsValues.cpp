@@ -11,6 +11,7 @@
 #include "Player.h"
 #include "PlayerbotAIConfig.h"
 #include "ServerFacade.h"
+#include "ObjectAccessor.h"
 
 Unit* HealthValue::GetTarget()
 {
@@ -39,7 +40,7 @@ bool IsDeadValue::Calculate()
     if (!target)
         return false;
 
-    return target->getDeathState() != DeathState::Alive;
+    return target->getDeathState() != DeathState::ALIVE;
 }
 
 bool PetIsDeadValue::Calculate()
@@ -51,18 +52,18 @@ bool PetIsDeadValue::Calculate()
 
     if (!bot->GetPet())
     {
-        uint32 ownerid = bot->GetGUID().GetCounter();
-        QueryResult result = CharacterDatabase.Query("SELECT id FROM character_pet WHERE owner = {}", ownerid);
+        uint32 ownerid = bot->GetObjectGuid().GetCounter();
+        QueryResult2 result = CharacterDatabase2.Query("SELECT id FROM character_pet WHERE owner_guid = {}", ownerid);
         if (!result)
             return false;
 
         return true;
     }
 
-    if (bot->GetPetGUID() && !bot->GetPet())
+    if (bot->GetPetGuid() && !bot->GetPet())
         return true;
 
-    return bot->GetPet() && bot->GetPet()->getDeathState() != DeathState::Alive;
+    return bot->GetPet() && bot->GetPet()->getDeathState() != DeathState::ALIVE;
 }
 
 bool PetIsHappyValue::Calculate() { return !bot->GetPet() || bot->GetPet()->GetHappinessState() == HAPPY; }
@@ -140,7 +141,7 @@ Unit* ComboPointsValue::GetTarget()
 uint8 ComboPointsValue::Calculate()
 {
     Unit* target = GetTarget();
-    if (!target || target->GetGUID() != bot->GetComboTargetGUID())
+    if (!target || target->GetObjectGuid() != bot->GetComboTargetGuid())
         return 0;
 
     return bot->GetComboPoints();

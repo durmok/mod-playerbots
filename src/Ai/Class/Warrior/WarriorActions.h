@@ -106,7 +106,7 @@ DEBUFF_ACTION_R(CastPiercingHowlAction, "piercing howl", 8.0f);
 BUFF_ACTION(CastRampageAction, "rampage");
 
 // protection
-MELEE_ACTION_U(CastTauntAction, "taunt", GetTarget() && GetTarget()->GetTarget() != bot->GetGUID());
+MELEE_ACTION_U(CastTauntAction, "taunt", GetTarget() && GetTarget()->GetTarget() != bot->GetObjectGuid());
 SNARE_ACTION(CastTauntOnSnareTargetAction, "taunt");
 BUFF_ACTION(CastBloodrageAction, "bloodrage");
 MELEE_ACTION(CastShieldBashAction, "shield bash");

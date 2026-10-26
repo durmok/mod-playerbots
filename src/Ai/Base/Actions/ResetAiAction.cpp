@@ -19,6 +19,7 @@ bool ResetAiAction::Execute(Event event)
         WorldPacket packet = event.getPacket();
         if (packet.GetOpcode() == SMSG_GROUP_LIST)
         {
+            /*
             uint8 groupType;
             Group::MemberSlot slot;
             packet >> groupType;
@@ -42,6 +43,17 @@ bool ResetAiAction::Execute(Event event)
             {
                 return false;
             }
+            */
+
+            uint8 groupType;
+            uint8 ownGroupAndAssistantFlag;
+            uint32 membersCount;
+            packet >> groupType;
+            packet >> ownGroupAndAssistantFlag;
+            packet >> membersCount;
+            packet.rpos(0);
+            if (membersCount != 0)
+                return false;
         }
     }
     if (Player* master = botAI->GetMaster())

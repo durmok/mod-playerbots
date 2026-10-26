@@ -7,12 +7,12 @@
 #include "PlayerbotSpellRepository.h"
 
 #include "DBCStores.h"
-#include "DatabaseEnv.h"
-#include "Field.h"
+#include "DatabaseEnv2.h"
+#include "Field2.h"
 #include "Log.h"
 #include "ObjectMgr.h"
-#include "QueryResult.h"  // Required due to a poor implementation by AC
-#include "SpellInfo.h"
+#include "QueryResult2.h"  // Required due to a poor implementation by AC
+#include "SpellEntry.h"
 #include "SpellMgr.h"
 
 #include <algorithm>
@@ -45,14 +45,32 @@ void PlayerbotSpellRepository::Initialize()
     LOG_INFO("playerbots", "Playerbots: ListSpellsAction caches initialized");
 
     // Mount spells carry no Riding requirement; the item that teaches them does.
-    for (auto const& [itemId, itemTemplate] : *sObjectMgr->GetItemTemplateStore())
+    for (auto const& [itemId, itemTemplate] : sObjectMgr.GetItemPrototypeMap())
     {
         if (itemTemplate.RequiredSkill != SKILL_RIDING)
             continue;
 
-        for (_Spell const& itemSpell : itemTemplate.Spells)
+        for (_ItemSpell const& itemSpell : itemTemplate.Spells)
         {
+            /*
             if (itemSpell.SpellId <= 0 || itemSpell.SpellTrigger != ITEM_SPELLTRIGGER_LEARN_SPELL_ID)
+                continue;
+            */
+
+            const SpellEntry* pSpell = sSpellMgr.GetSpellEntry(itemSpell.SpellId);
+            if (!pSpell)
+                continue;
+
+            uint32 learnSpellId = 0;
+            for (int j = 0; j < MAX_SPELL_EFFECTS; ++j)
+            {
+                if (pSpell->Effect[j] == SPELL_EFFECT_LEARN_SPELL)
+                {
+                    if (pSpell->EffectTriggerSpell[j])
+                        learnSpellId = pSpell->EffectTriggerSpell[j];
+                }
+            }
+            if (!learnSpellId)
                 continue;
 
             auto [itr, inserted] =
@@ -62,28 +80,36 @@ void PlayerbotSpellRepository::Initialize()
         }
     }
 
+
     // Fast class mounts are taught by no item; spell_required lists their Riding spell.
     for (auto const& [ridingSpell, rank] : RIDING_SPELL_RANKS)
     {
-        SpellsRequiringSpellMapBounds const bounds = sSpellMgr->GetSpellsRequiringSpellBounds(ridingSpell);
+        // SpellsRequiringSpellMapBounds const bounds = sSpellMgr.GetSpellsRequiringSpellBounds(ridingSpell);
+        SpellLearnSpellMapBounds const bounds = sSpellMgr.GetSpellLearnSpellMapBounds(ridingSpell);
         for (auto itr = bounds.first; itr != bounds.second; ++itr)
-            _ridingSkillByMount.try_emplace(itr->second, rank);
+            _ridingSkillByMount.try_emplace(itr->second.spell, rank);
     }
 
-    for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
+    
+    for (uint32 j = 0; j < sObjectMgr.GetMaxSkillLineAbilityId(); ++j)
     {
-        if (SkillLineAbilityEntry const* skillLine = sSkillLineAbilityStore.LookupEntry(j))
-            skillSpells[skillLine->Spell] = skillLine;
+        if (SkillLineAbilityEntry const* skillLine = sObjectMgr.GetSkillLineAbility(j))
+            skillSpells[skillLine->spellId] = skillLine;
     }
 
-    for (uint32 spellId = 0; spellId < sSpellMgr->GetSpellInfoStoreSize(); ++spellId)
+    for (uint32 spellId = 0; spellId < sSpellMgr.GetMaxSpellId(); ++spellId)
     {
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellEntry const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (!spellInfo)
             continue;
 
-        for (SpellEffectInfo const& spellEffectInfo : spellInfo->GetEffects())
+        for (uint32 i = 0; i < MAX_SPELL_EFFECTS; i++)
         {
+            spellInfo->GetEffect(i);
+            SpellEffectInfo const& spellEffectInfo = *spellInfo->GetEffect(i);
+            if (!spellEffectInfo.Effect)
+                continue;
+
             if ((spellEffectInfo.Effect == SPELL_EFFECT_OPEN_LOCK || spellEffectInfo.Effect == SPELL_EFFECT_SKINNING) &&
                 spellEffectInfo.MiscValue)
                 _openingSpells[uint32(spellEffectInfo.MiscValue)].push_back(spellId);
@@ -91,12 +117,12 @@ void PlayerbotSpellRepository::Initialize()
     }
 
     // Fill the vendorItems cache once from the world database.
-    QueryResult results = WorldDatabase.Query("SELECT item FROM npc_vendor WHERE maxcount = 0");
+    QueryResult2 results = WorldDatabase2.Query("SELECT item FROM npc_vendor WHERE maxcount = 0");
     if (results)
     {
         do
         {
-            Field* fields = results->Fetch();
+            Field2* fields = results->Fetch();
             int32 entry = fields[0].Get<int32>();
             if (entry <= 0)
                 continue;
@@ -129,7 +155,7 @@ std::vector<uint32> const& PlayerbotSpellRepository::GetOpeningSpells(uint32 loc
     return itr != _openingSpells.end() ? itr->second : empty;
 }
 
-uint32 PlayerbotSpellRepository::GetRequiredRidingSkill(SpellInfo const* mountSpell) const
+uint32 PlayerbotSpellRepository::GetRequiredRidingSkill(SpellEntry const* mountSpell) const
 {
     auto const itr = _ridingSkillByMount.find(mountSpell->Id);
     if (itr != _ridingSkillByMount.end())
@@ -138,19 +164,25 @@ uint32 PlayerbotSpellRepository::GetRequiredRidingSkill(SpellInfo const* mountSp
     // No item or spell_required row (Acherus Deathcharger, slow class and quest mounts): rate by speed.
     int32 speed = 0;
     bool flying = false;
-    for (SpellEffectInfo const& effect : mountSpell->GetEffects())
+    for (uint32 i = 0; i < MAX_SPELL_EFFECTS; i++)
     {
-        switch (effect.ApplyAuraName)
+        auto effect = mountSpell->GetEffect(i);
+        if (!effect)
+            continue;
+
+        switch (effect->ApplyAuraName)
         {
+            /*
             case SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED:
             case SPELL_AURA_MOD_MOUNTED_FLIGHT_SPEED_ALWAYS:
                 flying = true;
-                speed = std::max(speed, effect.BasePoints);
+                speed = std::max(speed, effect->BasePoints);
                 break;
+            */
             case SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED:
             case SPELL_AURA_MOD_MOUNTED_SPEED_ALWAYS:
             case SPELL_AURA_MOD_MOUNTED_SPEED_NOT_STACK:
-                speed = std::max(speed, effect.BasePoints);
+                speed = std::max(speed, effect->BasePoints);
                 break;
             default:
                 break;

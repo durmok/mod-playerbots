@@ -48,7 +48,7 @@ bool SkipSpellsListAction::Execute(Event event)
         bool first = true;
         for (uint32 spellId : skipSpells)
         {
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+            SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
             if (!spellInfo)
                 continue;
 
@@ -75,7 +75,7 @@ bool SkipSpellsListAction::Execute(Event event)
             return false;
         }
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (!spellInfo)
             return false;
 

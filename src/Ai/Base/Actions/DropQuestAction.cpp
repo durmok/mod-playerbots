@@ -9,6 +9,7 @@
 #include "Event.h"
 #include "PlayerbotTextMgr.h"
 #include "Playerbots.h"
+#include "World.h"
 
 bool DropQuestAction::Execute(Event event)
 {
@@ -26,7 +27,7 @@ bool DropQuestAction::Execute(Event event)
     {
         uint32 logQuest = bot->GetQuestSlotQuestId(slot);
 
-        Quest const* quest = sObjectMgr->GetQuestTemplate(logQuest);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(logQuest);
         if (!quest)
             continue;
 
@@ -35,7 +36,8 @@ bool DropQuestAction::Execute(Event event)
             bot->SetQuestSlot(slot, 0);
 
             // we ignore unequippable quest items in this case, its' still be equipped
-            bot->TakeQuestSourceItem(logQuest, false);
+            // bot->TakeQuestSourceItem(logQuest, false);
+            bot->TakeOrReplaceQuestStartItems(logQuest, false, false);
             entry = logQuest;
             break;
         }
@@ -44,14 +46,15 @@ bool DropQuestAction::Execute(Event event)
     if (!entry)
         return false;
 
-    bot->RemoveRewardedQuest(entry);
-    bot->RemoveActiveQuest(entry, false);
+    // bot->RemoveRewardedQuest(entry);
+    // bot->RemoveActiveQuest(entry, false);
+    bot->RemoveQuest(entry);
 
     if (botAI->HasStrategy("debug quest", BotState::BOT_STATE_NON_COMBAT) || botAI->HasStrategy("debug rpg", BotState::BOT_STATE_COMBAT))
     {
-        Quest const* pQuest = sObjectMgr->GetQuestTemplate(entry);
+        Quest const* pQuest = sObjectMgr.GetQuestTemplate(entry);
         const std::string text_quest = ChatHelper::FormatQuest(pQuest);
-        LOG_INFO("playerbots", "{} => Quest [ {} ] removed", bot->GetName(), pQuest->GetTitle());
+        LOG_INFO("playerbots", "{} => Quest [ {} ] removed", bot->GetName(), pQuest->GetTitle().c_str());
         std::string text = PlayerbotTextMgr::instance().GetBotTextOrDefault(
             "quest_removed_debug",
             "Quest [%quest] removed",
@@ -88,7 +91,7 @@ bool CleanQuestLogAction::Execute(Event event)
         if (!questId)
             continue;
 
-        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
         if (!quest)
             continue;
 
@@ -120,14 +123,16 @@ bool CleanQuestLogAction::Execute(Event event)
             // Remove quest
             botAI->rpgStatistic.questDropped++;
             bot->SetQuestSlot(slot, 0);
-            bot->TakeQuestSourceItem(questId, false);
+            // bot->TakeQuestSourceItem(questId, false);
+            bot->TakeOrReplaceQuestStartItems(questId, false, false);
             bot->SetQuestStatus(questId, QUEST_STATUS_NONE);
-            bot->RemoveRewardedQuest(questId);
+            // bot->RemoveRewardedQuest(questId);
+            bot->RemoveQuest(questId);
 
             if (botAI->HasStrategy("debug rpg", BotState::BOT_STATE_COMBAT))
             {
                 const std::string text_quest = ChatHelper::FormatQuest(quest);
-                LOG_INFO("playerbots", "{} => Quest [ {} ] removed", bot->GetName(), quest->GetTitle());
+                LOG_INFO("playerbots", "{} => Quest [ {} ] removed", bot->GetName(), quest->GetTitle().c_str());
                 std::string text = PlayerbotTextMgr::instance().GetBotTextOrDefault(
                     "quest_removed_debug",
                     "Quest [%quest] removed",
@@ -174,7 +179,7 @@ void CleanQuestLogAction::DropQuestType(uint8& numQuest, uint8 wantNum, bool isG
         if (!questId)
             continue;
 
-        Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
+        Quest const* quest = sObjectMgr.GetQuestTemplate(questId);
         if (!quest)
             continue;
 
@@ -185,7 +190,7 @@ void CleanQuestLogAction::DropQuestType(uint8& numQuest, uint8 wantNum, bool isG
         if (wantNum == 100)
             numQuest++;
 
-        int32 lowLevelDiff = sWorld->getIntConfig(CONFIG_QUEST_LOW_LEVEL_HIDE_DIFF);
+        int32 lowLevelDiff = sWorld.getConfig(CONFIG_INT32_QUEST_LOW_LEVEL_HIDE_DIFF);
         if (lowLevelDiff < 0 ||
             bot->GetLevel() <= bot->GetQuestLevel(quest) + uint32(lowLevelDiff))  // Quest is not gray
         {
@@ -215,17 +220,19 @@ void CleanQuestLogAction::DropQuestType(uint8& numQuest, uint8 wantNum, bool isG
         bot->SetQuestSlot(slot, 0);
 
         // We ignore unequippable quest items in this case, its' still be equipped
-        bot->TakeQuestSourceItem(questId, false);
+        // bot->TakeQuestSourceItem(questId, false);
+        bot->TakeOrReplaceQuestStartItems(questId, false, false);
 
         bot->SetQuestStatus(questId, QUEST_STATUS_NONE);
-        bot->RemoveRewardedQuest(questId);
+        // bot->RemoveRewardedQuest(questId);
+        bot->RemoveQuest(questId);
 
         numQuest--;
 
         if (botAI->HasStrategy("debug quest", BotState::BOT_STATE_NON_COMBAT) || botAI->HasStrategy("debug rpg", BotState::BOT_STATE_COMBAT))
         {
             const std::string text_quest = ChatHelper::FormatQuest(quest);
-            LOG_INFO("playerbots", "{} => Quest [ {} ] removed", bot->GetName(), quest->GetTitle());
+            LOG_INFO("playerbots", "{} => Quest [ {} ] removed", bot->GetName(), quest->GetTitle().c_str());
             std::string text = PlayerbotTextMgr::instance().GetBotTextOrDefault(
                 "quest_removed_debug",
                 "Quest [%quest] removed",
@@ -253,18 +260,18 @@ bool CleanQuestLogAction::HasProgress(Player* bot, Quest const* quest)
         if (!quest->ObjectiveText[i].empty())
             return true;
 
-        if (quest->RequiredItemId[i])
+        if (quest->ReqItemId[i])
         {
-            int required = quest->RequiredItemCount[i];
-            int available = questStatus.ItemCount[i];
+            int required = quest->ReqItemCount[i];
+            int available = questStatus.m_itemcount[i];
             if (available > 0 && required > 0)
                 return true;
         }
 
-        if (quest->RequiredNpcOrGo[i])
+        if (quest->ReqCreatureOrGOId[i])
         {
-            int required = quest->RequiredNpcOrGoCount[i];
-            int available = questStatus.CreatureOrGOCount[i];
+            int required = quest->ReqCreatureOrGOCount[i];
+            int available = questStatus.m_creatureOrGOcount[i];
 
             if (available > 0 && required > 0)
                 return true;

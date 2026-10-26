@@ -23,7 +23,7 @@ typedef std::unordered_map<std::string, uint32> MissingBuffReagentNoticeMap;
 
 // True when the buff should be (re)cast: topped off toward full duration during an
 // out-of-combat force-rebuff, below baseBeforeDuration ms remaining otherwise.
-bool BuffBelowRefreshTarget(PlayerbotAI* botAI, Aura* aura, uint32 baseBeforeDuration);
+bool BuffBelowRefreshTarget(PlayerbotAI* botAI, Aura const* aura, uint32 baseBeforeDuration);
 
 bool IsGroupVariantEnabled(Player* bot, std::string const& name);
 

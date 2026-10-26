@@ -10,6 +10,7 @@
 #include "NamedObjectContext.h"
 #include "SharedDefines.h"
 #include "Value.h"
+#include "BattleGroundDefines.h"
 
 class PlayerbotAI;
 class Unit;
@@ -49,12 +50,12 @@ public:
     CreatureData const* NearestBm(bool allowDead = true);
 };
 
-class RpgBgTypeValue : public CalculatedValue<BattlegroundTypeId>
+class RpgBgTypeValue : public CalculatedValue<BattleGroundTypeId>
 {
 public:
     RpgBgTypeValue(PlayerbotAI* botAI) : CalculatedValue(botAI, "rpg bg type") {}
 
-    BattlegroundTypeId Calculate() override;
+    BattleGroundTypeId Calculate() override;
 };
 
 class FlagCarrierValue : public UnitCalculatedValue
@@ -70,6 +71,24 @@ public:
 private:
     bool sameTeam;
     bool ignoreRange;
+};
+
+class BgJoinQueueTypeIdValue : public ManualSetValue<uint32>
+{
+public:
+    BgJoinQueueTypeIdValue(PlayerbotAI* botAI) : ManualSetValue<uint32>(botAI, BATTLEGROUND_QUEUE_NONE, "bg join queue type id") {}
+};
+
+class BgJoinBracketIdValue : public ManualSetValue<uint32>
+{
+public:
+    BgJoinBracketIdValue(PlayerbotAI* botAI) : ManualSetValue<uint32>(botAI, BG_BRACKET_ID_FIRST, "bg join bracket id") {}
+};
+
+class BgLeaveQueueValue : public ManualSetValue<bool>
+{
+public:
+    BgLeaveQueueValue(PlayerbotAI* botAI) : ManualSetValue<bool>(botAI, false, "bg leave queue") {}
 };
 
 #endif

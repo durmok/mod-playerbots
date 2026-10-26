@@ -95,6 +95,7 @@
 #include "TradeValues.h"
 #include "Value.h"
 #include "WaitForAttackTimeValue.h"
+#include "WaitMoveCompleteValue.h"
 
 class PlayerbotAI;
 
@@ -255,6 +256,9 @@ public:
         creators["death count"] = &ValueContext::death_count;
 
         creators["bg type"] = &ValueContext::bg_type;
+        creators["bg join queue type id"] = &ValueContext::bg_join_queue_type_id;
+        creators["bg join bracket id"] = &ValueContext::bg_join_bracket_id;
+        creators["bg leave queue"] = &ValueContext::bg_leave_queue;
         creators["rpg bg type"] = &ValueContext::rpg_bg_type;
         creators["arena type"] = &ValueContext::arena_type;
         creators["bg role"] = &ValueContext::bg_role;
@@ -310,6 +314,8 @@ public:
         creators["RTSC selected"] = &ValueContext::RTSC_selected;
         creators["RTSC next spell action"] = &ValueContext::RTSC_next_spell_action;
         creators["RTSC saved location"] = &ValueContext::RTSC_saved_location;
+
+        creators["wait move complete"] = &ValueContext::wait_move_complete;
 
         creators["has area debuff"] = &ValueContext::has_area_debuff;
 
@@ -508,6 +514,9 @@ private:
     static UntypedValue* bg_role(PlayerbotAI* botAI) { return new BgRoleValue(botAI); }
     static UntypedValue* arena_type(PlayerbotAI* botAI) { return new ArenaTypeValue(botAI); }
     static UntypedValue* bg_type(PlayerbotAI* botAI) { return new BgTypeValue(botAI); }
+    static UntypedValue* bg_join_queue_type_id(PlayerbotAI* botAI) { return new BgJoinQueueTypeIdValue(botAI); }
+    static UntypedValue* bg_join_bracket_id(PlayerbotAI* botAI) { return new BgJoinBracketIdValue(botAI); }
+    static UntypedValue* bg_leave_queue(PlayerbotAI* botAI) { return new BgLeaveQueueValue(botAI); }
     static UntypedValue* rpg_bg_type(PlayerbotAI* botAI) { return new RpgBgTypeValue(botAI); }
     static UntypedValue* team_fc(PlayerbotAI* botAI) { return new FlagCarrierValue(botAI, true, true); }
     static UntypedValue* enemy_fc(PlayerbotAI* botAI) { return new FlagCarrierValue(botAI, false, true); }
@@ -564,6 +573,8 @@ private:
     static UntypedValue* RTSC_selected(PlayerbotAI* botAI) { return new RTSCSelectedValue(botAI); }
     static UntypedValue* RTSC_next_spell_action(PlayerbotAI* botAI) { return new RTSCNextSpellActionValue(botAI); }
     static UntypedValue* RTSC_saved_location(PlayerbotAI* botAI) { return new RTSCSavedLocationValue(botAI); }
+
+    static UntypedValue* wait_move_complete(PlayerbotAI* botAI) { return new WaitMoveCompleteValue(botAI); }
 
     static UntypedValue* has_area_debuff(PlayerbotAI* botAI) { return new HasAreaDebuffValue(botAI); }
 

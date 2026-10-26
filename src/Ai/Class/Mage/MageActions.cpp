@@ -67,9 +67,9 @@ bool UseManaAgateAction::isUseful()
 bool CastFrostNovaAction::isUseful()
 {
     Unit* target = AI_VALUE(Unit*, "current target");
-    if (!target || !target->IsInWorld() || target->isFrozen() ||
+    if (!target || !target->IsInWorld() || target->isFrozen()/* ||
         (target->ToCreature() &&
-         target->ToCreature()->HasMechanicTemplateImmunity(1 << (MECHANIC_FREEZE - 1))))
+         target->ToCreature()->HasMechanicTemplateImmunity(1 << (MECHANIC_FREEZE - 1)))*/)
     {
         return false;
     }

@@ -16,7 +16,7 @@ GuidVector NearestUnitsValue::Calculate()
     for (Unit* unit : targets)
     {
         if (AcceptUnit(unit) && (ignoreLos || bot->IsWithinLOSInMap(unit)))
-            results.push_back(unit->GetGUID());
+            results.push_back(unit->GetObjectGuid());
     }
 
     return results;

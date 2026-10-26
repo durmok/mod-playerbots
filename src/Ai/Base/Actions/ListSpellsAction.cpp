@@ -17,8 +17,8 @@ using SpellListEntry = std::pair<uint32, std::string>;
 // lhs = the left element, rhs = the right element.
 static bool CompareSpells(SpellListEntry const& lhSpell, SpellListEntry const& rhSpell)
 {
-    SpellInfo const* lhSpellInfo = sSpellMgr->GetSpellInfo(lhSpell.first);
-    SpellInfo const* rhSpellInfo = sSpellMgr->GetSpellInfo(rhSpell.first);
+    SpellInfo const* lhSpellInfo = sSpellMgr.GetSpellInfo(lhSpell.first);
+    SpellInfo const* rhSpellInfo = sSpellMgr.GetSpellInfo(rhSpell.first);
 
     if (!lhSpellInfo || !rhSpellInfo)
     {
@@ -27,17 +27,17 @@ static bool CompareSpells(SpellListEntry const& lhSpell, SpellListEntry const& r
         return lhSpell.first < rhSpell.first;
     }
 
-    uint32 lhsKey = lhSpellInfo->SchoolMask;
-    uint32 rhsKey = rhSpellInfo->SchoolMask;
+    uint32 lhsKey = lhSpellInfo->GetSpellSchoolMask();
+    uint32 rhsKey = rhSpellInfo->GetSpellSchoolMask();
 
     if (lhsKey == rhsKey)
     {
         // Defensive check: if DBC data is broken and spell names are nullptr,
         // fall back to id ordering instead of risking a crash in std::strcmp.
-        if (!lhSpellInfo->SpellName[0] || !rhSpellInfo->SpellName[0])
+        if (!lhSpellInfo->SpellName[0].empty() || !rhSpellInfo->SpellName[0].empty())
             return lhSpell.first < rhSpell.first;
 
-        return std::strcmp(lhSpellInfo->SpellName[0], rhSpellInfo->SpellName[0]) > 0;
+        return std::strcmp(lhSpellInfo->SpellName[0].c_str(), rhSpellInfo->SpellName[0].c_str()) > 0;
     }
     return lhsKey > rhsKey;
 }
@@ -123,13 +123,15 @@ std::vector<std::pair<uint32, std::string>> ListSpellsAction::GetSpellList(std::
     std::vector<SpellListEntry> spells;
     for (PlayerSpellMap::iterator itr = bot->GetSpellMap().begin(); itr != bot->GetSpellMap().end(); ++itr)
     {
-        if (itr->second->State == PLAYERSPELL_REMOVED || !itr->second->Active)
+        if (itr->second.state == PLAYERSPELL_REMOVED || !itr->second.active)
             continue;
 
+        /*
         if (!(itr->second->specMask & bot->GetActiveSpecMask()))
             continue;
+        */
 
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(itr->first);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(itr->first);
         if (!spellInfo)
             continue;
 
@@ -137,14 +139,14 @@ std::vector<std::pair<uint32, std::string>> ListSpellsAction::GetSpellList(std::
             continue;
 
         SkillLineAbilityEntry const* skillLine = PlayerbotSpellRepository::Instance().GetSkillLine(itr->first);
-        if (skill != SKILL_NONE && (!skillLine || skillLine->SkillLine != skill))
+        if (skill != SKILL_NONE && (!skillLine || skillLine->skillId != skill))
             continue;
 
         std::string const comp = spellInfo->SpellName[0];
         if (!(ignoreList.find(comp) == std::string::npos && alreadySeenList.find(comp) == std::string::npos))
             continue;
 
-        if (!filter.empty() && !strstri(spellInfo->SpellName[0], filter.c_str()))
+        if (!filter.empty() && !strstri(spellInfo->SpellName[0].c_str(), filter.c_str()))
             continue;
 
         bool first = true;
@@ -161,7 +163,7 @@ std::vector<std::pair<uint32, std::string>> ListSpellsAction::GetSpellList(std::
             uint32 reagentsRequired = spellInfo->ReagentCount[x];
             if (itemid)
             {
-                if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemid))
+                if (ItemTemplate const* proto = sObjectMgr.GetItemTemplate(itemid))
                 {
                     if (first)
                     {
@@ -200,9 +202,9 @@ std::vector<std::pair<uint32, std::string>> ListSpellsAction::GetSpellList(std::
         {
             for (uint8 i = 0; i < 3; ++i)
             {
-                if (spellInfo->Effects[i].Effect == SPELL_EFFECT_CREATE_ITEM)
+                if (spellInfo->Effect[i] == SPELL_EFFECT_CREATE_ITEM)
                 {
-                    if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(spellInfo->Effects[i].ItemType))
+                    if (ItemTemplate const* proto = sObjectMgr.GetItemTemplate(spellInfo->EffectItemType[i]))
                     {
                         if (craftsPossible)
                             out << "|cffffff00(x" << craftsPossible << ")|r ";
@@ -237,12 +239,12 @@ std::vector<std::pair<uint32, std::string>> ListSpellsAction::GetSpellList(std::
 
         out << materials.str();
 
-        if (skillLine && skillLine->SkillLine)
+        if (skillLine && skillLine->skillId)
         {
-            uint32 GrayLevel = skillLine->TrivialSkillLineRankHigh;
-            uint32 GreenLevel = (skillLine->TrivialSkillLineRankHigh + skillLine->MinSkillLineRank) / 2;
-            uint32 YellowLevel = skillLine->MinSkillLineRank;
-            uint32 SkillValue = bot->GetSkillValue(skillLine->SkillLine);
+            uint32 GrayLevel = skillLine->max_value;
+            uint32 GreenLevel = (skillLine->max_value + skillLine->min_value) / 2;
+            uint32 YellowLevel = skillLine->min_value;
+            uint32 SkillValue = bot->GetSkillValue(skillLine->skillId);
 
             out << " - ";
             if (SkillValue >= GrayLevel)

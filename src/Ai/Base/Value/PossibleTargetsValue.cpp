@@ -14,7 +14,7 @@
 #include "Playerbots.h"
 #include "SharedDefines.h"
 #include "SpellAuraDefines.h"
-#include "SpellAuraEffects.h"
+#include "SpellAuras.h"
 #include "SpellMgr.h"
 #include "Unit.h"
 
@@ -33,9 +33,9 @@ constexpr uint64_t FNV_PRIME = 1099511628211ULL;
 
 void PossibleTargetsValue::FindUnits(std::list<Unit*>& targets)
 {
-    Acore::AnyUnfriendlyUnitInObjectRangeCheck u_check(bot, bot, range);
-    Acore::UnitListSearcher<Acore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, range);
+    MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck u_check(bot, bot, range);
+    MaNGOS::UnitListSearcher<MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, range);
 }
 
 bool PossibleTargetsValue::AcceptUnit(Unit* unit)
@@ -69,7 +69,7 @@ bool PossibleTargetsValue::AcceptUnit(Unit* unit)
             return true;
 
         // Skip restrictions if in duel with this player
-        if (bot->duel && bot->duel->Opponent == unit)
+        if (bot->m_duel && bot->m_duel->opponent == unit)
             return true;
 
         // Capital cities - no restrictions
@@ -120,9 +120,9 @@ bool PossibleTargetsValue::AcceptUnit(Unit* unit)
             uint64_t hash = FNV_OFFSET_BASIS;
 
             // Diffuse bot GUID, target GUID, and time window into the hash
-            hash ^= bot->GetGUID().GetRawValue();
+            hash ^= bot->GetObjectGuid().GetRawValue();
             hash *= FNV_PRIME;
-            hash ^= unit->GetGUID().GetRawValue();
+            hash ^= unit->GetObjectGuid().GetRawValue();
             hash *= FNV_PRIME;
             hash ^= static_cast<uint64_t>(timeWindow);
             hash *= FNV_PRIME;
@@ -138,9 +138,9 @@ bool PossibleTargetsValue::AcceptUnit(Unit* unit)
 
 void PossibleTriggersValue::FindUnits(std::list<Unit*>& targets)
 {
-    Acore::AnyUnfriendlyUnitInObjectRangeCheck u_check(bot, bot, range);
-    Acore::UnitListSearcher<Acore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, range);
+    MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck u_check(bot, bot, range);
+    MaNGOS::UnitListSearcher<MaNGOS::AnyUnfriendlyUnitInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, range);
 }
 
 bool PossibleTriggersValue::AcceptUnit(Unit* unit)
@@ -150,9 +150,9 @@ bool PossibleTriggersValue::AcceptUnit(Unit* unit)
 
     Unit::AuraEffectList const& aurasPeriodicTriggerSpell =
         unit->GetAuraEffectsByType(SPELL_AURA_PERIODIC_TRIGGER_SPELL);
-    Unit::AuraEffectList const& aurasPeriodicTriggerWithValueSpell =
-        unit->GetAuraEffectsByType(SPELL_AURA_PERIODIC_TRIGGER_SPELL_WITH_VALUE);
-    for (Unit::AuraEffectList const& list : {aurasPeriodicTriggerSpell, aurasPeriodicTriggerWithValueSpell})
+    // Unit::AuraEffectList const& aurasPeriodicTriggerWithValueSpell =
+    //     unit->GetAuraEffectsByType(SPELL_AURA_PERIODIC_TRIGGER_SPELL_WITH_VALUE);
+    for (Unit::AuraEffectList const& list : {aurasPeriodicTriggerSpell/*, aurasPeriodicTriggerWithValueSpell*/})
     {
         for (auto i = list.begin(); i != list.end(); ++i)
         {
@@ -161,12 +161,12 @@ bool PossibleTriggersValue::AcceptUnit(Unit* unit)
             if (!spellInfo)
                 continue;
             SpellInfo const* triggerSpellInfo =
-                sSpellMgr->GetSpellInfo(spellInfo->Effects[aurEff->GetEffIndex()].TriggerSpell);
+                sSpellMgr.GetSpellInfo(spellInfo->EffectTriggerSpell[aurEff->GetEffIndex()]);
             if (!triggerSpellInfo)
                 continue;
             for (int j = 0; j < MAX_SPELL_EFFECTS; j++)
             {
-                if (triggerSpellInfo->Effects[j].Effect == SPELL_EFFECT_SCHOOL_DAMAGE)
+                if (triggerSpellInfo->Effect[j] == SPELL_EFFECT_SCHOOL_DAMAGE)
                     return true;
             }
         }

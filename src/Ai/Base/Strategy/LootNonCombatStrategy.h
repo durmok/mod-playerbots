@@ -17,6 +17,7 @@ public:
     LootNonCombatStrategy(PlayerbotAI* botAI) : Strategy(botAI) {}
 
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
+    void InitMultipliers(std::vector<Multiplier*>& multipliers) override;
     std::string const getName() override { return "loot"; }
 };
 
@@ -45,6 +46,14 @@ public:
     uint32 GetType() const override { return STRATEGY_TYPE_NONCOMBAT; }
     void InitTriggers(std::vector<TriggerNode*>& triggers) override;
     std::string const getName() override {return "use bobber";}
+};
+
+class LootMultiplier : public Multiplier
+{
+public:
+    LootMultiplier(PlayerbotAI* botAI) : Multiplier(botAI, "loot") {}
+
+    float GetValue(Action* action) override;
 };
 
 #endif

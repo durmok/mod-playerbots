@@ -16,14 +16,14 @@ GuidVector NearestGameObjects::Calculate()
 {
     std::list<GameObject*> targets;
     AnyGameObjectInObjectRangeCheck u_check(bot, range);
-    Acore::GameObjectListSearcher<AnyGameObjectInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, range);
+    MaNGOS::GameObjectListSearcher<AnyGameObjectInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, range);
 
     GuidVector result;
     for (GameObject* go : targets)
     {
         // if (ignoreLos || bot->IsWithinLOSInMap(go))
-        result.push_back(go->GetGUID());
+        result.push_back(go->GetObjectGuid());
     }
 
     return result;
@@ -33,8 +33,8 @@ GuidVector NearestTrapWithDamageValue::Calculate()
 {
     std::list<GameObject*> targets;
     AnyGameObjectInObjectRangeCheck u_check(bot, range);
-    Acore::GameObjectListSearcher<AnyGameObjectInObjectRangeCheck> searcher(bot, targets, u_check);
-    Cell::VisitObjects(bot, searcher, range);
+    MaNGOS::GameObjectListSearcher<AnyGameObjectInObjectRangeCheck> searcher(targets, u_check);
+    Cell::VisitAllObjects(bot, searcher, range);
 
     GuidVector result;
     for (GameObject* go : targets)
@@ -58,24 +58,24 @@ GuidVector NearestTrapWithDamageValue::Calculate()
         {
             continue;
         }
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(spellId);
         if (!spellInfo || spellInfo->IsPositive())
         {
             continue;
         }
         for (int i = 0; i < MAX_SPELL_EFFECTS; i++)
         {
-            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_APPLY_AURA)
+            if (spellInfo->Effect[i] == SPELL_EFFECT_APPLY_AURA)
             {
-                if (spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE)
+                if (spellInfo->EffectApplyAuraName[i] == SPELL_AURA_PERIODIC_DAMAGE)
                 {
-                    result.push_back(go->GetGUID());
+                    result.push_back(go->GetObjectGuid());
                     break;
                 }
             }
-            else if (spellInfo->Effects[i].Effect == SPELL_EFFECT_SCHOOL_DAMAGE)
+            else if (spellInfo->Effect[i] == SPELL_EFFECT_SCHOOL_DAMAGE)
             {
-                result.push_back(go->GetGUID());
+                result.push_back(go->GetObjectGuid());
                 break;
             }
         }

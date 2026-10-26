@@ -65,7 +65,7 @@ bool HandOfFreedomOnPartyTrigger::IsActive()
         return false;
 
     if (target != bot &&
-        bot->GetExactDist2dSq(target->GetPositionX(), target->GetPositionY()) > 30.0f * 30.0f)
+        bot->GetPosition().GetExactDist2dSq(target->GetPositionX(), target->GetPositionY()) > 30.0f * 30.0f)
         return false;
 
     if (!botAI->CanCastSpell("hand of freedom", target))
@@ -88,7 +88,7 @@ bool GreaterBlessingNeededTrigger::IsActive()
         return false;
 
     Group* group = bot->GetGroup();
-    uint32 const groupKey = group ? group->GetLeaderGUID().GetCounter() : 0;
+    uint32 const groupKey = group ? group->GetLeaderGuid().GetCounter() : 0;
 
     Value<ai::gbless::CachedPendingBlessingAssignment>* pendingValue =
         context->GetValue<ai::gbless::CachedPendingBlessingAssignment>("greater blessing pending assignment");

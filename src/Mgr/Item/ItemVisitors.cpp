@@ -17,18 +17,24 @@ bool FindUsableItemVisitor::Visit(Item* item)
 
 bool FindPotionVisitor::Accept(ItemTemplate const* proto)
 {
-    if (proto->Class == ITEM_CLASS_CONSUMABLE &&
-        (proto->SubClass == ITEM_SUBCLASS_POTION || proto->SubClass == ITEM_SUBCLASS_FLASK))
+    // if (proto->Class == ITEM_CLASS_CONSUMABLE &&
+    //     (proto->SubClass == ITEM_SUBCLASS_POTION || proto->SubClass == ITEM_SUBCLASS_FLASK))
+    if (proto->Class == ITEM_CLASS_CONSUMABLE)
     {
         for (uint8 j = 0; j < MAX_ITEM_PROTO_SPELLS; j++)
         {
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(proto->Spells[j].SpellId);
+            if (!proto->Spells[j].SpellId)
+                continue;
+            SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(proto->Spells[j].SpellId);
+            if (spellInfo->SpellFamilyName != SPELLFAMILY_POTION)
+                return false;
+
             if (!spellInfo)
                 return false;
 
             for (uint8 i = 0; i < 3; i++)
             {
-                if (spellInfo->Effects[i].Effect == effectId)
+                if (spellInfo->Effect[i] == effectId)
                     return true;
             }
         }
@@ -41,13 +47,13 @@ bool FindMountVisitor::Accept(ItemTemplate const* proto)
 {
     for (uint8 j = 0; j < MAX_ITEM_PROTO_SPELLS; j++)
     {
-        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(proto->Spells[j].SpellId);
+        SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(proto->Spells[j].SpellId);
         if (!spellInfo)
             return false;
 
         for (uint8 i = 0; i < 3; i++)
         {
-            if (spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_MOUNTED)
+            if (spellInfo->EffectApplyAuraName[i] == SPELL_AURA_MOUNTED)
                 return true;
         }
     }
@@ -57,17 +63,17 @@ bool FindMountVisitor::Accept(ItemTemplate const* proto)
 
 bool FindPetVisitor::Accept(ItemTemplate const* proto)
 {
-    if (proto->Class == ITEM_CLASS_MISC)
+    if (proto->Class == ITEM_CLASS_JUNK)
     {
         for (uint8 j = 0; j < MAX_ITEM_PROTO_SPELLS; j++)
         {
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(proto->Spells[j].SpellId);
+            SpellInfo const* spellInfo = sSpellMgr.GetSpellInfo(proto->Spells[j].SpellId);
             if (!spellInfo)
                 return false;
 
             for (uint8 i = 0; i < 3; i++)
             {
-                if (spellInfo->Effects[i].Effect == SPELL_EFFECT_SUMMON_PET)
+                if (spellInfo->Effect[i] == SPELL_EFFECT_SUMMON_PET)
                     return true;
             }
         }
@@ -91,5 +97,5 @@ bool FindItemUsageVisitor::Accept(ItemTemplate const* proto)
 
 bool FindUsableNamedItemVisitor::Accept(ItemTemplate const* proto)
 {
-    return proto && !proto->Name1.empty() && strstri(proto->Name1.c_str(), name.c_str());
+    return proto && (!proto->Name1 || proto->Name1[0] == '\0') && strstri(proto->Name1, name.c_str());
 }

@@ -34,8 +34,9 @@ public:
     virtual ~PlayerbotHolder(){};
 
     void AddPlayerBot(ObjectGuid guid, uint32 masterAccountId);
+    void DelayQueryHolderCallback(std::unique_ptr<QueryResult> dummy, SqlQueryHolder* holder);
     bool IsAccountLinked(uint32 accountId, uint32 masterAccountId);
-    void HandlePlayerBotLoginCallback(PlayerbotLoginQueryHolder const& holder, WorldSession* botSession);
+    void HandlePlayerBotLoginCallback(PlayerbotLoginQueryHolder const* holder, WorldSession* botSession);
 
     void LogoutPlayerBot(ObjectGuid guid);
     void DisablePlayerBot(ObjectGuid guid);
@@ -79,7 +80,7 @@ public:
     virtual ~PlayerbotMgr();
 
     static bool HandlePlayerbotMgrCommand(ChatHandler* handler, char const* args);
-    void HandleMasterIncomingPacket(WorldPacket const& packet);
+    void HandleMasterIncomingPacket(ClientPacket const& packet);
     void HandleMasterOutgoingPacket(WorldPacket const& packet);
     void HandleCommand(uint32 type, std::string const text);
     void OnPlayerLogin(Player* player);

@@ -13,10 +13,16 @@
 
 static void SendReadyConfirm(Player* bot)
 {
+    /*
     WorldPacket packet(MSG_RAID_READY_CHECK);
-    packet << bot->GetGUID();
+    packet << bot->GetObjectGuid();
     packet << uint8(1);
+    */
+    #if SUPPORTED_CLIENT_BUILD > CLIENT_BUILD_1_10_2
+    WorldPackets::Group::RaidReadyCheckFromClient packet;
+    packet.state = 1;
     bot->GetSession()->HandleRaidReadyCheckOpcode(packet);
+    #endif
 }
 
 std::string const formatPercent(std::string const name, uint8 value, float percent)
@@ -165,7 +171,7 @@ bool ReadyCheckAction::Execute(Event event)
     if (!p.empty())
     {
         p >> player;
-        if (player == bot->GetGUID())
+        if (player == bot->GetObjectGuid())
             return false;
 
         // Defer the ready reply until buffs are topped off.
